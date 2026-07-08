@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
+const BACKEND_URL = process.env.API_URL ?? "http://localhost:3001/api";
 
 export async function POST(req: NextRequest) {
   // Teruskan multipart/form-data langsung ke backend
