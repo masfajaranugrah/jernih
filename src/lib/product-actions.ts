@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 const API_URL = process.env.API_URL ?? "http://localhost:3001/api";
 
@@ -47,7 +47,8 @@ export async function createProduct(data: CreateProductInput) {
     throw new Error(err.message ?? `Gagal membuat produk: ${res.status}`);
   }
 
-  revalidatePath("/admin/products");
+  revalidateTag("products");
+  revalidatePath("/dashboard-admin/admin/products");
   revalidatePath("/produk");
   revalidatePath("/");
 
@@ -61,14 +62,18 @@ export async function removeProduct(id: string) {
   });
 
   if (!res.ok) {
-    throw new Error(`Gagal menghapus produk: ${res.status}`);
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message ?? `Gagal menghapus produk: ${res.status}`);
   }
 
-  revalidatePath("/admin/products");
+  revalidateTag("products");
+  revalidatePath("/dashboard-admin/admin/products");
   revalidatePath("/produk");
   revalidatePath("/");
 
-  return res.json();
+  // DELETE endpoint kadang return 204 No Content (body kosong)
+  const text = await res.text();
+  return text ? JSON.parse(text) : { success: true };
 }
 
 /** Update produk via backend API */
@@ -84,7 +89,8 @@ export async function editProduct(id: string, data: Partial<CreateProductInput>)
     throw new Error(err.message ?? `Gagal mengupdate produk: ${res.status}`);
   }
 
-  revalidatePath("/admin/products");
+  revalidateTag("products");
+  revalidatePath("/dashboard-admin/admin/products");
   revalidatePath("/produk");
   revalidatePath("/");
 

@@ -6,7 +6,7 @@ import ProductsTable from "./ProductsTable";
 export const metadata = { title: "Daftar Produk - Admin Jernih Creatife" };
 
 export default async function AdminProductsPage() {
-  const products = await fetchProducts({ limit: 100 });
+  const products = await fetchProducts({ limit: 100, noCache: true });
 
   return (
     <div className="min-h-screen bg-[#f8f9fa]">

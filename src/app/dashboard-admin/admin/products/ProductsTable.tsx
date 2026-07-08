@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useOptimistic, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
 import { removeProduct } from "@/lib/product-actions";
 import { formatRupiah, type ApiProduct } from "@/lib/api";
 
@@ -13,14 +12,24 @@ export default function ProductsTable({ products }: { products: ApiProduct[] }) 
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const confirmProduct = products.find((p) => p.id === confirmId);
+  // Optimistic state — langsung hilang dari list saat delete diklik
+  const [optimisticProducts, removeOptimistic] = useOptimistic(
+    products,
+    (current, idToRemove: string) => current.filter((p) => p.id !== idToRemove),
+  );
+
+  const confirmProduct = optimisticProducts.find((p) => p.id === confirmId);
 
   function handleDelete(id: string) {
     setDeletingId(id);
+    setConfirmId(null);
     startTransition(async () => {
+      removeOptimistic(id); // ← langsung hilang dari UI
       try {
         await removeProduct(id);
-        setConfirmId(null);
+        router.refresh(); // sync di background
+      } catch {
+        // kalau gagal, router.refresh() akan restore data asli
         router.refresh();
       } finally {
         setDeletingId(null);
@@ -43,7 +52,7 @@ export default function ProductsTable({ products }: { products: ApiProduct[] }) 
             </tr>
           </thead>
           <tbody className="divide-y divide-[#f3f4f5]">
-            {products.map((product) => (
+            {optimisticProducts.map((product) => (
               <tr key={product.id} className="hover:bg-[#f8f9fa] transition-colors">
                 {/* Produk */}
                 <td className="px-6 py-4">
