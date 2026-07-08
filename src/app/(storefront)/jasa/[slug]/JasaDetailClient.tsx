@@ -161,7 +161,7 @@ export default function JasaDetailClient({ service }: { service: ApiService }) {
 
             {/* Description snippet */}
             {description && (
-              <p className="text-[#707974] text-sm leading-relaxed line-clamp-3">{description}</p>
+              <p className="whitespace-pre-line text-[#707974] text-sm leading-relaxed line-clamp-3">{description}</p>
             )}
 
             {/* Price */}
@@ -250,7 +250,7 @@ export default function JasaDetailClient({ service }: { service: ApiService }) {
               <div>
                 <h3 className="text-xl font-bold text-[#003527] mb-4">Proses Layanan yang Terpersonalisasi</h3>
                 {description ? (
-                  <p className="text-[#707974] text-sm leading-relaxed">{description}</p>
+                  <p className="whitespace-pre-line text-[#707974] text-sm leading-relaxed">{description}</p>
                 ) : (
                   <p className="text-[#707974] italic text-sm">Belum ada deskripsi untuk jasa ini.</p>
                 )}

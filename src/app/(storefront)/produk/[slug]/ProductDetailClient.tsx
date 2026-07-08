@@ -101,7 +101,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               {activeTab === "description" ? (
                 <>
                   <h2 className="mb-2 text-xl font-black text-gray-950">{product.title}</h2>
-                  <p className="mb-6 max-w-3xl leading-7 text-gray-700">{product.description}</p>
+                  <p className="mb-6 max-w-3xl whitespace-pre-line leading-7 text-gray-700">{product.description}</p>
                   <div className="relative aspect-[16/7] overflow-hidden rounded-2xl bg-gray-100">
                     <Image src={gallery[activeImage]} alt={`Detail ${product.title}`} fill sizes="(min-width: 1024px) 60vw, 100vw" className="object-cover" />
                   </div>
