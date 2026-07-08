@@ -1,10 +1,10 @@
 # Panduan Deploy Eccomarket ke VPS
 
 Panduan ini mencakup deployment full-stack Eccomarket:
-- **Frontend**: Next.js (port 3000) → `jernihcreative.com`
-- **Backend**: NestJS + Prisma (port 3001) → `api.jernihcreative.com`
+- **Frontend**: Next.js (port 3000) → `jernihcreatif.com`
+- **Backend**: NestJS + Prisma (port 3001) → `api.jernihcreatif.com`
 - **Database**: PostgreSQL (install langsung di VPS)
-- **Web Server**: Nginx sebagai reverse proxy
+- **Web Server**: Nginx sebagai reverse proxy + SSL (Let's Encrypt)
 - **Process Manager**: PM2
 
 ---
@@ -12,9 +12,9 @@ Panduan ini mencakup deployment full-stack Eccomarket:
 ## Prasyarat VPS
 
 - OS: Ubuntu 22.04 LTS (direkomendasikan)
-- RAM: minimal 1 GB
+- RAM: minimal 1 GB (+ swap 1GB, lihat bagian Optimasi Performa)
 - Akses SSH sebagai `root`
-- Domain `jernihcreative.com` dan `api.jernihcreative.com` sudah diarahkan ke IP VPS
+- Domain `jernihcreatif.com` dan `api.jernihcreatif.com` sudah diarahkan ke IP VPS
 
 ---
 
@@ -108,11 +108,11 @@ exit
 ```bash
 cd /var/www
 git clone https://github.com/USERNAME/eccomarket.git
-chown -R creative:creative /var/www/eccomarket
+chown -R www-data:www-data /var/www/eccomarket
 cd eccomarket
 ```
 
-### Via SCP dari komputer lokal
+### Via rsync dari komputer lokal
 
 Jalankan dari terminal lokal:
 
@@ -157,7 +157,7 @@ JWT_SECRET=ganti_dengan_secret_panjang_dan_acak_minimal_32_karakter
 JWT_EXPIRES_IN=7d
 
 # Domain frontend
-CORS_ORIGIN=https://jernihcreative.com
+CORS_ORIGIN=https://jernihcreatif.com
 ```
 
 > **Penting**: Jangan pernah commit file `.env` ke Git.
@@ -210,7 +210,8 @@ nano .env.local
 Isi:
 
 ```env
-NEXT_PUBLIC_API_URL=https://api.jernihcreative.com/api
+NEXT_PUBLIC_API_URL=https://api.jernihcreatif.com/api
+API_URL=https://api.jernihcreatif.com/api
 ```
 
 ### Build frontend
@@ -236,21 +237,28 @@ pm2 save
 
 ---
 
-## 9. Konfigurasi Nginx (Reverse Proxy)
+## 9. Konfigurasi Nginx (Reverse Proxy + SSL)
 
 Buat file konfigurasi Nginx:
 
 ```bash
-nano /etc/nginx/sites-available/jernihcreative
+nano /etc/nginx/sites-available/jernihcreatif
 ```
 
-Paste konfigurasi berikut:
+Paste konfigurasi berikut (konfigurasi aktual yang berjalan di VPS):
 
 ```nginx
 # Frontend — Next.js
 server {
-    listen 80;
-    server_name jernihcreative.com www.jernihcreative.com;
+    server_name jernihcreatif.com www.jernihcreatif.com;
+
+    # Cache static assets Next.js (JS, CSS) — 1 tahun, immutable
+    location /_next/static/ {
+        proxy_pass http://localhost:3000;
+        proxy_cache_bypass $http_upgrade;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
 
     location / {
         proxy_pass http://localhost:3000;
@@ -265,12 +273,25 @@ server {
     }
 
     client_max_body_size 20M;
+
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/jernihcreatif.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/jernihcreatif.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 }
 
 # Backend — NestJS API
 server {
-    listen 80;
-    server_name api.jernihcreative.com;
+    server_name api.jernihcreatif.com;
+
+    # Cache gambar upload — 30 hari
+    location /uploads/ {
+        proxy_pass http://localhost:3001;
+        proxy_set_header Host $host;
+        expires 30d;
+        add_header Cache-Control "public";
+    }
 
     location / {
         proxy_pass http://localhost:3001;
@@ -284,20 +305,48 @@ server {
         proxy_cache_bypass $http_upgrade;
     }
 
-    # Upload/static files dari backend
-    location /uploads {
-        proxy_pass http://localhost:3001;
-        proxy_set_header Host $host;
+    client_max_body_size 20M;
+
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/jernihcreatif.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/jernihcreatif.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+}
+
+# HTTP → HTTPS redirect (frontend)
+server {
+    listen 80;
+    server_name jernihcreatif.com www.jernihcreatif.com;
+
+    if ($host = www.jernihcreatif.com) {
+        return 301 https://$host$request_uri;
     }
 
-    client_max_body_size 20M;
+    if ($host = jernihcreatif.com) {
+        return 301 https://$host$request_uri;
+    }
+
+    return 404;
+}
+
+# HTTP → HTTPS redirect (backend)
+server {
+    listen 80;
+    server_name api.jernihcreatif.com;
+
+    if ($host = api.jernihcreatif.com) {
+        return 301 https://$host$request_uri;
+    }
+
+    return 404;
 }
 ```
 
 Aktifkan konfigurasi:
 
 ```bash
-ln -s /etc/nginx/sites-available/jernihcreative /etc/nginx/sites-enabled/
+ln -s /etc/nginx/sites-available/jernihcreatif /etc/nginx/sites-enabled/
 nginx -t
 systemctl reload nginx
 ```
@@ -309,7 +358,7 @@ systemctl reload nginx
 ```bash
 apt install -y certbot python3-certbot-nginx
 
-certbot --nginx -d jernihcreative.com -d www.jernihcreative.com -d api.jernihcreative.com
+certbot --nginx -d jernihcreatif.com -d www.jernihcreatif.com -d api.jernihcreatif.com
 ```
 
 Ikuti instruksi di layar. Certbot akan otomatis memodifikasi konfigurasi Nginx untuk HTTPS.
@@ -322,7 +371,44 @@ systemctl enable certbot.timer
 
 ---
 
-## 11. Verifikasi Deployment
+## 11. Optimasi Performa
+
+### Tambah Swap (wajib untuk VPS RAM 1GB)
+
+Swap mencegah server crash saat RAM penuh:
+
+```bash
+fallocate -l 1G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+swapon /swapfile
+
+# Buat permanen setelah reboot
+echo '/swapfile none swap sw 0 0' | tee -a /etc/fstab
+
+# Verifikasi
+free -h
+```
+
+### Batasi penggunaan RAM Next.js
+
+```bash
+pm2 delete eccomarket-frontend
+NODE_OPTIONS="--max-old-space-size=400" pm2 start npm --name "eccomarket-frontend" -- start
+pm2 save
+```
+
+### Monitoring real-time
+
+```bash
+pm2 monit     # CPU & RAM per proses
+free -h       # Total RAM & swap
+top           # Semua proses sistem
+```
+
+---
+
+## 12. Verifikasi Deployment
 
 Cek status PM2:
 
@@ -331,6 +417,7 @@ pm2 status
 ```
 
 Output yang diharapkan:
+
 ```
 ┌────┬──────────────────────────┬─────────┬───────┐
 │ id │ name                     │ status  │ cpu   │
@@ -343,20 +430,20 @@ Output yang diharapkan:
 Cek log jika ada error:
 
 ```bash
-pm2 logs eccomarket-backend
-pm2 logs eccomarket-frontend
+pm2 logs eccomarket-backend --lines 50
+pm2 logs eccomarket-frontend --lines 50
 ```
 
 Test akses:
 
 ```bash
-curl http://localhost:3000        # Frontend
-curl http://localhost:3001/api    # Backend
+curl -I https://jernihcreatif.com         # Frontend
+curl -I https://api.jernihcreatif.com/api  # Backend
 ```
 
 ---
 
-## 12. Update / Redeploy
+## 13. Update / Redeploy
 
 Setiap kali ada perubahan kode:
 
@@ -385,12 +472,14 @@ pm2 restart eccomarket-frontend
 | Masalah | Solusi |
 |---|---|
 | PM2 process crash loop | Cek log: `pm2 logs` |
-| Port sudah dipakai | `lsof -i :3000` atau `:3001` |
-| Nginx 502 Bad Gateway | Pastikan PM2 sedang running |
+| Port sudah dipakai | `lsof -i :3000` atau `lsof -i :3001` |
+| Nginx 502 Bad Gateway | Pastikan PM2 sedang running: `pm2 status` |
 | Database connection error | Cek `DATABASE_URL` di `.env` backend |
-| CORS error | Pastikan `CORS_ORIGIN` di `.env` backend sesuai `https://jernihcreative.com` |
+| CORS error | Pastikan `CORS_ORIGIN=https://jernihcreatif.com` di `.env` backend |
 | Upload file tidak muncul | Pastikan folder `backend/public/uploads` ada dan writable |
 | psql: Peer authentication failed | Gunakan `su - postgres` lalu `psql` |
+| Server lambat / berat | Tambah swap 1GB, jalankan `free -h` dan `pm2 monit` |
+| SSL expired | `certbot renew --dry-run` untuk test, lalu `certbot renew` |
 
 Buat folder uploads jika belum ada:
 
@@ -405,7 +494,7 @@ chmod 755 /var/www/eccomarket/backend/public/uploads
 
 | Service | Port | Domain |
 |---|---|---|
-| Next.js Frontend | 3000 | `jernihcreative.com` |
-| NestJS Backend | 3001 | `api.jernihcreative.com` |
+| Next.js Frontend | 3000 | `https://jernihcreatif.com` |
+| NestJS Backend | 3001 | `https://api.jernihcreatif.com` |
 | PostgreSQL | 5432 | Lokal (tidak expose ke publik) |
-| Nginx | 80 / 443 | Publik |
+| Nginx | 80 / 443 | Publik (redirect HTTP → HTTPS) |
