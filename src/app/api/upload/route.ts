@@ -15,8 +15,3 @@ export async function POST(req: NextRequest) {
   const data = await res.json();
   return NextResponse.json(data, { status: res.status });
 }
-
-// Matikan body parser Next.js bawaan agar multipart tidak rusak
-export const config = {
-  api: { bodyParser: false },
-};

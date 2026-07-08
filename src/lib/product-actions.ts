@@ -47,7 +47,7 @@ export async function createProduct(data: CreateProductInput) {
     throw new Error(err.message ?? `Gagal membuat produk: ${res.status}`);
   }
 
-  revalidateTag("products");
+  revalidateTag("products", "max");
   revalidatePath("/dashboard-admin/admin/products");
   revalidatePath("/produk");
   revalidatePath("/");
@@ -66,7 +66,7 @@ export async function removeProduct(id: string) {
     throw new Error(err.message ?? `Gagal menghapus produk: ${res.status}`);
   }
 
-  revalidateTag("products");
+  revalidateTag("products", "max");
   revalidatePath("/dashboard-admin/admin/products");
   revalidatePath("/produk");
   revalidatePath("/");
@@ -89,7 +89,7 @@ export async function editProduct(id: string, data: Partial<CreateProductInput>)
     throw new Error(err.message ?? `Gagal mengupdate produk: ${res.status}`);
   }
 
-  revalidateTag("products");
+  revalidateTag("products", "max");
   revalidatePath("/dashboard-admin/admin/products");
   revalidatePath("/produk");
   revalidatePath("/");
