@@ -52,18 +52,18 @@ export function PromoSkeleton() {
   );
 }
 
-/** Skeleton hero bento grid */
+/** Skeleton hero bento grid — match layout asli (main tile row-span-2 di desktop) */
 export function HeroSkeleton() {
   return (
     <section className="w-full px-4 py-6 md:px-8">
-      <div className="grid grid-cols-12 gap-4 md:gap-5">
-        {/* Main tile */}
-        <div className="col-span-12 min-h-[380px] animate-pulse rounded-3xl bg-[#e1e3e4] lg:col-span-8" />
-        {/* Banner kanan atas */}
+      <div className="grid grid-cols-12 gap-4 md:gap-5 [grid-auto-rows:minmax(280px,auto)] max-lg:grid-rows-none">
+        {/* Main tile — 8 kolom, 2 baris (sama persis dengan HeroContent) */}
+        <div className="col-span-12 min-h-[380px] animate-pulse rounded-3xl bg-[#e1e3e4] lg:col-span-8 lg:row-span-2" />
+        {/* Banner kanan atas — 4 kolom */}
         <div className="col-span-12 min-h-[240px] animate-pulse rounded-3xl bg-[#e1e3e4] lg:col-span-4" />
-        {/* Banner kiri bawah */}
+        {/* Banner kiri bawah — 2 kolom */}
         <div className="col-span-6 min-h-[220px] animate-pulse rounded-3xl bg-[#e1e3e4] lg:col-span-2" />
-        {/* Banner kanan bawah */}
+        {/* Banner kanan bawah — 2 kolom */}
         <div className="col-span-6 min-h-[220px] animate-pulse rounded-3xl bg-[#e1e3e4] lg:col-span-2" />
       </div>
     </section>

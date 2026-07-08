@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { getHeroDataFromBackend } from "@/lib/hero-store";
-import { getHomepageSections } from "@/lib/homepage-settings";
 import { HeroSkeleton, PromoSkeleton, ProductSkeleton } from "./components/Skeletons";
 import PromoSection from "./components/PromoSection";
 import ProductSection from "./components/ProductSection";
@@ -165,46 +164,33 @@ async function HeroContent() {
   );
 }
 
-// ── Page utama — fetch sections settings lalu render dengan Suspense ──────────
-export default async function Home() {
-  // Hanya fetch settings — ringan & cepat
-  const sections = await getHomepageSections();
-
+// ── Page utama — render langsung tanpa blocking fetch ────────────────────────
+export default function Home() {
   return (
     <>
       {/* ── Hero: stream dari backend database ── */}
-      {sections.showHero ? (
-        <Suspense fallback={<HeroSkeleton />}>
-          <HeroContent />
-        </Suspense>
-      ) : null}
+      <Suspense fallback={<HeroSkeleton />}>
+        <HeroContent />
+      </Suspense>
 
       {/* ── Main sections: masing-masing stream sendiri ── */}
       <main className="flex w-full flex-col gap-14 px-4 py-12 md:px-8 md:py-20">
 
-        {sections.showPromo && (
-          <Suspense fallback={<PromoSkeleton />}>
-            <PromoSection />
-          </Suspense>
-        )}
+        <Suspense fallback={<PromoSkeleton />}>
+          <PromoSection />
+        </Suspense>
 
-        {sections.showProduct && (
-          <Suspense fallback={<ProductSkeleton />}>
-            <ProductSection />
-          </Suspense>
-        )}
+        <Suspense fallback={<ProductSkeleton />}>
+          <ProductSection />
+        </Suspense>
 
-        {sections.showJasa && (
-          <Suspense fallback={<ProductSkeleton />}>
-            <JasaSection />
-          </Suspense>
-        )}
+        <Suspense fallback={<ProductSkeleton />}>
+          <JasaSection />
+        </Suspense>
 
-        {sections.showSewa && (
-          <Suspense fallback={<ProductSkeleton />}>
-            <SewaSection />
-          </Suspense>
-        )}
+        <Suspense fallback={<ProductSkeleton />}>
+          <SewaSection />
+        </Suspense>
 
       </main>
 

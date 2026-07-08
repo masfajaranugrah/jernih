@@ -33,7 +33,7 @@ export interface CreateServiceInput {
   isActive?: boolean;
 }
 
-/** Ambil semua jasa dari DB */
+/** Ambil semua jasa dari DB — cache 60 detik, auto-revalidate */
 export async function fetchServices(params?: {
   search?: string;
   categoryId?: string;
@@ -42,21 +42,30 @@ export async function fetchServices(params?: {
   if (params?.search) qs.set("search", params.search);
   if (params?.categoryId) qs.set("categoryId", params.categoryId);
 
-  const res = await fetch(`${API_URL}/services?${qs}`, { cache: "no-store" });
+  // Kalau ada search query, jangan cache (hasil dinamis per query)
+  const cacheOption = params?.search
+    ? { cache: "no-store" as const }
+    : { next: { revalidate: 60 } };
+
+  const res = await fetch(`${API_URL}/services?${qs}`, cacheOption);
   if (!res.ok) return [];
   return res.json();
 }
 
-/** Ambil detail satu jasa by slug */
+/** Ambil detail satu jasa by slug — cache 60 detik */
 export async function fetchServiceBySlug(slug: string): Promise<ApiService | null> {
-  const res = await fetch(`${API_URL}/services/slug/${slug}`, { cache: "no-store" });
+  const res = await fetch(`${API_URL}/services/slug/${slug}`, {
+    next: { revalidate: 60 },
+  });
   if (!res.ok) return null;
   return res.json();
 }
 
 /** Ambil detail satu jasa by id */
 export async function fetchServiceById(id: string): Promise<ApiService | null> {
-  const res = await fetch(`${API_URL}/services/${id}`, { cache: "no-store" });
+  const res = await fetch(`${API_URL}/services/${id}`, {
+    next: { revalidate: 60 },
+  });
   if (!res.ok) return null;
   return res.json();
 }

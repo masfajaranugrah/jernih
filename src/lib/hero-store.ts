@@ -174,7 +174,7 @@ function mapBackendToHeroData(banners: any[]): HeroData {
 export async function getHeroDataFromBackend(): Promise<HeroData> {
   try {
     const res = await fetch(`${API_URL}/hero`, {
-      cache: "no-store",
+      next: { revalidate: 60 },
     });
     if (!res.ok) return defaultHero;
     const banners: any[] = await res.json();
