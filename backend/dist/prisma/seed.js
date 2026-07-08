@@ -35,21 +35,21 @@ async function main() {
     const bcrypt = await Promise.resolve().then(() => require('bcryptjs'));
     const adminPassword = await bcrypt.hash('admin123', 12);
     const admin = await prisma.user.upsert({
-        where: { email: 'admin@Jernih Creatife.id' },
+        where: { email: 'admin@jernihcreative.id' },
         update: {},
         create: {
-            email: 'admin@Jernih Creatife.id',
+            email: 'admin@jernihcreative.id',
             password: adminPassword,
-            name: 'Admin Jernih Creatife',
+            name: 'Admin Jernih Creative',
             role: 'ADMIN',
         },
     });
     console.log(`✓ Admin user: ${admin.email}`);
     const mitraUser = await prisma.user.upsert({
-        where: { email: 'mitra@Jernih Creatife.id' },
+        where: { email: 'mitra@jernihcreative.id' },
         update: {},
         create: {
-            email: 'mitra@Jernih Creatife.id',
+            email: 'mitra@jernihcreative.id',
             password: await bcrypt.hash('mitra123', 12),
             name: 'Demo Mitra',
             role: 'MITRA',
@@ -129,8 +129,8 @@ async function main() {
     }
     console.log(`✓ ${products.length} produk selesai`);
     console.log('\n✅ Seeding selesai!');
-    console.log('   Admin login: admin@Jernih Creatife.id / admin123');
-    console.log('   Mitra login: mitra@Jernih Creatife.id / mitra123');
+    console.log('   Admin login: admin@jernihcreative.id / admin123');
+    console.log('   Mitra login: mitra@jernihcreative.id / mitra123');
 }
 main()
     .catch((e) => { console.error(e); process.exit(1); })
