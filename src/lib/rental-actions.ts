@@ -27,7 +27,7 @@ export async function fetchRentalItems(params?: {
   // Kalau ada search query, jangan cache (hasil dinamis per query)
   const cacheOption = params?.search
     ? { cache: "no-store" as const }
-    : { next: { revalidate: 60 } };
+    : { next: { revalidate: 300, tags: ["rentals"] } };
 
   try {
     const res = await fetch(`${API_URL}/rentals/items?${qs}`, cacheOption);

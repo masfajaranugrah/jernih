@@ -33,7 +33,7 @@ export interface PromoCard {
 export async function getPromoCardsFromBackend(): Promise<PromoCard[]> {
   try {
     const res = await fetch(`${API_URL}/settings/promo_cards`, {
-      cache: "no-store",
+      next: { revalidate: 300, tags: ["promos"] },
     });
     if (!res.ok) return [];
     const data = await res.json();

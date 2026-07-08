@@ -45,7 +45,7 @@ export async function fetchProducts(params?: {
 
     const res = await fetch(url, {
       cache: params?.noCache ? "no-store" : "default",
-      next: params?.noCache ? undefined : { revalidate: 60, tags: ["products"] },
+      next: params?.noCache ? undefined : { revalidate: 300, tags: ["products"] },
     });
 
     if (!res.ok) throw new Error(`API error: ${res.status}`);

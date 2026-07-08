@@ -45,7 +45,7 @@ export async function fetchServices(params?: {
   // Kalau ada search query, jangan cache (hasil dinamis per query)
   const cacheOption = params?.search
     ? { cache: "no-store" as const }
-    : { next: { revalidate: 60 } };
+    : { next: { revalidate: 300, tags: ["services"] } };
 
   const res = await fetch(`${API_URL}/services?${qs}`, cacheOption);
   if (!res.ok) return [];
