@@ -3,6 +3,7 @@ import DashboardSidebar from "@/app/dashboard-admin/DashboardSidebar";
 import { fetchProducts } from "@/lib/api";
 import ProductsTable from "./ProductsTable";
 
+export const dynamic = "force-dynamic"; // selalu render fresh, tidak di-cache
 export const metadata = { title: "Daftar Produk - Admin Jernih Creatife" };
 
 export default async function AdminProductsPage() {

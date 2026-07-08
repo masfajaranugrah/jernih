@@ -32,7 +32,7 @@ export async function fetchProducts(params?: {
   categoryId?: string;
   limit?: number;
   page?: number;
-  noCache?: boolean; // set true di admin untuk always fresh
+  noCache?: boolean;
 }): Promise<ApiProduct[]> {
   try {
     const qs = new URLSearchParams();
@@ -44,9 +44,8 @@ export async function fetchProducts(params?: {
     const url = `${API_URL}/products${qs.toString() ? `?${qs}` : ""}`;
 
     const res = await fetch(url, {
-      next: params?.noCache
-        ? { revalidate: 0 }       // admin: selalu fresh
-        : { revalidate: 60, tags: ["products"] }, // publik: cache 60s, bisa di-revalidate by tag
+      cache: params?.noCache ? "no-store" : "default",
+      next: params?.noCache ? undefined : { revalidate: 60, tags: ["products"] },
     });
 
     if (!res.ok) throw new Error(`API error: ${res.status}`);
