@@ -68,7 +68,12 @@ function EmptyState() {
 }
 
 export default async function JasaSection() {
-  const services = await fetchServices();
+  let services;
+  try {
+    services = await fetchServices();
+  } catch {
+    return null;
+  }
 
   return (
     <section>

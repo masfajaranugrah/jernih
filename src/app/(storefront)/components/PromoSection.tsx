@@ -3,7 +3,12 @@ import Link from "next/link";
 import { getPromoCardsFromBackend } from "@/lib/promo-actions";
 
 export default async function PromoSection() {
-  const promoCards = await getPromoCardsFromBackend();
+  let promoCards;
+  try {
+    promoCards = await getPromoCardsFromBackend();
+  } catch {
+    return null;
+  }
 
   if (promoCards.length === 0) return null;
 

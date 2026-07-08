@@ -24,9 +24,13 @@ export async function fetchRentalItems(params?: {
   const qs = new URLSearchParams();
   if (params?.search) qs.set("search", params.search);
 
-  const res = await fetch(`${API_URL}/rentals/items?${qs}`, {
-    cache: "no-store",
-  });
-  if (!res.ok) return [];
-  return res.json();
+  try {
+    const res = await fetch(`${API_URL}/rentals/items?${qs}`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return res.json();
+  } catch {
+    return [];
+  }
 }

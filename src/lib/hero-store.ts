@@ -1,6 +1,8 @@
 // lib/hero-store.ts
-// Simulasi persistent store untuk konten hero banner.
-// Di production, ini diganti dengan database (Prisma, Supabase, dsb).
+// Data hero sekarang disimpan di backend PostgreSQL via /api/hero
+// In-memory store hanya dipakai sebagai fallback default jika backend tidak tersedia
+
+const API_URL = process.env.API_URL ?? "http://localhost:3001/api";
 
 export type HeroMain = {
   badge: string;
@@ -31,10 +33,10 @@ export type HeroBanner = {
 
 export type HeroData = {
   main: HeroMain;
-  banners: [HeroBanner, HeroBanner, HeroBanner]; // 3 banner kanan
+  banners: [HeroBanner, HeroBanner, HeroBanner];
 };
 
-// Default data — sama persis seperti yang tampil di halaman utama sekarang
+// ── Default fallback ──────────────────────────────────────────────────────────
 const defaultHero: HeroData = {
   main: {
     badge: "NEW",
@@ -83,7 +85,7 @@ const defaultHero: HeroData = {
       label: "eraXpress",
       bgColor: "#1e3a8a",
       imageUrl:
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuCOaofM_Tbe2B0v9VD3NKO41giRxx-uNHrtaga7sfsGGRItPF-mhKYuxyA7v0wyKOuTxVuvrOMPhYj1v54wmnIX66gYcGvfEixhBOELGoqdSyWdp_3VJmzQwEht95a9u00FSNDM7Am8ZWuqdih0-fie5xw_-FWcVzpoDt_--3YNo_4_iz_48L_q6ZY9mGsKNPWndexdjfydsbB9uCuGmq-FKs34Oaxitcdg-xGZkAc9TGXiEUc52Bkl",
+        "https://lh3.googleusercontent.com/aida-public/AB6AXuCOaofM_Tbe2B0v9VD3NKO41giRxx-uNHrtaga7sfsGGRItPF-mhKYuxyA7v0wyKOuTxVuvrOMPhYj1v54wmnIX66gYcGvfEixhBOELGoqdSyWdp_3YNo_4_iz_48L_q6ZY9mGsKNPWndexdjfydsbB9uCuGmq-FKs34Oaxitcdg-xGZkAc9TGXiEUc52Bkl",
       tagline: "Pasti sampai hari ini",
       title: "eraXpress",
       subtitle: "",
@@ -95,26 +97,105 @@ const defaultHero: HeroData = {
   ],
 };
 
-// In-memory store (persists selama server process hidup, cukup untuk demo)
-let heroStore: HeroData = { ...defaultHero };
+// ── Helper: mapping dari response backend ke HeroData ────────────────────────
+function mapBackendToHeroData(banners: any[]): HeroData {
+  // position 0 = main hero, 1 = banner kanan atas, 2 = kiri bawah, 3 = kanan bawah
+  const main = banners.find((b) => b.position === 0);
+  const b0 = banners.find((b) => b.position === 1);
+  const b1 = banners.find((b) => b.position === 2);
+  const b2 = banners.find((b) => b.position === 3);
 
-export function getHeroData(): HeroData {
-  return heroStore;
-}
-
-export function updateHeroMain(data: Partial<HeroMain>) {
-  heroStore = {
-    ...heroStore,
-    main: { ...heroStore.main, ...data },
+  return {
+    main: main
+      ? {
+          badge: main.badge ?? defaultHero.main.badge,
+          title: main.title ?? defaultHero.main.title,
+          titleSuffix: main.titleSuffix ?? defaultHero.main.titleSuffix,
+          description: main.description ?? defaultHero.main.description,
+          ctaText: main.ctaText ?? defaultHero.main.ctaText,
+          ctaColor: main.ctaColor ?? defaultHero.main.ctaColor,
+          bgColor: main.bgColor ?? defaultHero.main.bgColor,
+          imageUrl: main.imageUrl ?? defaultHero.main.imageUrl,
+          imageAlt: main.imageAlt ?? defaultHero.main.imageAlt,
+          linkHref: main.linkHref ?? defaultHero.main.linkHref,
+        }
+      : defaultHero.main,
+    banners: [
+      b0
+        ? {
+            id: String(b0.id),
+            label: b0.badge ?? b0.title ?? "",
+            bgColor: b0.bgColor ?? defaultHero.banners[0].bgColor,
+            imageUrl: b0.imageUrl ?? "",
+            tagline: b0.tagline ?? "",
+            title: b0.title ?? "",
+            subtitle: b0.subtitle ?? "",
+            ctaText: b0.ctaText ?? "",
+            ctaColor: b0.ctaColor ?? "",
+            ctaTextColor: b0.ctaTextColor ?? "",
+            align: (b0.align as "left" | "right" | "center") ?? "left",
+          }
+        : defaultHero.banners[0],
+      b1
+        ? {
+            id: String(b1.id),
+            label: b1.badge ?? b1.title ?? "",
+            bgColor: b1.bgColor ?? defaultHero.banners[1].bgColor,
+            imageUrl: b1.imageUrl ?? "",
+            tagline: b1.tagline ?? "",
+            title: b1.title ?? "",
+            subtitle: b1.subtitle ?? "",
+            ctaText: b1.ctaText ?? "",
+            ctaColor: b1.ctaColor ?? "",
+            ctaTextColor: b1.ctaTextColor ?? "",
+            align: (b1.align as "left" | "right" | "center") ?? "left",
+          }
+        : defaultHero.banners[1],
+      b2
+        ? {
+            id: String(b2.id),
+            label: b2.badge ?? b2.title ?? "",
+            bgColor: b2.bgColor ?? defaultHero.banners[2].bgColor,
+            imageUrl: b2.imageUrl ?? "",
+            tagline: b2.tagline ?? "",
+            title: b2.title ?? "",
+            subtitle: b2.subtitle ?? "",
+            ctaText: b2.ctaText ?? "",
+            ctaColor: b2.ctaColor ?? "",
+            ctaTextColor: b2.ctaTextColor ?? "",
+            align: (b2.align as "left" | "right" | "center") ?? "center",
+          }
+        : defaultHero.banners[2],
+    ],
   };
 }
 
-export function updateHeroBanner(index: 0 | 1 | 2, data: Partial<HeroBanner>) {
-  const banners = [...heroStore.banners] as HeroData["banners"];
-  banners[index] = { ...banners[index], ...data };
-  heroStore = { ...heroStore, banners };
+// ── Fetch dari backend (untuk Server Component) ───────────────────────────────
+export async function getHeroDataFromBackend(): Promise<HeroData> {
+  try {
+    const res = await fetch(`${API_URL}/hero`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return defaultHero;
+    const banners: any[] = await res.json();
+    if (!banners || banners.length === 0) return defaultHero;
+    return mapBackendToHeroData(banners);
+  } catch {
+    return defaultHero;
+  }
 }
 
-export function resetHeroData() {
-  heroStore = { ...defaultHero };
+// ── Legacy: getHeroData tetap ada untuk backward compat tapi sekarang sync fallback
+export function getHeroData(): HeroData {
+  return defaultHero;
 }
+
+// ── Untuk HeroEditor: fetch data terbaru dari backend ────────────────────────
+export async function fetchHeroForEditor(): Promise<HeroData> {
+  return getHeroDataFromBackend();
+}
+
+// ── In-memory update (tidak lagi dipakai untuk persist, hanya legacy) ─────────
+export function updateHeroMain(_data: Partial<HeroMain>) { /* deprecated */ }
+export function updateHeroBanner(_index: 0 | 1 | 2, _data: Partial<HeroBanner>) { /* deprecated */ }
+export function resetHeroData() { /* deprecated */ }

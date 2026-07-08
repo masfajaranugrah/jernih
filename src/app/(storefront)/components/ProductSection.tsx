@@ -61,7 +61,12 @@ function ProductCard({ product }: { product: ApiProduct }) {
 }
 
 export default async function ProductSection() {
-  const products = await fetchProducts({ limit: 8 });
+  let products;
+  try {
+    products = await fetchProducts({ limit: 8 });
+  } catch {
+    return null;
+  }
 
   if (products.length === 0) return null;
 

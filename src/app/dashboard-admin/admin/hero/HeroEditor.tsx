@@ -56,10 +56,16 @@ export default function HeroEditor({ initial }: Props) {
 
   const handleSave = () => {
     startTransition(async () => {
-      await saveHeroMain(main);
-      await saveHeroBanner(0, banners[0]);
-      await saveHeroBanner(1, banners[1]);
-      await saveHeroBanner(2, banners[2]);
+      const { getToken } = await import("@/lib/auth");
+      const token = getToken();
+      if (!token) {
+        alert("Token tidak ditemukan. Silakan login ulang.");
+        return;
+      }
+      await saveHeroMain(main, token);
+      await saveHeroBanner(0, banners[0], token);
+      await saveHeroBanner(1, banners[1], token);
+      await saveHeroBanner(2, banners[2], token);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     });
@@ -67,7 +73,9 @@ export default function HeroEditor({ initial }: Props) {
 
   const handleReset = () => {
     startTransition(async () => {
-      await resetHero();
+      const { getToken } = await import("@/lib/auth");
+      const token = getToken() ?? "";
+      await resetHero(token);
       window.location.reload();
     });
   };

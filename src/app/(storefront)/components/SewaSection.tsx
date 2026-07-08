@@ -62,7 +62,12 @@ function EmptyState() {
 }
 
 export default async function SewaSection() {
-  const rentalItems = await fetchRentalItems();
+  let rentalItems;
+  try {
+    rentalItems = await fetchRentalItems();
+  } catch {
+    return null;
+  }
 
   return (
     <section>

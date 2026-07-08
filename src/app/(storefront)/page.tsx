@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { getHeroData } from "@/lib/hero-store";
+import { getHeroDataFromBackend } from "@/lib/hero-store";
 import { getHomepageSections } from "@/lib/homepage-settings";
 import { HeroSkeleton, PromoSkeleton, ProductSkeleton } from "./components/Skeletons";
 import PromoSection from "./components/PromoSection";
@@ -9,9 +9,10 @@ import ProductSection from "./components/ProductSection";
 import JasaSection from "./components/JasaSection";
 import SewaSection from "./components/SewaSection";
 
-// ── Hero Section (render langsung dari local store — cepat) ───────────────────
-function HeroContent() {
-  const hero = getHeroData();
+// ── Hero Section — async server component tersendiri ─────────────────────────
+async function HeroContent() {
+  // getHeroDataFromBackend sudah ada try/catch, selalu return data (default jika gagal)
+  const hero = await getHeroDataFromBackend();
   const { main, banners } = hero;
   const [b0, b1, b2] = banners;
 
@@ -171,9 +172,11 @@ export default async function Home() {
 
   return (
     <>
-      {/* ── Hero: render langsung dari local store (tidak ada fetch) ── */}
+      {/* ── Hero: stream dari backend database ── */}
       {sections.showHero ? (
-        <HeroContent />
+        <Suspense fallback={<HeroSkeleton />}>
+          <HeroContent />
+        </Suspense>
       ) : null}
 
       {/* ── Main sections: masing-masing stream sendiri ── */}
