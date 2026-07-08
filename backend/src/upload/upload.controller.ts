@@ -10,7 +10,8 @@ import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 
-const uploadDir = join(process.cwd(), 'public', 'uploads');
+// Gunakan path absolut relatif ke root project (bukan dist/)
+const uploadDir = join(__dirname, '..', '..', 'public', 'uploads');
 if (!existsSync(uploadDir)) {
   mkdirSync(uploadDir, { recursive: true });
 }

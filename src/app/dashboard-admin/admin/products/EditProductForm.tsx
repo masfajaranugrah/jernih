@@ -48,6 +48,7 @@ export default function EditProductForm({ product }: { product: ApiProduct }) {
   const [imageUrls, setImageUrls] = useState<string[]>(product.images ?? []);
   const [imageInput, setImageInput] = useState("");
   const [dragActive, setDragActive] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
   const [error, setError] = useState("");
 
   // ── Slug otomatis ───────────────────────────────────────────────────────────
@@ -71,9 +72,30 @@ export default function EditProductForm({ product }: { product: ApiProduct }) {
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragActive(false);
+    const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/"));
+    if (files.length) { handleFileUpload(files); return; }
     const text = e.dataTransfer.getData("text/plain").trim();
     if (text.startsWith("http")) {
       setImageUrls((prev) => [...prev, text]);
+    }
+  }
+
+  async function handleFileUpload(files: File[]) {
+    if (!files.length) return;
+    setUploadingImages(true);
+    try {
+      const formData = new FormData();
+      files.forEach((f) => formData.append("files", f));
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      if (!res.ok) throw new Error("Upload gagal");
+      const data = await res.json();
+      const urls: string[] = data.urls ?? [];
+      if (urls.length) setImageUrls((prev) => [...prev, ...urls]);
+    } catch {
+      setError("Upload gambar gagal. Coba lagi.");
+    } finally {
+      setUploadingImages(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
 
@@ -296,16 +318,15 @@ export default function EditProductForm({ product }: { product: ApiProduct }) {
                 dragActive ? "border-[#064e3b] bg-[#064e3b]/5" : "border-[#bfc9c3] hover:border-[#064e3b] hover:bg-[#f8f9fa]"
               }`}
             >
-              <span className="material-symbols-outlined text-4xl text-[#bfc9c3] mb-2">cloud_upload</span>
-              <p className="text-xs font-semibold text-[#404944]">Seret & lepas atau klik</p>
+              <span className="material-symbols-outlined text-4xl text-[#bfc9c3] mb-2">
+                {uploadingImages ? "hourglass_top" : "cloud_upload"}
+              </span>
+              <p className="text-xs font-semibold text-[#404944]">
+                {uploadingImages ? "Mengupload..." : "Seret & lepas atau klik"}
+              </p>
               <p className="mt-1 text-[10px] text-[#707974]">PNG, JPG hingga 10MB</p>
               <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden"
-                onChange={(e) => {
-                  Array.from(e.target.files ?? []).forEach((file) => {
-                    const url = URL.createObjectURL(file);
-                    setImageUrls((prev) => [...prev, url]);
-                  });
-                }}
+                onChange={(e) => handleFileUpload(Array.from(e.target.files ?? []))}
               />
             </div>
 

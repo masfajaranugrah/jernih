@@ -7,8 +7,8 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Serve static files dari public/
-  app.useStaticAssets(join(process.cwd(), 'public'));
+  // Serve static files dari public/ — path absolut dari root project
+  app.useStaticAssets(join(__dirname, '..', 'public'));
 
   // Global prefix untuk semua route
   app.setGlobalPrefix('api');
