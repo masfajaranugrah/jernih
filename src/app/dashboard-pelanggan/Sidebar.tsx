@@ -52,6 +52,7 @@ export default function SidebarPelanggan() {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
                   active
                     ? "bg-[#f3f4f5] text-[#003527] font-bold border-r-2 border-[#003527] scale-[0.98]"
@@ -78,6 +79,7 @@ export default function SidebarPelanggan() {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                   active
                     ? "bg-[#f3f4f5] text-[#003527] font-bold border-r-2 border-[#003527]"
@@ -100,6 +102,7 @@ export default function SidebarPelanggan() {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
               className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors ${
                 active ? "text-[#003527]" : "text-[#707974]"
               }`}
@@ -111,6 +114,7 @@ export default function SidebarPelanggan() {
         })}
         <Link
           href="/dashboard-pelanggan/profile"
+          prefetch={false}
           className="flex flex-col items-center gap-0.5 px-3 py-1 text-[#707974]"
         >
           <span className="material-symbols-outlined text-[22px]">person</span>

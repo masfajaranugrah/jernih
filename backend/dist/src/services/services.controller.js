@@ -15,13 +15,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ServicesController = void 0;
 const common_1 = require("@nestjs/common");
 const services_service_1 = require("./services.service");
+const create_service_dto_1 = require("./dto/create-service.dto");
 const update_service_dto_1 = require("./dto/update-service.dto");
 let ServicesController = class ServicesController {
     constructor(servicesService) {
         this.servicesService = servicesService;
     }
-    createFromAdmin(body) {
-        return this.servicesService.createFromAdmin(body);
+    createForAdmin(mitraId, dto) {
+        if (!mitraId) {
+            throw new common_1.BadRequestException('Header X-Mitra-Id wajib ada. Silakan login ulang.');
+        }
+        return this.servicesService.create(mitraId, dto);
     }
     findAll(search, categoryId, mitraId) {
         return this.servicesService.findAll({ search, categoryId, mitraId });
@@ -42,11 +46,12 @@ let ServicesController = class ServicesController {
 exports.ServicesController = ServicesController;
 __decorate([
     (0, common_1.Post)('admin'),
-    __param(0, (0, common_1.Body)()),
+    __param(0, (0, common_1.Headers)('x-mitra-id')),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [String, create_service_dto_1.CreateServiceDto]),
     __metadata("design:returntype", void 0)
-], ServicesController.prototype, "createFromAdmin", null);
+], ServicesController.prototype, "createForAdmin", null);
 __decorate([
     (0, common_1.Get)(),
     __param(0, (0, common_1.Query)('search')),

@@ -4,9 +4,7 @@ import { UpdateServiceDto } from './dto/update-service.dto';
 export declare class ServicesController {
     private servicesService;
     constructor(servicesService: ServicesService);
-    createFromAdmin(body: CreateServiceDto & {
-        mitraId?: string;
-    }): Promise<{
+    createForAdmin(mitraId: string, dto: CreateServiceDto): Promise<{
         id: string;
         name: string;
         slug: string;

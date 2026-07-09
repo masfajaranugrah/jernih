@@ -43,7 +43,13 @@ function revalidateProductCaches() {
 
 /** Tambah produk baru ke database via backend API (dari admin dashboard) */
 export async function createProduct(data: CreateProductInput) {
-  const mitraId = await getMitraIdFromCookie();
+  let mitraId: string;
+  try {
+    mitraId = await getMitraIdFromCookie();
+  } catch {
+    // Error ini muncul di client sebagai pesan yang bisa dibaca
+    throw new Error("Session tidak valid. Silakan login ulang ke /dashboard-admin/admin/login");
+  }
 
   const payload = {
     name: data.name,
@@ -57,19 +63,24 @@ export async function createProduct(data: CreateProductInput) {
     isActive: data.isActive ?? true,
   };
 
-  const res = await fetch(`${API_URL}/products/admin`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      // Kirim mitraId via header — backend langsung pakai, 0 DB lookup
-      "X-Mitra-Id": mitraId,
-    },
-    body: JSON.stringify(payload),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/products/admin`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Mitra-Id": mitraId,
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (fetchErr) {
+    throw new Error("Tidak dapat terhubung ke server. Pastikan backend berjalan.");
+  }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.message ?? `Gagal membuat produk: ${res.status}`);
+    const msg = Array.isArray(err.message) ? err.message.join(", ") : err.message;
+    throw new Error(msg ?? `Gagal membuat produk: ${res.status}`);
   }
 
   const result = await res.json();

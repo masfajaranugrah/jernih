@@ -19,23 +19,6 @@ export declare class ServicesService {
         priceFrom: import("@prisma/client/runtime/library").Decimal;
         unit: string;
     }>;
-    createFromAdmin(dto: CreateServiceDto & {
-        mitraId?: string;
-    }): Promise<{
-        id: string;
-        name: string;
-        slug: string;
-        createdAt: Date;
-        isActive: boolean;
-        updatedAt: Date;
-        description: string | null;
-        rating: number;
-        mitraId: string;
-        categoryId: string | null;
-        images: string[];
-        priceFrom: import("@prisma/client/runtime/library").Decimal;
-        unit: string;
-    }>;
     findAll(query?: {
         search?: string;
         categoryId?: string;

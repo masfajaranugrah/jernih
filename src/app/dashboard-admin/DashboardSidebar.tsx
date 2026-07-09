@@ -62,6 +62,7 @@ export default function DashboardSidebar() {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 className={`flex items-center gap-2 px-2 py-3 rounded-lg text-sm font-semibold transition-all duration-150 ${
                   isActive
                     ? "bg-[#064e3b] text-[#80bea6]"
@@ -112,6 +113,7 @@ export default function DashboardSidebar() {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
               className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors ${
                 isActive ? "text-[#003527]" : "text-[#707974]"
               }`}
