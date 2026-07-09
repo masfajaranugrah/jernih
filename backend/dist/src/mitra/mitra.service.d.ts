@@ -26,7 +26,6 @@ export declare class MitraService {
         isVerified?: boolean;
     }): Promise<({
         _count: {
-            products: number;
             services: number;
         };
         user: {
@@ -52,23 +51,6 @@ export declare class MitraService {
         totalReviews: number;
     })[]>;
     findOne(id: string): Promise<{
-        products: {
-            id: string;
-            name: string;
-            slug: string;
-            createdAt: Date;
-            isActive: boolean;
-            updatedAt: Date;
-            description: string | null;
-            rating: number;
-            oldPrice: import("@prisma/client/runtime/library").Decimal | null;
-            mitraId: string;
-            categoryId: string | null;
-            price: import("@prisma/client/runtime/library").Decimal;
-            stock: number;
-            images: string[];
-            totalSold: number;
-        }[];
         services: {
             id: string;
             name: string;
@@ -78,14 +60,13 @@ export declare class MitraService {
             updatedAt: Date;
             description: string | null;
             rating: number;
-            mitraId: string;
             categoryId: string | null;
             images: string[];
+            mitraId: string;
             priceFrom: import("@prisma/client/runtime/library").Decimal;
             unit: string;
         }[];
         _count: {
-            products: number;
             services: number;
             rentals: number;
         };
@@ -113,7 +94,6 @@ export declare class MitraService {
     }>;
     findByUser(userId: string): Promise<{
         _count: {
-            products: number;
             services: number;
             rentals: number;
         };

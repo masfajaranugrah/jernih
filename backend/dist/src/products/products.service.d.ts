@@ -4,7 +4,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 export declare class ProductsService {
     private prisma;
     constructor(prisma: PrismaService);
-    create(mitraId: string, dto: CreateProductDto): Promise<{
+    create(dto: CreateProductDto): Promise<{
         id: string;
         name: string;
         slug: string;
@@ -14,7 +14,6 @@ export declare class ProductsService {
         description: string | null;
         rating: number;
         oldPrice: import("@prisma/client/runtime/library").Decimal | null;
-        mitraId: string;
         categoryId: string | null;
         price: import("@prisma/client/runtime/library").Decimal;
         stock: number;
@@ -24,7 +23,6 @@ export declare class ProductsService {
     findAll(query?: {
         search?: string;
         categoryId?: string;
-        mitraId?: string;
         minPrice?: number;
         maxPrice?: number;
         page?: number;
@@ -36,11 +34,6 @@ export declare class ProductsService {
                 name: string;
                 slug: string;
             };
-            mitra: {
-                id: string;
-                storeName: string;
-                city: string;
-            };
         } & {
             id: string;
             name: string;
@@ -51,7 +44,6 @@ export declare class ProductsService {
             description: string | null;
             rating: number;
             oldPrice: import("@prisma/client/runtime/library").Decimal | null;
-            mitraId: string;
             categoryId: string | null;
             price: import("@prisma/client/runtime/library").Decimal;
             stock: number;
@@ -73,13 +65,6 @@ export declare class ProductsService {
             icon: string | null;
             createdAt: Date;
         };
-        mitra: {
-            id: string;
-            storeName: string;
-            logo: string;
-            city: string;
-            rating: number;
-        };
     } & {
         id: string;
         name: string;
@@ -90,7 +75,6 @@ export declare class ProductsService {
         description: string | null;
         rating: number;
         oldPrice: import("@prisma/client/runtime/library").Decimal | null;
-        mitraId: string;
         categoryId: string | null;
         price: import("@prisma/client/runtime/library").Decimal;
         stock: number;
@@ -105,13 +89,6 @@ export declare class ProductsService {
             icon: string | null;
             createdAt: Date;
         };
-        mitra: {
-            id: string;
-            storeName: string;
-            logo: string;
-            city: string;
-            rating: number;
-        };
     } & {
         id: string;
         name: string;
@@ -122,7 +99,6 @@ export declare class ProductsService {
         description: string | null;
         rating: number;
         oldPrice: import("@prisma/client/runtime/library").Decimal | null;
-        mitraId: string;
         categoryId: string | null;
         price: import("@prisma/client/runtime/library").Decimal;
         stock: number;
@@ -139,7 +115,6 @@ export declare class ProductsService {
         description: string | null;
         rating: number;
         oldPrice: import("@prisma/client/runtime/library").Decimal | null;
-        mitraId: string;
         categoryId: string | null;
         price: import("@prisma/client/runtime/library").Decimal;
         stock: number;

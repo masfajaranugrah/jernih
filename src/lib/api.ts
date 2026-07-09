@@ -17,7 +17,6 @@ export type ApiProduct = {
   rating: number;
   totalSold: number;
   createdAt: string;
-  mitra?: { id: string; storeName: string; city: string };
   category?: { id: string; name: string; slug: string } | null;
 };
 

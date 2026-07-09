@@ -25,7 +25,7 @@ export class MitraService {
       },
       include: {
         user: { select: { name: true, email: true, avatar: true } },
-        _count: { select: { products: true, services: true } },
+        _count: { select: { services: true } },
       },
       orderBy: { rating: 'desc' },
     });
@@ -36,9 +36,8 @@ export class MitraService {
       where: { id },
       include: {
         user: { select: { name: true, email: true, avatar: true } },
-        products: { where: { isActive: true }, take: 8 },
         services: { where: { isActive: true }, take: 8 },
-        _count: { select: { products: true, services: true, rentals: true } },
+        _count: { select: { services: true, rentals: true } },
       },
     });
     if (!mitra) throw new NotFoundException('Mitra tidak ditemukan');
@@ -49,7 +48,7 @@ export class MitraService {
     return this.prisma.mitra.findUnique({
       where: { userId },
       include: {
-        _count: { select: { products: true, services: true, rentals: true } },
+        _count: { select: { services: true, rentals: true } },
       },
     });
   }

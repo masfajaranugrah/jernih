@@ -16,10 +16,10 @@ let ProductsService = class ProductsService {
     constructor(prisma) {
         this.prisma = prisma;
     }
-    async create(mitraId, dto) {
+    async create(dto) {
         try {
             return await this.prisma.product.create({
-                data: { mitraId, ...dto },
+                data: dto,
             });
         }
         catch (err) {
@@ -45,7 +45,6 @@ let ProductsService = class ProductsService {
                 ],
             }),
             ...(query?.categoryId && { categoryId: query.categoryId }),
-            ...(query?.mitraId && { mitraId: query.mitraId }),
             ...(query?.minPrice !== undefined && !isNaN(Number(query.minPrice)) && {
                 price: { gte: Number(query.minPrice) },
             }),
@@ -57,7 +56,6 @@ let ProductsService = class ProductsService {
             this.prisma.product.findMany({
                 where,
                 include: {
-                    mitra: { select: { id: true, storeName: true, city: true } },
                     category: { select: { id: true, name: true, slug: true } },
                 },
                 orderBy: { createdAt: 'desc' },
@@ -75,7 +73,6 @@ let ProductsService = class ProductsService {
         const product = await this.prisma.product.findUnique({
             where: { id },
             include: {
-                mitra: { select: { id: true, storeName: true, logo: true, city: true, rating: true } },
                 category: true,
             },
         });
@@ -87,7 +84,6 @@ let ProductsService = class ProductsService {
         const product = await this.prisma.product.findUnique({
             where: { slug },
             include: {
-                mitra: { select: { id: true, storeName: true, logo: true, city: true, rating: true } },
                 category: true,
             },
         });

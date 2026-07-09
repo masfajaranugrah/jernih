@@ -29,7 +29,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     description: apiProduct.description ?? "Tidak ada deskripsi tersedia.",
     details: [
       `Dijual oleh: ${sellerName}`,
-      apiProduct.mitra?.city ? `Lokasi: ${apiProduct.mitra.city}` : "Lokasi: Indonesia",
+      "Lokasi: Indonesia",
       apiProduct.category ? `Kategori: ${apiProduct.category.name}` : null,
       `Terjual: ${apiProduct.totalSold} item`,
       `Rating: ${apiProduct.rating}/5`,

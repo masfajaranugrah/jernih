@@ -13,9 +13,9 @@ export declare class ServicesController {
         updatedAt: Date;
         description: string | null;
         rating: number;
-        mitraId: string;
         categoryId: string | null;
         images: string[];
+        mitraId: string;
         priceFrom: import("@prisma/client/runtime/library").Decimal;
         unit: string;
     }>;
@@ -38,9 +38,9 @@ export declare class ServicesController {
         updatedAt: Date;
         description: string | null;
         rating: number;
-        mitraId: string;
         categoryId: string | null;
         images: string[];
+        mitraId: string;
         priceFrom: import("@prisma/client/runtime/library").Decimal;
         unit: string;
     })[]>;
@@ -68,9 +68,9 @@ export declare class ServicesController {
         updatedAt: Date;
         description: string | null;
         rating: number;
-        mitraId: string;
         categoryId: string | null;
         images: string[];
+        mitraId: string;
         priceFrom: import("@prisma/client/runtime/library").Decimal;
         unit: string;
     }>;
@@ -98,9 +98,9 @@ export declare class ServicesController {
         updatedAt: Date;
         description: string | null;
         rating: number;
-        mitraId: string;
         categoryId: string | null;
         images: string[];
+        mitraId: string;
         priceFrom: import("@prisma/client/runtime/library").Decimal;
         unit: string;
     }>;
@@ -113,9 +113,9 @@ export declare class ServicesController {
         updatedAt: Date;
         description: string | null;
         rating: number;
-        mitraId: string;
         categoryId: string | null;
         images: string[];
+        mitraId: string;
         priceFrom: import("@prisma/client/runtime/library").Decimal;
         unit: string;
     }>;

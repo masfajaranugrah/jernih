@@ -4,47 +4,24 @@ import { UpdateProductDto } from './dto/update-product.dto';
 export declare class ProductsController {
     private productsService;
     constructor(productsService: ProductsService);
-    createForAdmin(mitraId: string, dto: CreateProductDto): Promise<{
+    create(dto: CreateProductDto): Promise<{
         id: string;
-        mitraId: string;
-        categoryId: string | null;
         name: string;
         slug: string;
-        description: string | null;
-        price: import("@prisma/client/runtime/library").Decimal;
-        oldPrice: import("@prisma/client/runtime/library").Decimal | null;
-        stock: number;
-        images: string[];
-        isActive: boolean;
-        rating: number;
-        totalSold: number;
         createdAt: Date;
+        isActive: boolean;
         updatedAt: Date;
-    }>;
-    create(req: any, dto: CreateProductDto): Promise<{
-        id: string;
-        mitraId: string;
+        description: string | null;
+        rating: number;
+        oldPrice: import("@prisma/client/runtime/library").Decimal | null;
         categoryId: string | null;
-        name: string;
-        slug: string;
-        description: string | null;
         price: import("@prisma/client/runtime/library").Decimal;
-        oldPrice: import("@prisma/client/runtime/library").Decimal | null;
         stock: number;
         images: string[];
-        isActive: boolean;
-        rating: number;
         totalSold: number;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
-    findAll(search?: string, categoryId?: string, mitraId?: string, minPrice?: number, maxPrice?: number, page?: number, limit?: number): Promise<{
+    findAll(search?: string, categoryId?: string, minPrice?: number, maxPrice?: number, page?: number, limit?: number): Promise<{
         data: ({
-            mitra: {
-                id: string;
-                storeName: string;
-                city: string;
-            };
             category: {
                 id: string;
                 name: string;
@@ -52,20 +29,19 @@ export declare class ProductsController {
             };
         } & {
             id: string;
-            mitraId: string;
-            categoryId: string | null;
             name: string;
             slug: string;
+            createdAt: Date;
+            isActive: boolean;
+            updatedAt: Date;
             description: string | null;
-            price: import("@prisma/client/runtime/library").Decimal;
+            rating: number;
             oldPrice: import("@prisma/client/runtime/library").Decimal | null;
+            categoryId: string | null;
+            price: import("@prisma/client/runtime/library").Decimal;
             stock: number;
             images: string[];
-            isActive: boolean;
-            rating: number;
             totalSold: number;
-            createdAt: Date;
-            updatedAt: Date;
         })[];
         meta: {
             total: number;
@@ -75,85 +51,68 @@ export declare class ProductsController {
         };
     }>;
     findBySlug(slug: string): Promise<{
-        mitra: {
-            id: string;
-            rating: number;
-            storeName: string;
-            logo: string;
-            city: string;
-        };
         category: {
             id: string;
             name: string;
             slug: string;
-            createdAt: Date;
             icon: string | null;
+            createdAt: Date;
         };
     } & {
         id: string;
-        mitraId: string;
-        categoryId: string | null;
         name: string;
         slug: string;
+        createdAt: Date;
+        isActive: boolean;
+        updatedAt: Date;
         description: string | null;
-        price: import("@prisma/client/runtime/library").Decimal;
+        rating: number;
         oldPrice: import("@prisma/client/runtime/library").Decimal | null;
+        categoryId: string | null;
+        price: import("@prisma/client/runtime/library").Decimal;
         stock: number;
         images: string[];
-        isActive: boolean;
-        rating: number;
         totalSold: number;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     findOne(id: string): Promise<{
-        mitra: {
-            id: string;
-            rating: number;
-            storeName: string;
-            logo: string;
-            city: string;
-        };
         category: {
             id: string;
             name: string;
             slug: string;
-            createdAt: Date;
             icon: string | null;
+            createdAt: Date;
         };
     } & {
         id: string;
-        mitraId: string;
-        categoryId: string | null;
         name: string;
         slug: string;
+        createdAt: Date;
+        isActive: boolean;
+        updatedAt: Date;
         description: string | null;
-        price: import("@prisma/client/runtime/library").Decimal;
+        rating: number;
         oldPrice: import("@prisma/client/runtime/library").Decimal | null;
+        categoryId: string | null;
+        price: import("@prisma/client/runtime/library").Decimal;
         stock: number;
         images: string[];
-        isActive: boolean;
-        rating: number;
         totalSold: number;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     update(id: string, dto: UpdateProductDto): Promise<{
         id: string;
-        mitraId: string;
-        categoryId: string | null;
         name: string;
         slug: string;
+        createdAt: Date;
+        isActive: boolean;
+        updatedAt: Date;
         description: string | null;
-        price: import("@prisma/client/runtime/library").Decimal;
+        rating: number;
         oldPrice: import("@prisma/client/runtime/library").Decimal | null;
+        categoryId: string | null;
+        price: import("@prisma/client/runtime/library").Decimal;
         stock: number;
         images: string[];
-        isActive: boolean;
-        rating: number;
         totalSold: number;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     remove(id: string): Promise<{
         message: string;

@@ -13,8 +13,8 @@ export declare class RentalsController {
         updatedAt: Date;
         description: string | null;
         rating: number;
-        mitraId: string;
         images: string[];
+        mitraId: string;
         pricePerDay: import("@prisma/client/runtime/library").Decimal;
         deposit: import("@prisma/client/runtime/library").Decimal | null;
     }[]>;
@@ -28,8 +28,8 @@ export declare class RentalsController {
             updatedAt: Date;
             description: string | null;
             rating: number;
-            mitraId: string;
             images: string[];
+            mitraId: string;
             pricePerDay: import("@prisma/client/runtime/library").Decimal;
             deposit: import("@prisma/client/runtime/library").Decimal | null;
         };
@@ -62,8 +62,8 @@ export declare class RentalsController {
             updatedAt: Date;
             description: string | null;
             rating: number;
-            mitraId: string;
             images: string[];
+            mitraId: string;
             pricePerDay: import("@prisma/client/runtime/library").Decimal;
             deposit: import("@prisma/client/runtime/library").Decimal | null;
         };
@@ -101,8 +101,8 @@ export declare class RentalsController {
             updatedAt: Date;
             description: string | null;
             rating: number;
-            mitraId: string;
             images: string[];
+            mitraId: string;
             pricePerDay: import("@prisma/client/runtime/library").Decimal;
             deposit: import("@prisma/client/runtime/library").Decimal | null;
         };

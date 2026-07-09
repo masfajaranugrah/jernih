@@ -7,17 +7,10 @@ import { UpdateProductDto } from './dto/update-product.dto';
 export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
-  /**
-   * Simpan produk baru.
-   * mitraId selalu datang dari caller — tidak ada lookup DB di sini.
-   * Dipanggil dari:
-   *   - POST /products/admin  → mitraId dari header X-Mitra-Id (cookie login)
-   *   - POST /products        → mitraId dari JWT token
-   */
-  async create(mitraId: string, dto: CreateProductDto) {
+  async create(dto: CreateProductDto) {
     try {
       return await this.prisma.product.create({
-        data: { mitraId, ...dto },
+        data: dto,
       });
     } catch (err: any) {
       if (err?.message?.includes('numeric field overflow') || err?.code === '22003') {
@@ -35,7 +28,6 @@ export class ProductsService {
   async findAll(query?: {
     search?: string;
     categoryId?: string;
-    mitraId?: string;
     minPrice?: number;
     maxPrice?: number;
     page?: number;
@@ -54,7 +46,6 @@ export class ProductsService {
         ],
       }),
       ...(query?.categoryId && { categoryId: query.categoryId }),
-      ...(query?.mitraId && { mitraId: query.mitraId }),
       ...(query?.minPrice !== undefined && !isNaN(Number(query.minPrice)) && {
         price: { gte: Number(query.minPrice) },
       }),
@@ -67,7 +58,6 @@ export class ProductsService {
       this.prisma.product.findMany({
         where,
         include: {
-          mitra: { select: { id: true, storeName: true, city: true } },
           category: { select: { id: true, name: true, slug: true } },
         },
         orderBy: { createdAt: 'desc' },
@@ -87,7 +77,6 @@ export class ProductsService {
     const product = await this.prisma.product.findUnique({
       where: { id },
       include: {
-        mitra: { select: { id: true, storeName: true, logo: true, city: true, rating: true } },
         category: true,
       },
     });
@@ -99,7 +88,6 @@ export class ProductsService {
     const product = await this.prisma.product.findUnique({
       where: { slug },
       include: {
-        mitra: { select: { id: true, storeName: true, logo: true, city: true, rating: true } },
         category: true,
       },
     });

@@ -3,24 +3,29 @@ import { NextRequest, NextResponse } from "next/server";
 const BACKEND_URL = process.env.API_URL ?? "http://localhost:3001/api";
 
 export async function POST(req: NextRequest) {
-  const contentType = req.headers.get("content-type") ?? "";
-
-  if (!contentType.includes("multipart/form-data")) {
+  let formData: FormData;
+  try {
+    formData = await req.formData();
+  } catch {
     return NextResponse.json(
-      { message: "Content-Type harus multipart/form-data" },
+      { message: "Gagal membaca form data" },
       { status: 400 }
     );
   }
 
-  // Forward body stream langsung ke backend — tidak dibaca dua kali
-  const res = await fetch(`${BACKEND_URL}/upload`, {
-    method: "POST",
-    headers: { "content-type": contentType },
-    // req.body adalah ReadableStream — Node.js fetch bisa terima langsung
-    body: req.body,
-    // @ts-expect-error — duplex diperlukan untuk streaming request body di Node 18+
-    duplex: "half",
-  });
+  // Forward ke backend dengan formData yang sudah di-parse
+  let res: Response;
+  try {
+    res = await fetch(`${BACKEND_URL}/upload`, {
+      method: "POST",
+      body: formData,
+    });
+  } catch {
+    return NextResponse.json(
+      { message: "Tidak dapat terhubung ke backend" },
+      { status: 502 }
+    );
+  }
 
   if (!res.ok) {
     const errText = await res.text();

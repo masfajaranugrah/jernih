@@ -22,22 +22,12 @@ let ProductsController = class ProductsController {
     constructor(productsService) {
         this.productsService = productsService;
     }
-    createForAdmin(mitraId, dto) {
-        if (!mitraId) {
-            throw new common_1.BadRequestException('Header X-Mitra-Id wajib ada. Silakan login ulang.');
-        }
-        return this.productsService.create(mitraId, dto);
+    create(dto) {
+        return this.productsService.create(dto);
     }
-    create(req, dto) {
-        const mitraId = req.user.mitraId;
-        if (!mitraId) {
-            throw new common_1.BadRequestException('Akun ini belum terdaftar sebagai mitra. Daftarkan toko Anda terlebih dahulu.');
-        }
-        return this.productsService.create(mitraId, dto);
-    }
-    findAll(search, categoryId, mitraId, minPrice, maxPrice, page, limit) {
+    findAll(search, categoryId, minPrice, maxPrice, page, limit) {
         return this.productsService.findAll({
-            search, categoryId, mitraId, minPrice, maxPrice, page, limit,
+            search, categoryId, minPrice, maxPrice, page, limit,
         });
     }
     findBySlug(slug) {
@@ -55,33 +45,23 @@ let ProductsController = class ProductsController {
 };
 exports.ProductsController = ProductsController;
 __decorate([
-    (0, common_1.Post)('admin'),
-    __param(0, (0, common_1.Headers)('x-mitra-id')),
-    __param(1, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, create_product_dto_1.CreateProductDto]),
-    __metadata("design:returntype", void 0)
-], ProductsController.prototype, "createForAdmin", null);
-__decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Post)(),
-    __param(0, (0, common_1.Request)()),
-    __param(1, (0, common_1.Body)()),
+    __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, create_product_dto_1.CreateProductDto]),
+    __metadata("design:paramtypes", [create_product_dto_1.CreateProductDto]),
     __metadata("design:returntype", void 0)
 ], ProductsController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
     __param(0, (0, common_1.Query)('search')),
     __param(1, (0, common_1.Query)('categoryId')),
-    __param(2, (0, common_1.Query)('mitraId')),
-    __param(3, (0, common_1.Query)('minPrice')),
-    __param(4, (0, common_1.Query)('maxPrice')),
-    __param(5, (0, common_1.Query)('page')),
-    __param(6, (0, common_1.Query)('limit')),
+    __param(2, (0, common_1.Query)('minPrice')),
+    __param(3, (0, common_1.Query)('maxPrice')),
+    __param(4, (0, common_1.Query)('page')),
+    __param(5, (0, common_1.Query)('limit')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String, Number, Number, Number, Number]),
+    __metadata("design:paramtypes", [String, String, Number, Number, Number, Number]),
     __metadata("design:returntype", void 0)
 ], ProductsController.prototype, "findAll", null);
 __decorate([
@@ -99,6 +79,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], ProductsController.prototype, "findOne", null);
 __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Patch)(':id'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
@@ -107,6 +88,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], ProductsController.prototype, "update", null);
 __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Delete)(':id'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),

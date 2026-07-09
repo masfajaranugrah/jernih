@@ -6,11 +6,11 @@ export declare class AuthController {
     register(dto: RegisterDto): Promise<{
         user: {
             id: string;
-            email: string;
             name: string;
+            createdAt: Date;
+            email: string;
             phone: string;
             role: import(".prisma/client").$Enums.Role;
-            createdAt: Date;
         };
         access_token: string;
     }>;
@@ -21,25 +21,25 @@ export declare class AuthController {
                 storeName: string;
             };
             id: string;
-            email: string;
             name: string;
+            createdAt: Date;
+            email: string;
             phone: string | null;
             avatar: string | null;
             role: import(".prisma/client").$Enums.Role;
             isActive: boolean;
-            createdAt: Date;
             updatedAt: Date;
         };
         access_token: string;
     }>;
     getMe(req: any): Promise<{
         id: string;
-        email: string;
         name: string;
+        createdAt: Date;
+        email: string;
         phone: string;
         avatar: string;
         role: import(".prisma/client").$Enums.Role;
-        createdAt: Date;
         mitra: {
             id: string;
             storeName: string;

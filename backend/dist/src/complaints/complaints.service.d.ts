@@ -16,8 +16,8 @@ export declare class ComplaintsService {
         updatedAt: Date;
         userId: string;
         description: string;
-        mitraId: string | null;
         images: string[];
+        mitraId: string | null;
         status: import(".prisma/client").$Enums.ComplaintStatus;
         orderId: string | null;
         title: string;
@@ -38,8 +38,8 @@ export declare class ComplaintsService {
         updatedAt: Date;
         userId: string;
         description: string;
-        mitraId: string | null;
         images: string[];
+        mitraId: string | null;
         status: import(".prisma/client").$Enums.ComplaintStatus;
         orderId: string | null;
         title: string;
@@ -78,8 +78,8 @@ export declare class ComplaintsService {
         updatedAt: Date;
         userId: string;
         description: string;
-        mitraId: string | null;
         images: string[];
+        mitraId: string | null;
         status: import(".prisma/client").$Enums.ComplaintStatus;
         orderId: string | null;
         title: string;
@@ -91,8 +91,8 @@ export declare class ComplaintsService {
         updatedAt: Date;
         userId: string;
         description: string;
-        mitraId: string | null;
         images: string[];
+        mitraId: string | null;
         status: import(".prisma/client").$Enums.ComplaintStatus;
         orderId: string | null;
         title: string;
