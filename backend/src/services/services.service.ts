@@ -7,6 +7,12 @@ import { UpdateServiceDto } from './dto/update-service.dto';
 export class ServicesService {
   constructor(private prisma: PrismaService) {}
 
+  /**
+   * Simpan jasa baru.
+   * mitraId selalu datang dari caller — tidak ada lookup DB di sini.
+   * Dipanggil dari:
+   *   - POST /services/admin  → mitraId dari header X-Mitra-Id (cookie login)
+   */
   async create(mitraId: string, dto: CreateServiceDto) {
     try {
       return await this.prisma.service.create({ data: { mitraId, ...dto } });
@@ -19,44 +25,6 @@ export class ServicesService {
       }
       throw err;
     }
-  }
-
-  /**
-   * Tambah jasa dari dashboard admin — otomatis cari/buat mitra admin.
-   */
-  async createFromAdmin(dto: CreateServiceDto & { mitraId?: string }) {
-    if (dto.mitraId) {
-      const { mitraId, ...serviceData } = dto;
-      return this.create(mitraId, serviceData);
-    }
-
-    let mitra = await this.prisma.mitra.findFirst({
-      where: { user: { role: 'ADMIN' } },
-    });
-
-    if (!mitra) {
-      let adminUser = await this.prisma.user.findFirst({ where: { role: 'ADMIN' } });
-      if (!adminUser) {
-        adminUser = await this.prisma.user.create({
-          data: {
-            email: 'admin@eccomarket.id',
-            password: 'hashed-placeholder',
-            name: 'Admin Eccomarket',
-            role: 'ADMIN',
-          },
-        });
-      }
-      mitra = await this.prisma.mitra.create({
-        data: {
-          userId: adminUser.id,
-          storeName: 'Eccomarket Official',
-          isVerified: true,
-          isActive: true,
-        },
-      });
-    }
-
-    return this.create(mitra.id, dto);
   }
 
   async findAll(query?: { search?: string; categoryId?: string; mitraId?: string }) {

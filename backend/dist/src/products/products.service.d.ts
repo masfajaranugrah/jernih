@@ -21,25 +21,6 @@ export declare class ProductsService {
         images: string[];
         totalSold: number;
     }>;
-    createFromAdmin(dto: CreateProductDto & {
-        mitraId?: string;
-    }): Promise<{
-        id: string;
-        name: string;
-        slug: string;
-        createdAt: Date;
-        isActive: boolean;
-        updatedAt: Date;
-        description: string | null;
-        rating: number;
-        oldPrice: import("@prisma/client/runtime/library").Decimal | null;
-        mitraId: string;
-        categoryId: string | null;
-        price: import("@prisma/client/runtime/library").Decimal;
-        stock: number;
-        images: string[];
-        totalSold: number;
-    }>;
     findAll(query?: {
         search?: string;
         categoryId?: string;

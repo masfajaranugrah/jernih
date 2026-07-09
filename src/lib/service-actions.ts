@@ -1,8 +1,19 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 const API_URL = process.env.API_URL ?? "http://localhost:3001/api";
+
+/** Baca mitraId dari cookie server-side — zero DB query */
+async function getMitraIdFromCookie(): Promise<string> {
+  const cookieStore = await cookies();
+  const mitraId = cookieStore.get("mh_mitra_id")?.value;
+  if (!mitraId) {
+    throw new Error("Session tidak valid. Silakan login ulang.");
+  }
+  return mitraId;
+}
 
 export interface ApiService {
   id: string;
@@ -72,9 +83,15 @@ export async function fetchServiceById(id: string): Promise<ApiService | null> {
 
 /** Tambah jasa baru dari admin dashboard */
 export async function createService(data: CreateServiceInput): Promise<ApiService> {
+  const mitraId = await getMitraIdFromCookie();
+
   const res = await fetch(`${API_URL}/services/admin`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      // Kirim mitraId via header — backend langsung pakai, 0 DB lookup
+      "X-Mitra-Id": mitraId,
+    },
     body: JSON.stringify({
       name: data.name,
       slug: data.slug,

@@ -59,6 +59,11 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
+      include: {
+        // Sertakan mitra supaya frontend bisa simpan mitraId ke cookie —
+        // tidak perlu query DB lagi saat create produk
+        mitra: { select: { id: true, storeName: true } },
+      },
     });
 
     if (!user || !user.isActive) {

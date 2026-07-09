@@ -20,6 +20,10 @@ export declare class AuthService {
     }>;
     login(dto: LoginDto): Promise<{
         user: {
+            mitra: {
+                id: string;
+                storeName: string;
+            };
             id: string;
             name: string;
             createdAt: Date;

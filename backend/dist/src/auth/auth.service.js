@@ -52,6 +52,9 @@ let AuthService = class AuthService {
     async login(dto) {
         const user = await this.prisma.user.findUnique({
             where: { email: dto.email },
+            include: {
+                mitra: { select: { id: true, storeName: true } },
+            },
         });
         if (!user || !user.isActive) {
             throw new common_1.UnauthorizedException('Email atau password salah');

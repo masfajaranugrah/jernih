@@ -1,5 +1,6 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { revalidatePath, revalidateTag } from "next/cache";
 
 const API_URL = process.env.API_URL ?? "http://localhost:3001/api";
@@ -22,17 +23,28 @@ export type CreateProductInput = {
   warranty?: string;
 };
 
+/** Baca mitraId dari cookie server-side — zero DB query */
+async function getMitraIdFromCookie(): Promise<string> {
+  const cookieStore = await cookies();
+  const mitraId = cookieStore.get("mh_mitra_id")?.value;
+  if (!mitraId) {
+    throw new Error("Session tidak valid. Silakan login ulang.");
+  }
+  return mitraId;
+}
+
 /** Jalankan semua revalidation sekaligus — tidak blocking satu per satu */
 function revalidateProductCaches() {
   revalidateTag("products");
-  // revalidatePath tidak bisa di-await jadi cukup dipanggil bersamaan
-  revalidatePath("/dashboard-admin/admin/products");
-  revalidatePath("/produk");
-  revalidatePath("/");
+  revalidatePath("/dashboard-admin/admin/products", "page");
+  revalidatePath("/produk", "page");
+  revalidatePath("/", "page");
 }
 
 /** Tambah produk baru ke database via backend API (dari admin dashboard) */
 export async function createProduct(data: CreateProductInput) {
+  const mitraId = await getMitraIdFromCookie();
+
   const payload = {
     name: data.name,
     slug: data.slug,
@@ -47,7 +59,11 @@ export async function createProduct(data: CreateProductInput) {
 
   const res = await fetch(`${API_URL}/products/admin`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      // Kirim mitraId via header — backend langsung pakai, 0 DB lookup
+      "X-Mitra-Id": mitraId,
+    },
     body: JSON.stringify(payload),
   });
 
@@ -74,7 +90,6 @@ export async function removeProduct(id: string) {
 
   revalidateProductCaches();
 
-  // DELETE endpoint kadang return 204 No Content (body kosong)
   const text = await res.text();
   return text ? JSON.parse(text) : { success: true };
 }

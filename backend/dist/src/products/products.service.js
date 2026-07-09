@@ -32,39 +32,6 @@ let ProductsService = class ProductsService {
             throw err;
         }
     }
-    async createFromAdmin(dto) {
-        if (dto.mitraId) {
-            const { mitraId, ...productData } = dto;
-            return this.create(mitraId, productData);
-        }
-        let mitra = await this.prisma.mitra.findFirst({
-            where: { user: { role: 'ADMIN' } },
-        });
-        if (!mitra) {
-            let adminUser = await this.prisma.user.findFirst({
-                where: { role: 'ADMIN' },
-            });
-            if (!adminUser) {
-                adminUser = await this.prisma.user.create({
-                    data: {
-                        email: 'admin@eccomarket.id',
-                        password: 'hashed-placeholder',
-                        name: 'Admin Eccomarket',
-                        role: 'ADMIN',
-                    },
-                });
-            }
-            mitra = await this.prisma.mitra.create({
-                data: {
-                    userId: adminUser.id,
-                    storeName: 'Eccomarket Official',
-                    isVerified: true,
-                    isActive: true,
-                },
-            });
-        }
-        return this.create(mitra.id, dto);
-    }
     async findAll(query) {
         const page = Math.max(1, Number(query?.page) || 1);
         const limit = Math.min(100, Math.max(1, Number(query?.limit) || 20));

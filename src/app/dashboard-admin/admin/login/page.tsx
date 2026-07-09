@@ -40,6 +40,12 @@ export default function AdminLoginPage() {
       // Simpan token ke cookie
       setToken(data.access_token);
 
+      // Simpan mitraId ke cookie supaya server action tidak perlu query DB
+      if (data.user.mitra?.id) {
+        const maxAge = 60 * 60 * 24 * 365;
+        document.cookie = `mh_mitra_id=${data.user.mitra.id}; path=/; max-age=${maxAge}; SameSite=Lax`;
+      }
+
       // Hard redirect agar browser kirim cookie baru ke middleware
       window.location.href = "/dashboard-admin/admin";
     } catch (err: unknown) {

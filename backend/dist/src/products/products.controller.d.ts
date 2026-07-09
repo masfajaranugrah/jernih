@@ -4,9 +4,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 export declare class ProductsController {
     private productsService;
     constructor(productsService: ProductsService);
-    createFromAdmin(body: CreateProductDto & {
-        mitraId?: string;
-    }): Promise<{
+    createForAdmin(mitraId: string, dto: CreateProductDto): Promise<{
         id: string;
         name: string;
         slug: string;

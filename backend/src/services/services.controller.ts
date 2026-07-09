@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, Headers, BadRequestException } from '@nestjs/common';
 import { ServicesService } from './services.service';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
@@ -9,11 +9,20 @@ export class ServicesController {
 
   /**
    * POST /api/services/admin
-   * Tambah jasa dari dashboard admin — tanpa JWT, mitraId otomatis dari admin
+   * Tambah jasa dari dashboard admin.
+   * mitraId dibaca dari header X-Mitra-Id yang dikirim oleh Next.js server action.
+   * Header ini diisi dari cookie mh_mitra_id yang disimpan saat login.
+   * Hasil: 1 INSERT saja, 0 query ekstra.
    */
   @Post('admin')
-  createFromAdmin(@Body() body: CreateServiceDto & { mitraId?: string }) {
-    return this.servicesService.createFromAdmin(body);
+  createForAdmin(
+    @Headers('x-mitra-id') mitraId: string,
+    @Body() dto: CreateServiceDto,
+  ) {
+    if (!mitraId) {
+      throw new BadRequestException('Header X-Mitra-Id wajib ada. Silakan login ulang.');
+    }
+    return this.servicesService.create(mitraId, dto);
   }
 
   /** GET /api/services?search=&categoryId= */
