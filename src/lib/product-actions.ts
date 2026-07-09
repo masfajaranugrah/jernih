@@ -35,7 +35,7 @@ async function getMitraIdFromCookie(): Promise<string> {
 
 /** Jalankan semua revalidation sekaligus — tidak blocking satu per satu */
 function revalidateProductCaches() {
-  revalidateTag("products");
+  revalidateTag("products", "page");
   revalidatePath("/dashboard-admin/admin/products", "page");
   revalidatePath("/produk", "page");
   revalidatePath("/", "page");
