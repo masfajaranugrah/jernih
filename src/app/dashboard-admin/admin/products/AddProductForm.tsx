@@ -99,54 +99,57 @@ export default function AddProductForm() {
       return toastError("Harga coret terlalu besar", "Maksimum harga adalah Rp 9.999.999.999");
 
     startTransition(async () => {
-      try {
-        // ── Upload pending files dulu baru simpan ──────────────────────────
-        let finalImageUrls = [...imageUrls];
+      // ── Upload pending files dulu baru simpan ──────────────────────────
+      let finalImageUrls = [...imageUrls];
 
-        if (pendingFiles.length > 0) {
-          setUploadingImages(true);
-          try {
-            const formData = new FormData();
-            pendingFiles.forEach((file) => formData.append("files", file));
-            const res = await fetch("/api/upload", {
-              method: "POST",
-              body: formData,
-            });
-            if (!res.ok) throw new Error("Server upload error");
-            const data = await res.json();
-            const uploadedUrls: string[] = data.urls ?? [];
-            finalImageUrls = [...finalImageUrls, ...uploadedUrls];
-            // Cleanup blob URLs
-            pendingPreviews.forEach((p) => URL.revokeObjectURL(p));
-            setPendingFiles([]);
-            setPendingPreviews([]);
-          } finally {
-            setUploadingImages(false);
-          }
+      if (pendingFiles.length > 0) {
+        setUploadingImages(true);
+        try {
+          const formData = new FormData();
+          pendingFiles.forEach((file) => formData.append("files", file));
+          const res = await fetch("/api/upload", {
+            method: "POST",
+            body: formData,
+          });
+          if (!res.ok) throw new Error("Server upload error");
+          const data = await res.json();
+          const uploadedUrls: string[] = data.urls ?? [];
+          finalImageUrls = [...finalImageUrls, ...uploadedUrls];
+          // Cleanup blob URLs
+          pendingPreviews.forEach((p) => URL.revokeObjectURL(p));
+          setPendingFiles([]);
+          setPendingPreviews([]);
+        } catch (uploadErr) {
+          setUploadingImages(false);
+          toastError("Gagal upload gambar", "Coba lagi atau gunakan URL gambar.");
+          return;
+        } finally {
+          setUploadingImages(false);
         }
-
-        const descWithBadge = badge
-          ? `[badge:${badge}] ${description}`
-          : description;
-        await createProduct({
-          name: name.trim(),
-          slug: toSlug(name),
-          categoryId,
-          description: descWithBadge,
-          price: Number(price),
-          oldPrice: oldPrice ? Number(oldPrice) : undefined,
-          stock: Number(stock) || 0,
-          images: finalImageUrls,
-          isActive: true,
-        });
-        success("Produk berhasil disimpan!", `"${name.trim()}" telah ditambahkan ke katalog.`);
-        router.push("/dashboard-admin/admin/products");
-      } catch (err: unknown) {
-        toastError(
-          "Gagal menyimpan produk",
-          err instanceof Error ? err.message : "Terjadi kesalahan, coba lagi."
-        );
       }
+
+      const descWithBadge = badge
+        ? `[badge:${badge}] ${description}`
+        : description;
+      const result = await createProduct({
+        name: name.trim(),
+        slug: toSlug(name),
+        categoryId,
+        description: descWithBadge,
+        price: Number(price),
+        oldPrice: oldPrice ? Number(oldPrice) : undefined,
+        stock: Number(stock) || 0,
+        images: finalImageUrls,
+        isActive: true,
+      });
+
+      if (!result.success) {
+        toastError("Gagal menyimpan produk", result.error);
+        return;
+      }
+
+      success("Produk berhasil disimpan!", `"${name.trim()}" telah ditambahkan ke katalog.`);
+      router.push("/dashboard-admin/admin/products");
     });
   }
 

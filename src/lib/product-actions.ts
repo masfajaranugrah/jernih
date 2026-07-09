@@ -1,7 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 
 const API_URL = process.env.API_URL ?? "http://localhost:3001/api";
 
@@ -42,23 +42,25 @@ async function authHeaders(): Promise<Record<string, string>> {
   };
 }
 
-/** Jalankan semua revalidation sekaligus — tidak blocking satu per satu */
+/** Jalankan semua revalidation sekaligus */
 function revalidateProductCaches() {
-  revalidateTag("products", { expire: 0 });
   revalidatePath("/dashboard-admin/admin/products", "page");
   revalidatePath("/produk", "page");
   revalidatePath("/", "page");
 }
 
 /** Tambah produk baru ke database via backend API */
-export async function createProduct(data: CreateProductInput) {
+export async function createProduct(
+  data: CreateProductInput
+): Promise<{ success: true; data: unknown } | { success: false; error: string }> {
   let headers: Record<string, string>;
   try {
     headers = await authHeaders();
   } catch {
-    throw new Error(
-      "Session tidak valid. Silakan login ulang ke /dashboard-admin/admin/login"
-    );
+    return {
+      success: false,
+      error: "Session tidak valid. Silakan login ulang ke /dashboard-admin/admin/login",
+    };
   }
 
   const payload = {
@@ -81,22 +83,26 @@ export async function createProduct(data: CreateProductInput) {
       body: JSON.stringify(payload),
     });
   } catch {
-    throw new Error(
-      "Tidak dapat terhubung ke server. Pastikan backend berjalan."
-    );
+    return {
+      success: false,
+      error: "Tidak dapat terhubung ke server. Pastikan backend berjalan.",
+    };
   }
 
   if (!res.ok) {
+    if (res.status === 401) {
+      return { success: false, error: "Session telah berakhir. Silakan login ulang." };
+    }
     const err = await res.json().catch(() => ({}));
     const msg = Array.isArray(err.message)
       ? err.message.join(", ")
-      : err.message;
-    throw new Error(msg ?? `Gagal membuat produk: ${res.status}`);
+      : (err.message ?? `Gagal membuat produk: ${res.status}`);
+    return { success: false, error: msg };
   }
 
   const result = await res.json();
   revalidateProductCaches();
-  return result;
+  return { success: true, data: result };
 }
 
 /** Hapus produk dari database via backend API */
