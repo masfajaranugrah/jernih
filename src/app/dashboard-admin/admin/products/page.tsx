@@ -27,6 +27,7 @@ export default async function AdminProductsPage() {
           </div>
           <Link
             href="/dashboard-admin/admin/products/new"
+            prefetch={false}
             className="flex items-center gap-2 rounded-lg bg-[#064e3b] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#043b2d]"
           >
             <span className="material-symbols-outlined text-base">add</span>
@@ -65,6 +66,7 @@ export default async function AdminProductsPage() {
                 <p className="font-semibold text-[#404944]">Belum ada produk</p>
                 <p className="mt-1 text-sm text-[#707974]">Klik &quot;Tambah Produk&quot; untuk mulai menambahkan</p>
                 <Link href="/dashboard-admin/admin/products/new"
+                  prefetch={false}
                   className="mt-4 rounded-lg bg-[#064e3b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#043b2d] transition-colors">
                   + Tambah Produk Pertama
                 </Link>
