@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import type { ApiRentalItem } from "@/lib/rental-actions";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
 
 interface FilterState {
   category: string;
@@ -22,6 +23,64 @@ function formatRupiah(num: string | number) {
   return "Rp " + parseFloat(String(num)).toLocaleString("id-ID");
 }
 
+// ── Sub-component RentalCard (dipakai SSR fallback & virtualizer) ──
+function RentalCard({ item }: { item: ApiRentalItem }) {
+  const cleanDesc = item.description?.replace(/^\[cat:[^\]]+\]\s*/, "");
+  return (
+    <div className="premium-shadow group bg-white rounded-xl overflow-hidden cursor-pointer">
+      <div className="relative aspect-[4/5] overflow-hidden bg-[#edeeef]">
+        {item.images[0] ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={item.images[0]}
+            alt={item.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="material-symbols-outlined text-5xl text-[#bfc9c3]">inventory_2</span>
+          </div>
+        )}
+        <div className="absolute top-3 left-3 bg-[#064e3b] text-white font-black text-[10px] px-2 py-1 uppercase tracking-tight rounded">
+          Sewa
+        </div>
+        {item.rating > 0 && (
+          <div className="absolute top-3 right-3 bg-white/90 rounded-full px-2 py-0.5 flex items-center gap-1">
+            <span
+              className="material-symbols-outlined text-[#003527] text-xs"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              star
+            </span>
+            <span className="text-[#003527] text-xs font-bold">{item.rating.toFixed(1)}</span>
+          </div>
+        )}
+      </div>
+      <div className="p-4 space-y-1">
+        <h2 className="text-sm font-semibold text-[#191c1d] group-hover:text-[#003527] transition-colors leading-tight line-clamp-2">
+          {item.name}
+        </h2>
+        {cleanDesc && (
+          <p className="text-[11px] text-[#707974] line-clamp-2 leading-relaxed">
+            {cleanDesc}
+          </p>
+        )}
+        <div className="pt-1">
+          <p className="text-base font-bold text-[#003527]">
+            {formatRupiah(item.pricePerDay)}
+            <span className="text-xs font-normal text-[#707974]">/hari</span>
+          </p>
+          {item.deposit && parseFloat(String(item.deposit)) > 0 && (
+            <p className="text-[10px] text-[#707974]">
+              Deposit: {formatRupiah(item.deposit)}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface Props {
   items: ApiRentalItem[];
   categories: string[];
@@ -32,6 +91,24 @@ export default function SewaPageClient({ items, categories, resolvedSearch }: Pr
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterState>(DEFAULT_FILTER);
   const [draftFilter, setDraftFilter] = useState<FilterState>(DEFAULT_FILTER);
+
+  // ── SSR Hydration Guard ──
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // ── Column Detection ──
+  const [cols, setCols] = useState(2);
+  useEffect(() => {
+    if (!mounted) return;
+    const handleResize = () => {
+      setCols(window.innerWidth >= 1024 ? 3 : 2);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [mounted]);
 
   const filtered = items
     .filter((item) => {
@@ -56,6 +133,21 @@ export default function SewaPageClient({ items, categories, resolvedSearch }: Pr
   const activeCount =
     (activeFilter.category !== "all" ? 1 : 0) +
     (activeFilter.priceMin || activeFilter.priceMax ? 1 : 0);
+
+  // ── Chunking Rows for Virtual Grid ──
+  const rows: ApiRentalItem[][] = [];
+  for (let i = 0; i < filtered.length; i += cols) {
+    rows.push(filtered.slice(i, i + cols));
+  }
+
+  // ── TanStack Virtualizer ──
+  const parentRef = useRef<HTMLDivElement>(null);
+  const rowVirtualizer = useWindowVirtualizer({
+    count: rows.length,
+    estimateSize: () => 400,
+    scrollMargin: parentRef.current?.offsetTop ?? 0,
+    overscan: 3,
+  });
 
   function openFilter() { setDraftFilter(activeFilter); setFilterOpen(true); }
   function applyFilter() { setActiveFilter(draftFilter); setFilterOpen(false); }
@@ -220,7 +312,7 @@ export default function SewaPageClient({ items, categories, resolvedSearch }: Pr
           {resolvedSearch && (
             <div className="mb-6 bg-white border border-[#bfc9c3]/30 rounded-xl p-4 flex items-center justify-between shadow-sm">
               <p className="text-sm text-[#404944]">
-                Hasil pencarian: <strong className="text-[#064e3b]">"{resolvedSearch}"</strong>
+                Hasil pencarian: <strong className="text-[#064e3b]">&quot;{resolvedSearch}&quot;</strong>
               </p>
               <Link href="/sewa" className="text-xs font-semibold text-[#ba1a1a] hover:underline">
                 Hapus Pencarian
@@ -249,67 +341,54 @@ export default function SewaPageClient({ items, categories, resolvedSearch }: Pr
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filtered.map((item) => {
-                const cleanDesc = item.description?.replace(/^\[cat:[^\]]+\]\s*/, "");
-                return (
-                  <div
-                    key={item.id}
-                    className="premium-shadow group bg-white rounded-xl overflow-hidden cursor-pointer"
-                  >
-                    <div className="relative aspect-[4/5] overflow-hidden bg-[#edeeef]">
-                      {item.images[0] ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={item.images[0]}
-                          alt={item.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <span className="material-symbols-outlined text-5xl text-[#bfc9c3]">inventory_2</span>
-                        </div>
-                      )}
-                      <div className="absolute top-3 left-3 bg-[#064e3b] text-white font-black text-[10px] px-2 py-1 uppercase tracking-tight rounded">
-                        Sewa
+            <>
+              {!mounted ? (
+                /* SSR Fallback: static grid untuk SEO */
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filtered.map((item) => (
+                    <RentalCard key={item.id} item={item} />
+                  ))}
+                </div>
+              ) : (
+                /* Virtualized Grid: performa tinggi di client */
+                <div
+                  ref={parentRef}
+                  style={{
+                    height: `${rowVirtualizer.getTotalSize()}px`,
+                    width: "100%",
+                    position: "relative",
+                  }}
+                >
+                  {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                    const rowItems = rows[virtualRow.index] || [];
+                    return (
+                      <div
+                        key={virtualRow.key}
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "100%",
+                          height: `${virtualRow.size}px`,
+                          transform: `translateY(${virtualRow.start - rowVirtualizer.options.scrollMargin}px)`,
+                        }}
+                        className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                      >
+                        {rowItems.map((item) => (
+                          <RentalCard key={item.id} item={item} />
+                        ))}
+                        {/* Placeholder columns agar grid tidak collapse */}
+                        {rowItems.length < cols &&
+                          Array.from({ length: cols - rowItems.length }).map((_, idx) => (
+                            <div key={`empty-${idx}`} className="invisible" />
+                          ))
+                        }
                       </div>
-                      {item.rating > 0 && (
-                        <div className="absolute top-3 right-3 bg-white/90 rounded-full px-2 py-0.5 flex items-center gap-1">
-                          <span
-                            className="material-symbols-outlined text-[#003527] text-xs"
-                            style={{ fontVariationSettings: "'FILL' 1" }}
-                          >
-                            star
-                          </span>
-                          <span className="text-[#003527] text-xs font-bold">{item.rating.toFixed(1)}</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4 space-y-1">
-                      <h2 className="text-sm font-semibold text-[#191c1d] group-hover:text-[#003527] transition-colors leading-tight line-clamp-2">
-                        {item.name}
-                      </h2>
-                      {cleanDesc && (
-                        <p className="text-[11px] text-[#707974] line-clamp-2 leading-relaxed">
-                          {cleanDesc}
-                        </p>
-                      )}
-                      <div className="pt-1">
-                        <p className="text-base font-bold text-[#003527]">
-                          {formatRupiah(item.pricePerDay)}
-                          <span className="text-xs font-normal text-[#707974]">/hari</span>
-                        </p>
-                        {item.deposit && parseFloat(String(item.deposit)) > 0 && (
-                          <p className="text-[10px] text-[#707974]">
-                            Deposit: {formatRupiah(item.deposit)}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
         </main>
       </div>

@@ -1,8 +1,62 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { formatRupiah, type ApiProduct } from "@/lib/api";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
+
+function ProductCard({ product }: { product: ApiProduct }) {
+  return (
+    <Link
+      href={`/produk/${product.slug}`}
+      className="group bg-white shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer rounded-xl flex flex-col h-full"
+    >
+      <div className="relative aspect-[4/5] overflow-hidden bg-[#edeeef] shrink-0">
+        {product.images[0] ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={product.images[0]}
+            alt={product.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-[#bfc9c3]">
+            <span className="text-5xl">📷</span>
+          </div>
+        )}
+        {(() => {
+          const badgeMatch = product.description?.match(/^\[badge:([A-Z0-9]+)\]/);
+          const badge = badgeMatch ? badgeMatch[1] : product.oldPrice ? "SALE" : null;
+          if (!badge) return null;
+          const colors: Record<string, string> = {
+            SALE: "bg-[#ba1a1a]", NEW: "bg-[#064e3b]", HOT: "bg-orange-500",
+            DISKON: "bg-[#1d4ed8]", TERBATAS: "bg-[#7c3aed]",
+          };
+          return (
+            <div className={`absolute top-3 left-3 font-black text-[10px] px-2 py-1 uppercase tracking-tight text-white rounded ${colors[badge] ?? "bg-[#ba1a1a]"}`}>
+              {badge}
+            </div>
+          );
+        })()}
+      </div>
+      <div className="p-4 space-y-1 flex-grow flex flex-col justify-between">
+        <div className="space-y-1">
+          <p className="text-[10px] font-medium text-[#707974] uppercase tracking-widest">
+            {product.category?.name ?? "Produk"}
+          </p>
+          <h2 className="text-sm font-semibold text-[#191c1d] group-hover:text-[#003527] transition-colors leading-tight line-clamp-2">
+            {product.name}
+          </h2>
+          {product.oldPrice && (
+            <p className="text-xs text-[#707974] line-through">{formatRupiah(product.oldPrice)}</p>
+          )}
+          <p className="text-base font-bold text-[#003527]">{formatRupiah(product.price)}</p>
+        </div>
+        <p className="text-[10px] text-[#707974] mt-2">oleh Jernih Creative Official</p>
+      </div>
+    </Link>
+  );
+}
 
 interface FilterState {
   category: string;
@@ -31,6 +85,28 @@ export default function ProdukPageClient({
   const [activeFilter, setActiveFilter] = useState<FilterState>(DEFAULT_FILTER);
   const [draftFilter, setDraftFilter] = useState<FilterState>(DEFAULT_FILTER);
 
+  // ── SSR Hydration Guard ──
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // ── Column Detection ──
+  const [cols, setCols] = useState(2);
+  useEffect(() => {
+    if (!mounted) return;
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setCols(3);
+      } else {
+        setCols(2);
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [mounted]);
+
   // ── Apply filter ────────────────────────────────────────────────────────────
   const filtered = products
     .filter((p) => {
@@ -51,6 +127,21 @@ export default function ProdukPageClient({
   const activeCount =
     (activeFilter.category !== "all" ? 1 : 0) +
     (activeFilter.priceMin || activeFilter.priceMax ? 1 : 0);
+
+  // ── Chunking Rows for Virtual Grid ──
+  const rows: ApiProduct[][] = [];
+  for (let i = 0; i < filtered.length; i += cols) {
+    rows.push(filtered.slice(i, i + cols));
+  }
+
+  // ── TanStack Virtualizer ──
+  const parentRef = useRef<HTMLDivElement>(null);
+  const rowVirtualizer = useWindowVirtualizer({
+    count: rows.length,
+    estimateSize: () => 380,
+    scrollMargin: parentRef.current?.offsetTop ?? 0,
+    overscan: 3,
+  });
 
   function openFilter() {
     setDraftFilter(activeFilter);
@@ -273,57 +364,54 @@ export default function ProdukPageClient({
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filtered.map((product: ApiProduct) => (
-                <Link
-                  key={product.id}
-                  href={`/produk/${product.slug}`}
-                  className="group bg-white shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer rounded-xl"
+            <>
+              {!mounted ? (
+                /* Fallback static grid for SSR (SEO friendly) */
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filtered.map((product: ApiProduct) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+              ) : (
+                /* High performance Virtualized Grid for client view */
+                <div
+                  ref={parentRef}
+                  style={{
+                    height: `${rowVirtualizer.getTotalSize()}px`,
+                    width: "100%",
+                    position: "relative",
+                  }}
                 >
-                  <div className="relative aspect-[4/5] overflow-hidden bg-[#edeeef]">
-                    {product.images[0] ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={product.images[0]}
-                        alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[#bfc9c3]">
-                        <span className="text-5xl">📷</span>
+                  {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                    const rowItems = rows[virtualRow.index] || [];
+                    return (
+                      <div
+                        key={virtualRow.key}
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "100%",
+                          height: `${virtualRow.size}px`,
+                          transform: `translateY(${virtualRow.start - rowVirtualizer.options.scrollMargin}px)`,
+                        }}
+                        className="grid grid-cols-2 lg:grid-cols-3 gap-4"
+                      >
+                        {rowItems.map((product) => (
+                          <ProductCard key={product.id} product={product} />
+                        ))}
+                        {/* Placeholder columns if row is not full to maintain exact grid width layout */}
+                        {rowItems.length < cols &&
+                          Array.from({ length: cols - rowItems.length }).map((_, idx) => (
+                            <div key={`empty-${idx}`} className="invisible" />
+                          ))
+                        }
                       </div>
-                    )}
-                    {(() => {
-                      const badgeMatch = product.description?.match(/^\[badge:([A-Z0-9]+)\]/);
-                      const badge = badgeMatch ? badgeMatch[1] : product.oldPrice ? "SALE" : null;
-                      if (!badge) return null;
-                      const colors: Record<string, string> = {
-                        SALE: "bg-[#ba1a1a]", NEW: "bg-[#064e3b]", HOT: "bg-orange-500",
-                        DISKON: "bg-[#1d4ed8]", TERBATAS: "bg-[#7c3aed]",
-                      };
-                      return (
-                        <div className={`absolute top-3 left-3 font-black text-[10px] px-2 py-1 uppercase tracking-tight text-white rounded ${colors[badge] ?? "bg-[#ba1a1a]"}`}>
-                          {badge}
-                        </div>
-                      );
-                    })()}
-                  </div>
-                  <div className="p-4 space-y-1">
-                    <p className="text-[10px] font-medium text-[#707974] uppercase tracking-widest">
-                      {product.category?.name ?? "Produk"}
-                    </p>
-                    <h2 className="text-sm font-semibold text-[#191c1d] group-hover:text-[#003527] transition-colors leading-tight line-clamp-2">
-                      {product.name}
-                    </h2>
-                    {product.oldPrice && (
-                      <p className="text-xs text-[#707974] line-through">{formatRupiah(product.oldPrice)}</p>
-                    )}
-                    <p className="text-base font-bold text-[#003527]">{formatRupiah(product.price)}</p>
-                    <p className="text-[10px] text-[#707974]">oleh Jernih Creative Official</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
         </main>
       </div>

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import type { ApiService } from "@/lib/service-actions";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
 
 interface FilterState {
   category: string;
@@ -22,16 +23,96 @@ function formatRupiah(val: string | number) {
   return "Rp " + parseFloat(String(val)).toLocaleString("id-ID");
 }
 
+// ── Sub-component ServiceCard (dipakai SSR fallback & virtualizer) ──
+function ServiceCard({ svc }: { svc: ApiService }) {
+  return (
+    <Link
+      href={`/jasa/${svc.slug}`}
+      className="premium-shadow bg-white rounded-xl overflow-hidden group cursor-pointer block"
+    >
+      <div className="relative h-48 overflow-hidden bg-[#edeeef]">
+        {svc.images[0] ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={svc.images[0]}
+            alt={svc.name}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="material-symbols-outlined text-5xl text-[#bfc9c3]">design_services</span>
+          </div>
+        )}
+        <div className="absolute top-3 left-3 bg-[#064e3b] text-white font-black text-[10px] px-2 py-1 uppercase tracking-tight rounded">
+          Jasa
+        </div>
+      </div>
+      <div className="p-5">
+        <div className="flex justify-between items-start mb-1">
+          <h3 className="text-[#003527] font-semibold text-base leading-tight group-hover:underline line-clamp-2 flex-1">
+            {svc.name}
+          </h3>
+          {svc.rating > 0 && (
+            <div className="flex items-center gap-1 text-[#003527] flex-shrink-0 ml-2">
+              <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+              <span className="font-semibold text-sm">{svc.rating.toFixed(1)}</span>
+            </div>
+          )}
+        </div>
+        <p className="text-[10px] font-medium text-[#707974] uppercase tracking-widest mb-3">
+          {svc.category?.name ?? "Jasa"}
+        </p>
+        <div className="flex justify-between items-end border-t border-[#e1e3e4] pt-3">
+          <div>
+            <span className="block text-xs text-[#707974]">Mulai dari</span>
+            <span className="text-base font-bold text-[#003527]">
+              {formatRupiah(svc.priceFrom)}
+              <span className="text-xs font-normal text-[#707974]">/{svc.unit}</span>
+            </span>
+          </div>
+          <span className="bg-[#003527] text-white px-4 py-2 rounded-full font-semibold text-xs">
+            Lihat Detail
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 interface Props {
   services: ApiService[];
   categories: string[];
   resolvedSearch: string;
 }
 
+const CATEGORY_ICONS: Record<string, string> = {
+  "Kreatif": "brush",
+  "Konstruksi": "construction",
+  "IT & Digital": "code",
+};
+
 export default function JasaPageClient({ services, categories, resolvedSearch }: Props) {
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterState>(DEFAULT_FILTER);
   const [draftFilter, setDraftFilter] = useState<FilterState>(DEFAULT_FILTER);
+
+  // ── SSR Hydration Guard ──
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // ── Column Detection ──
+  const [cols, setCols] = useState(2);
+  useEffect(() => {
+    if (!mounted) return;
+    const handleResize = () => {
+      setCols(window.innerWidth >= 1024 ? 3 : window.innerWidth >= 640 ? 2 : 1);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [mounted]);
 
   const filtered = services
     .filter((s) => {
@@ -56,15 +137,24 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
     (activeFilter.category !== "all" ? 1 : 0) +
     (activeFilter.priceMin || activeFilter.priceMax ? 1 : 0);
 
+  // ── Chunking Rows for Virtual Grid ──
+  const rows: ApiService[][] = [];
+  for (let i = 0; i < filtered.length; i += cols) {
+    rows.push(filtered.slice(i, i + cols));
+  }
+
+  // ── TanStack Virtualizer ──
+  const parentRef = useRef<HTMLDivElement>(null);
+  const rowVirtualizer = useWindowVirtualizer({
+    count: rows.length,
+    estimateSize: () => 340,
+    scrollMargin: parentRef.current?.offsetTop ?? 0,
+    overscan: 3,
+  });
+
   function openFilter() { setDraftFilter(activeFilter); setFilterOpen(true); }
   function applyFilter() { setActiveFilter(draftFilter); setFilterOpen(false); }
   function resetDraft() { setDraftFilter(DEFAULT_FILTER); }
-
-  const CATEGORY_ICONS: Record<string, string> = {
-    "Kreatif": "brush",
-    "Konstruksi": "construction",
-    "IT & Digital": "code",
-  };
 
   const FilterPanel = (
     <div className="space-y-6">
@@ -227,7 +317,7 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
           {resolvedSearch && (
             <div className="mb-6 bg-white border border-[#bfc9c3]/30 rounded-xl p-4 flex items-center justify-between shadow-sm">
               <p className="text-sm text-[#404944]">
-                Hasil pencarian: <strong className="text-[#064e3b]">"{resolvedSearch}"</strong>
+                Hasil pencarian: <strong className="text-[#064e3b]">&quot;{resolvedSearch}&quot;</strong>
               </p>
               <Link href="/jasa" className="text-xs font-semibold text-[#ba1a1a] hover:underline">
                 Hapus Pencarian
@@ -248,61 +338,54 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filtered.map((svc) => (
-                <Link
-                  key={svc.id}
-                  href={`/jasa/${svc.slug}`}
-                  className="premium-shadow bg-white rounded-xl overflow-hidden group cursor-pointer block"
+            <>
+              {!mounted ? (
+                /* SSR Fallback: static grid untuk SEO */
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filtered.map((svc) => (
+                    <ServiceCard key={svc.id} svc={svc} />
+                  ))}
+                </div>
+              ) : (
+                /* Virtualized Grid: performa tinggi di client */
+                <div
+                  ref={parentRef}
+                  style={{
+                    height: `${rowVirtualizer.getTotalSize()}px`,
+                    width: "100%",
+                    position: "relative",
+                  }}
                 >
-                  <div className="relative h-48 overflow-hidden bg-[#edeeef]">
-                    {svc.images[0] ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={svc.images[0]}
-                        alt={svc.name}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <span className="material-symbols-outlined text-5xl text-[#bfc9c3]">design_services</span>
+                  {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                    const rowItems = rows[virtualRow.index] || [];
+                    return (
+                      <div
+                        key={virtualRow.key}
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "100%",
+                          height: `${virtualRow.size}px`,
+                          transform: `translateY(${virtualRow.start - rowVirtualizer.options.scrollMargin}px)`,
+                        }}
+                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+                      >
+                        {rowItems.map((svc) => (
+                          <ServiceCard key={svc.id} svc={svc} />
+                        ))}
+                        {/* Placeholder columns agar grid tidak collapse */}
+                        {rowItems.length < cols &&
+                          Array.from({ length: cols - rowItems.length }).map((_, idx) => (
+                            <div key={`empty-${idx}`} className="invisible" />
+                          ))
+                        }
                       </div>
-                    )}
-                    <div className="absolute top-3 left-3 bg-[#064e3b] text-white font-black text-[10px] px-2 py-1 uppercase tracking-tight rounded">
-                      Jasa
-                    </div>
-                  </div>
-                  <div className="p-5">
-                    <div className="flex justify-between items-start mb-1">
-                      <h3 className="text-[#003527] font-semibold text-base leading-tight group-hover:underline line-clamp-2 flex-1">
-                        {svc.name}
-                      </h3>
-                      {svc.rating > 0 && (
-                        <div className="flex items-center gap-1 text-[#003527] flex-shrink-0 ml-2">
-                          <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                          <span className="font-semibold text-sm">{svc.rating.toFixed(1)}</span>
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-[10px] font-medium text-[#707974] uppercase tracking-widest mb-3">
-                      {svc.category?.name ?? "Jasa"}
-                    </p>
-                    <div className="flex justify-between items-end border-t border-[#e1e3e4] pt-3">
-                      <div>
-                        <span className="block text-xs text-[#707974]">Mulai dari</span>
-                        <span className="text-base font-bold text-[#003527]">
-                          {formatRupiah(svc.priceFrom)}
-                          <span className="text-xs font-normal text-[#707974]">/{svc.unit}</span>
-                        </span>
-                      </div>
-                      <span className="bg-[#003527] text-white px-4 py-2 rounded-full font-semibold text-xs">
-                        Lihat Detail
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
         </main>
       </div>
