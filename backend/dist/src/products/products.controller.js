@@ -29,7 +29,11 @@ let ProductsController = class ProductsController {
         return this.productsService.create(mitraId, dto);
     }
     create(req, dto) {
-        return this.productsService.create(req.user.mitraId ?? req.body.mitraId, dto);
+        const mitraId = req.user.mitraId;
+        if (!mitraId) {
+            throw new common_1.BadRequestException('Akun ini belum terdaftar sebagai mitra. Daftarkan toko Anda terlebih dahulu.');
+        }
+        return this.productsService.create(mitraId, dto);
     }
     findAll(search, categoryId, mitraId, minPrice, maxPrice, page, limit) {
         return this.productsService.findAll({

@@ -23,32 +23,42 @@ export type CreateProductInput = {
   warranty?: string;
 };
 
-/** Baca mitraId dari cookie server-side — zero DB query */
-async function getMitraIdFromCookie(): Promise<string> {
+/** Baca JWT token dari cookie server-side */
+async function getTokenFromCookie(): Promise<string> {
   const cookieStore = await cookies();
-  const mitraId = cookieStore.get("mh_mitra_id")?.value;
-  if (!mitraId) {
+  const token = cookieStore.get("mh_token")?.value;
+  if (!token) {
     throw new Error("Session tidak valid. Silakan login ulang.");
   }
-  return mitraId;
+  return token;
+}
+
+/** Header auth standar — ambil token dari cookie, kirim sebagai Bearer */
+async function authHeaders(): Promise<Record<string, string>> {
+  const token = await getTokenFromCookie();
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
 }
 
 /** Jalankan semua revalidation sekaligus — tidak blocking satu per satu */
 function revalidateProductCaches() {
-  revalidateTag("products", "page");
+  revalidateTag("products", { expire: 0 });
   revalidatePath("/dashboard-admin/admin/products", "page");
   revalidatePath("/produk", "page");
   revalidatePath("/", "page");
 }
 
-/** Tambah produk baru ke database via backend API (dari admin dashboard) */
+/** Tambah produk baru ke database via backend API */
 export async function createProduct(data: CreateProductInput) {
-  let mitraId: string;
+  let headers: Record<string, string>;
   try {
-    mitraId = await getMitraIdFromCookie();
+    headers = await authHeaders();
   } catch {
-    // Error ini muncul di client sebagai pesan yang bisa dibaca
-    throw new Error("Session tidak valid. Silakan login ulang ke /dashboard-admin/admin/login");
+    throw new Error(
+      "Session tidak valid. Silakan login ulang ke /dashboard-admin/admin/login"
+    );
   }
 
   const payload = {
@@ -65,21 +75,22 @@ export async function createProduct(data: CreateProductInput) {
 
   let res: Response;
   try {
-    res = await fetch(`${API_URL}/products/admin`, {
+    res = await fetch(`${API_URL}/products`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Mitra-Id": mitraId,
-      },
+      headers,
       body: JSON.stringify(payload),
     });
-  } catch (fetchErr) {
-    throw new Error("Tidak dapat terhubung ke server. Pastikan backend berjalan.");
+  } catch {
+    throw new Error(
+      "Tidak dapat terhubung ke server. Pastikan backend berjalan."
+    );
   }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    const msg = Array.isArray(err.message) ? err.message.join(", ") : err.message;
+    const msg = Array.isArray(err.message)
+      ? err.message.join(", ")
+      : err.message;
     throw new Error(msg ?? `Gagal membuat produk: ${res.status}`);
   }
 
@@ -90,8 +101,18 @@ export async function createProduct(data: CreateProductInput) {
 
 /** Hapus produk dari database via backend API */
 export async function removeProduct(id: string) {
+  let headers: Record<string, string>;
+  try {
+    headers = await authHeaders();
+  } catch {
+    throw new Error(
+      "Session tidak valid. Silakan login ulang ke /dashboard-admin/admin/login"
+    );
+  }
+
   const res = await fetch(`${API_URL}/products/${id}`, {
     method: "DELETE",
+    headers,
   });
 
   if (!res.ok) {
@@ -107,9 +128,18 @@ export async function removeProduct(id: string) {
 
 /** Update produk via backend API */
 export async function editProduct(id: string, data: Partial<CreateProductInput>) {
+  let headers: Record<string, string>;
+  try {
+    headers = await authHeaders();
+  } catch {
+    throw new Error(
+      "Session tidak valid. Silakan login ulang ke /dashboard-admin/admin/login"
+    );
+  }
+
   const res = await fetch(`${API_URL}/products/${id}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(data),
   });
 

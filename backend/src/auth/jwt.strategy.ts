@@ -26,13 +26,22 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: JwtPayload) {
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
-      select: { id: true, email: true, name: true, role: true, isActive: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        isActive: true,
+        mitra: { select: { id: true } },
+      },
     });
 
     if (!user || !user.isActive) {
       throw new UnauthorizedException('Token tidak valid atau akun tidak aktif');
     }
 
-    return user; // injected ke req.user
+    // Inject mitraId langsung ke req.user — 0 query tambahan di controller
+    const { mitra, ...rest } = user;
+    return { ...rest, mitraId: mitra?.id ?? null }; // injected ke req.user
   }
 }

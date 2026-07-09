@@ -5,14 +5,23 @@ import { revalidatePath } from "next/cache";
 
 const API_URL = process.env.API_URL ?? "http://localhost:3001/api";
 
-/** Baca mitraId dari cookie server-side — zero DB query */
-async function getMitraIdFromCookie(): Promise<string> {
+/** Baca JWT token dari cookie server-side */
+async function getTokenFromCookie(): Promise<string> {
   const cookieStore = await cookies();
-  const mitraId = cookieStore.get("mh_mitra_id")?.value;
-  if (!mitraId) {
+  const token = cookieStore.get("mh_token")?.value;
+  if (!token) {
     throw new Error("Session tidak valid. Silakan login ulang.");
   }
-  return mitraId;
+  return token;
+}
+
+/** Header auth standar */
+async function authHeaders(): Promise<Record<string, string>> {
+  const token = await getTokenFromCookie();
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
 }
 
 export interface ApiService {
@@ -83,15 +92,18 @@ export async function fetchServiceById(id: string): Promise<ApiService | null> {
 
 /** Tambah jasa baru dari admin dashboard */
 export async function createService(data: CreateServiceInput): Promise<ApiService> {
-  const mitraId = await getMitraIdFromCookie();
+  let headers: Record<string, string>;
+  try {
+    headers = await authHeaders();
+  } catch {
+    throw new Error(
+      "Session tidak valid. Silakan login ulang ke /dashboard-admin/admin/login"
+    );
+  }
 
-  const res = await fetch(`${API_URL}/services/admin`, {
+  const res = await fetch(`${API_URL}/services`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      // Kirim mitraId via header — backend langsung pakai, 0 DB lookup
-      "X-Mitra-Id": mitraId,
-    },
+    headers,
     body: JSON.stringify({
       name: data.name,
       slug: data.slug,
@@ -122,9 +134,18 @@ export async function editService(
   id: string,
   data: Partial<CreateServiceInput>
 ): Promise<ApiService> {
+  let headers: Record<string, string>;
+  try {
+    headers = await authHeaders();
+  } catch {
+    throw new Error(
+      "Session tidak valid. Silakan login ulang ke /dashboard-admin/admin/login"
+    );
+  }
+
   const res = await fetch(`${API_URL}/services/${id}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(data),
   });
 
@@ -143,7 +164,19 @@ export async function editService(
 
 /** Hapus jasa dari admin dashboard */
 export async function deleteService(id: string): Promise<void> {
-  const res = await fetch(`${API_URL}/services/${id}`, { method: "DELETE" });
+  let headers: Record<string, string>;
+  try {
+    headers = await authHeaders();
+  } catch {
+    throw new Error(
+      "Session tidak valid. Silakan login ulang ke /dashboard-admin/admin/login"
+    );
+  }
+
+  const res = await fetch(`${API_URL}/services/${id}`, {
+    method: "DELETE",
+    headers,
+  });
   if (!res.ok) {
     throw new Error(`Gagal menghapus jasa: ${res.status}`);
   }

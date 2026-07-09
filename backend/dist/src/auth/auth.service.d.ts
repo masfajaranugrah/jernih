@@ -10,11 +10,11 @@ export declare class AuthService {
     register(dto: RegisterDto): Promise<{
         user: {
             id: string;
-            name: string;
-            createdAt: Date;
             email: string;
+            name: string;
             phone: string;
             role: import(".prisma/client").$Enums.Role;
+            createdAt: Date;
         };
         access_token: string;
     }>;
@@ -25,25 +25,25 @@ export declare class AuthService {
                 storeName: string;
             };
             id: string;
-            name: string;
-            createdAt: Date;
             email: string;
+            name: string;
             phone: string | null;
             avatar: string | null;
             role: import(".prisma/client").$Enums.Role;
             isActive: boolean;
+            createdAt: Date;
             updatedAt: Date;
         };
         access_token: string;
     }>;
     getMe(userId: string): Promise<{
         id: string;
-        name: string;
-        createdAt: Date;
         email: string;
+        name: string;
         phone: string;
         avatar: string;
         role: import(".prisma/client").$Enums.Role;
+        createdAt: Date;
         mitra: {
             id: string;
             storeName: string;

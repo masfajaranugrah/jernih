@@ -29,11 +29,17 @@ export class ProductsController {
     return this.productsService.create(mitraId, dto);
   }
 
-  /** POST /api/products (butuh JWT + mitraId dari token) */
+  /** POST /api/products (butuh JWT) — mitraId dari token via JwtStrategy */
   @UseGuards(JwtAuthGuard)
   @Post()
   create(@Request() req: any, @Body() dto: CreateProductDto) {
-    return this.productsService.create(req.user.mitraId ?? req.body.mitraId, dto);
+    const mitraId: string | null = req.user.mitraId;
+    if (!mitraId) {
+      throw new BadRequestException(
+        'Akun ini belum terdaftar sebagai mitra. Daftarkan toko Anda terlebih dahulu.',
+      );
+    }
+    return this.productsService.create(mitraId, dto);
   }
 
   /** GET /api/products?search=&categoryId=&page=&limit= */
