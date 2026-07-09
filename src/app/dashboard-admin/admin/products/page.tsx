@@ -1,13 +1,66 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import DashboardSidebar from "@/app/dashboard-admin/DashboardSidebar";
-import { fetchProducts } from "@/lib/api";
 import ProductsTable from "./ProductsTable";
+import type { ApiProduct } from "@/lib/api";
 
-export const dynamic = "force-dynamic"; // selalu render fresh, tidak di-cache
-export const metadata = { title: "Daftar Produk - Admin Jernih Creatife" };
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
 
-export default async function AdminProductsPage() {
-  const products = await fetchProducts({ limit: 100, noCache: true });
+function StatsCard({ label, value, icon, color }: { label: string; value: number; icon: string; color: string }) {
+  return (
+    <div className="rounded-xl border border-[#e1e3e4] bg-white p-4 shadow-sm">
+      <div className={`flex items-center gap-2 ${color}`}>
+        <span className="material-symbols-outlined text-xl">{icon}</span>
+        <span className="text-2xl font-black">{value}</span>
+      </div>
+      <p className="mt-1 text-xs text-[#707974]">{label}</p>
+    </div>
+  );
+}
+
+function TableSkeleton() {
+  return (
+    <div className="divide-y divide-[#f3f4f5]">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <div key={i} className="flex items-center gap-4 px-6 py-4">
+          <div className="h-12 w-12 rounded-lg bg-[#e1e3e4] animate-pulse shrink-0" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 w-48 rounded bg-[#e1e3e4] animate-pulse" />
+            <div className="h-3 w-24 rounded bg-[#e1e3e4] animate-pulse" />
+          </div>
+          <div className="h-4 w-20 rounded bg-[#e1e3e4] animate-pulse" />
+          <div className="h-6 w-12 rounded-full bg-[#e1e3e4] animate-pulse" />
+          <div className="h-6 w-14 rounded-full bg-[#e1e3e4] animate-pulse" />
+          <div className="flex gap-1">
+            {[1, 2, 3].map((j) => (
+              <div key={j} className="h-8 w-8 rounded-lg bg-[#e1e3e4] animate-pulse" />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function AdminProductsPage() {
+  const { data: products = [], isLoading: loading, isFetching: isRefreshing } = useQuery<ApiProduct[]>({
+    queryKey: ["admin", "products"],
+    queryFn: async () => {
+      const res = await fetch(`${API_URL}/products?limit=100`);
+      if (!res.ok) throw new Error("Gagal mengambil data produk");
+      const json = await res.json();
+      return json.data ?? [];
+    },
+  });
+
+  const stats = [
+    { label: "Total Produk", value: products.length, icon: "inventory_2", color: "text-[#003527]" },
+    { label: "Aktif", value: products.filter((p) => p.isActive).length, icon: "check_circle", color: "text-green-600" },
+    { label: "Stok Habis", value: products.filter((p) => p.stock === 0).length, icon: "warning", color: "text-[#ba1a1a]" },
+    { label: "Kategori", value: new Set(products.map((p) => p.categoryId)).size, icon: "category", color: "text-[#575e70]" },
+  ];
 
   return (
     <div className="min-h-screen bg-[#f8f9fa]">
@@ -21,9 +74,12 @@ export default async function AdminProductsPage() {
       <div className="lg:ml-64 min-h-screen flex flex-col pb-24 lg:pb-0">
         {/* Top bar */}
         <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-[#e1e3e4] bg-white/90 px-6 shadow-sm backdrop-blur">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[#003527]">inventory_2</span>
             <h1 className="text-[#003527] font-bold text-lg">Manajemen Produk</h1>
+            {isRefreshing && (
+              <span className="text-[10px] text-[#707974] animate-pulse ml-1">memperbarui...</span>
+            )}
           </div>
           <Link
             href="/dashboard-admin/admin/products/new"
@@ -38,35 +94,37 @@ export default async function AdminProductsPage() {
         <main className="p-6">
           {/* Stats */}
           <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {[
-              { label: "Total Produk", value: products.length, icon: "inventory_2", color: "text-[#003527]" },
-              { label: "Aktif", value: products.filter((p) => p.isActive).length, icon: "check_circle", color: "text-green-600" },
-              { label: "Stok Habis", value: products.filter((p) => p.stock === 0).length, icon: "warning", color: "text-[#ba1a1a]" },
-              { label: "Kategori", value: new Set(products.map((p) => p.categoryId)).size, icon: "category", color: "text-[#575e70]" },
-            ].map((s) => (
-              <div key={s.label} className="rounded-xl border border-[#e1e3e4] bg-white p-4 shadow-sm">
-                <div className={`flex items-center gap-2 ${s.color}`}>
-                  <span className="material-symbols-outlined text-xl">{s.icon}</span>
-                  <span className="text-2xl font-black">{s.value}</span>
-                </div>
-                <p className="mt-1 text-xs text-[#707974]">{s.label}</p>
-              </div>
-            ))}
+            {loading
+              ? [1, 2, 3, 4].map((i) => (
+                  <div key={i} className="rounded-xl border border-[#e1e3e4] bg-white p-4 shadow-sm">
+                    <div className="h-8 w-16 rounded bg-[#e1e3e4] animate-pulse mb-2" />
+                    <div className="h-3 w-24 rounded bg-[#e1e3e4] animate-pulse" />
+                  </div>
+                ))
+              : stats.map((s) => <StatsCard key={s.label} {...s} />)
+            }
           </div>
 
           {/* Tabel */}
           <div className="rounded-xl border border-[#e1e3e4] bg-white shadow-sm overflow-hidden">
             <div className="flex items-center justify-between border-b border-[#e1e3e4] px-6 py-4">
-              <h2 className="font-semibold text-[#191c1d]">Semua Produk ({products.length})</h2>
+              <h2 className="font-semibold text-[#191c1d]">
+                {loading ? (
+                  <span className="inline-block h-5 w-40 rounded bg-[#e1e3e4] animate-pulse" />
+                ) : (
+                  `Semua Produk (${products.length})`
+                )}
+              </h2>
             </div>
 
-            {products.length === 0 ? (
+            {loading ? (
+              <TableSkeleton />
+            ) : products.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <span className="material-symbols-outlined text-6xl text-[#bfc9c3] mb-4">inventory_2</span>
                 <p className="font-semibold text-[#404944]">Belum ada produk</p>
                 <p className="mt-1 text-sm text-[#707974]">Klik &quot;Tambah Produk&quot; untuk mulai menambahkan</p>
-                <Link href="/dashboard-admin/admin/products/new"
-                  prefetch={false}
+                <Link href="/dashboard-admin/admin/products/new" prefetch={false}
                   className="mt-4 rounded-lg bg-[#064e3b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#043b2d] transition-colors">
                   + Tambah Produk Pertama
                 </Link>

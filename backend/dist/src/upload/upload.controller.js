@@ -18,7 +18,7 @@ const platform_express_1 = require("@nestjs/platform-express");
 const multer_1 = require("multer");
 const path_1 = require("path");
 const fs_1 = require("fs");
-const uploadDir = (0, path_1.join)(__dirname, '..', '..', 'public', 'uploads');
+const uploadDir = (0, path_1.join)(process.cwd(), 'public', 'uploads');
 if (!(0, fs_1.existsSync)(uploadDir)) {
     (0, fs_1.mkdirSync)(uploadDir, { recursive: true });
 }

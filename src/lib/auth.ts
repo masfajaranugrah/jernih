@@ -31,3 +31,11 @@ export function removeToken() {
 export function isLoggedIn(): boolean {
   return !!getToken();
 }
+
+/** Session expired — hapus token dan redirect ke login */
+export function handleSessionExpired() {
+  removeToken();
+  // Simpan pesan di sessionStorage supaya halaman login bisa tampilkan notif
+  sessionStorage.setItem("auth_expired", "1");
+  window.location.href = "/dashboard-admin/admin/login";
+}

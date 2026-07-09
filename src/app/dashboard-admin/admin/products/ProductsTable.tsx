@@ -1,40 +1,40 @@
 "use client";
 
-import { useState, useOptimistic, useTransition } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { removeProduct } from "@/lib/product-actions";
+import { handleSessionExpired } from "@/lib/auth";
 import { formatRupiah, type ApiProduct } from "@/lib/api";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function ProductsTable({ products }: { products: ApiProduct[] }) {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const queryClient = useQueryClient();
   const [confirmId, setConfirmId] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // Optimistic state — langsung hilang dari list saat delete diklik
-  const [optimisticProducts, removeOptimistic] = useOptimistic(
-    products,
-    (current, idToRemove: string) => current.filter((p) => p.id !== idToRemove),
-  );
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const token = document.cookie.split("; ").find(r => r.startsWith("mh_token="))?.split("=")[1] ?? "";
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api"}/products/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401) {
+        handleSessionExpired();
+        throw new Error("Session expired");
+      }
+      if (!res.ok) {
+        throw new Error("Gagal menghapus produk");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
+    },
+  });
 
-  const confirmProduct = optimisticProducts.find((p) => p.id === confirmId);
+  const confirmProduct = products.find((p) => p.id === confirmId);
 
   function handleDelete(id: string) {
-    setDeletingId(id);
     setConfirmId(null);
-    startTransition(async () => {
-      removeOptimistic(id); // ← langsung hilang dari UI
-      try {
-        await removeProduct(id);
-        router.refresh(); // sync di background
-      } catch {
-        // kalau gagal, router.refresh() akan restore data asli
-        router.refresh();
-      } finally {
-        setDeletingId(null);
-      }
-    });
+    deleteMutation.mutate(id);
   }
 
   return (
@@ -52,7 +52,7 @@ export default function ProductsTable({ products }: { products: ApiProduct[] }) 
             </tr>
           </thead>
           <tbody className="divide-y divide-[#f3f4f5]">
-            {optimisticProducts.map((product) => (
+            {products.map((product) => (
               <tr key={product.id} className="hover:bg-[#f8f9fa] transition-colors">
                 {/* Produk */}
                 <td className="px-6 py-4">
@@ -117,13 +117,13 @@ export default function ProductsTable({ products }: { products: ApiProduct[] }) 
                     >
                       <span className="material-symbols-outlined text-base">open_in_new</span>
                     </Link>
-                    <button
-                      onClick={() => router.push(`/dashboard-admin/admin/products/${product.id}`)}
+                    <Link
+                      href={`/dashboard-admin/admin/products/${product.id}`}
                       className="rounded-lg p-2 text-[#707974] hover:bg-[#e8f0fe] hover:text-[#1a73e8] transition-colors"
                       title="Edit produk"
                     >
                       <span className="material-symbols-outlined text-base">edit</span>
-                    </button>
+                    </Link>
                     <button
                       onClick={() => setConfirmId(product.id)}
                       title="Hapus produk"
@@ -166,10 +166,9 @@ export default function ProductsTable({ products }: { products: ApiProduct[] }) 
               </button>
               <button
                 onClick={() => handleDelete(confirmId)}
-                disabled={isPending && deletingId === confirmId}
-                className="flex-1 rounded-xl bg-[#ba1a1a] py-2.5 text-sm font-semibold text-white hover:bg-[#93000a] transition-colors disabled:opacity-60"
+                className="flex-1 rounded-xl bg-[#ba1a1a] py-2.5 text-sm font-semibold text-white hover:bg-[#93000a] transition-colors"
               >
-                {isPending && deletingId === confirmId ? "Menghapus..." : "Ya, Hapus"}
+                Ya, Hapus
               </button>
             </div>
           </div>

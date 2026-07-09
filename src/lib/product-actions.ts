@@ -106,14 +106,14 @@ export async function createProduct(
 }
 
 /** Hapus produk dari database via backend API */
-export async function removeProduct(id: string) {
+export async function removeProduct(
+  id: string
+): Promise<{ success: true } | { success: false; error: string }> {
   let headers: Record<string, string>;
   try {
     headers = await authHeaders();
   } catch {
-    throw new Error(
-      "Session tidak valid. Silakan login ulang ke /dashboard-admin/admin/login"
-    );
+    return { success: false, error: "Session tidak valid. Silakan login ulang." };
   }
 
   const res = await fetch(`${API_URL}/products/${id}`, {
@@ -122,25 +122,25 @@ export async function removeProduct(id: string) {
   });
 
   if (!res.ok) {
+    if (res.status === 401) return { success: false, error: "Session telah berakhir. Silakan login ulang." };
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.message ?? `Gagal menghapus produk: ${res.status}`);
+    return { success: false, error: err.message ?? `Gagal menghapus produk: ${res.status}` };
   }
 
   revalidateProductCaches();
-
-  const text = await res.text();
-  return text ? JSON.parse(text) : { success: true };
+  return { success: true };
 }
 
 /** Update produk via backend API */
-export async function editProduct(id: string, data: Partial<CreateProductInput>) {
+export async function editProduct(
+  id: string,
+  data: Partial<CreateProductInput>
+): Promise<{ success: true; data: unknown } | { success: false; error: string }> {
   let headers: Record<string, string>;
   try {
     headers = await authHeaders();
   } catch {
-    throw new Error(
-      "Session tidak valid. Silakan login ulang ke /dashboard-admin/admin/login"
-    );
+    return { success: false, error: "Session tidak valid. Silakan login ulang." };
   }
 
   const res = await fetch(`${API_URL}/products/${id}`, {
@@ -150,11 +150,13 @@ export async function editProduct(id: string, data: Partial<CreateProductInput>)
   });
 
   if (!res.ok) {
+    if (res.status === 401) return { success: false, error: "Session telah berakhir. Silakan login ulang." };
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.message ?? `Gagal mengupdate produk: ${res.status}`);
+    const msg = Array.isArray(err.message) ? err.message.join(", ") : (err.message ?? `Gagal mengupdate produk: ${res.status}`);
+    return { success: false, error: msg };
   }
 
   const result = await res.json();
   revalidateProductCaches();
-  return result;
+  return { success: true, data: result };
 }

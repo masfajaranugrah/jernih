@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { setToken } from "@/lib/auth";
 
@@ -13,6 +13,14 @@ export default function AdminLoginPage() {
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  useEffect(() => {
+    if (sessionStorage.getItem("auth_expired") === "1") {
+      sessionStorage.removeItem("auth_expired");
+      setSessionExpired(true);
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -78,6 +86,16 @@ export default function AdminLoginPage() {
               Jernih Creatife — Akses Terbatas
             </p>
           </div>
+
+          {/* Session Expired Banner */}
+          {sessionExpired && (
+            <div className="mb-5 bg-amber-500/10 border border-amber-500/30 rounded-lg px-4 py-3 flex items-start gap-2">
+              <svg className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-amber-300 text-sm">Sesi Anda telah berakhir. Silakan login ulang untuk melanjutkan.</p>
+            </div>
+          )}
 
           {/* Error Alert */}
           {error && (

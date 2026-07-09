@@ -4,7 +4,9 @@ import { useState, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { getCategoryOptions } from "@/lib/categories";
 import { editProduct } from "@/lib/product-actions";
+import { handleSessionExpired } from "@/lib/auth";
 import type { ApiProduct } from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
 
 const categoryOptions = getCategoryOptions();
 
@@ -26,6 +28,7 @@ const inputCls =
 
 export default function EditProductForm({ product }: { product: ApiProduct }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [isPending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -46,6 +49,8 @@ export default function EditProductForm({ product }: { product: ApiProduct }) {
     return match ? match[1] : "";
   });
   const [imageUrls, setImageUrls] = useState<string[]>(product.images ?? []);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [pendingPreviews, setPendingPreviews] = useState<string[]>([]);
   const [imageInput, setImageInput] = useState("");
   const [dragActive, setDragActive] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -73,30 +78,24 @@ export default function EditProductForm({ product }: { product: ApiProduct }) {
     e.preventDefault();
     setDragActive(false);
     const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/"));
-    if (files.length) { handleFileUpload(files); return; }
+    if (files.length) { addPendingFiles(files); return; }
     const text = e.dataTransfer.getData("text/plain").trim();
     if (text.startsWith("http")) {
       setImageUrls((prev) => [...prev, text]);
     }
   }
 
-  async function handleFileUpload(files: File[]) {
+  function addPendingFiles(files: File[]) {
     if (!files.length) return;
-    setUploadingImages(true);
-    try {
-      const formData = new FormData();
-      files.forEach((f) => formData.append("files", f));
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
-      if (!res.ok) throw new Error("Upload gagal");
-      const data = await res.json();
-      const urls: string[] = data.urls ?? [];
-      if (urls.length) setImageUrls((prev) => [...prev, ...urls]);
-    } catch {
-      setError("Upload gambar gagal. Coba lagi.");
-    } finally {
-      setUploadingImages(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
+    const previews = files.map((f) => URL.createObjectURL(f));
+    setPendingFiles((prev) => [...prev, ...files]);
+    setPendingPreviews((prev) => [...prev, ...previews]);
+  }
+
+  function removePending(index: number) {
+    URL.revokeObjectURL(pendingPreviews[index]);
+    setPendingFiles((prev) => prev.filter((_, i) => i !== index));
+    setPendingPreviews((prev) => prev.filter((_, i) => i !== index));
   }
 
   // ── Submit ──────────────────────────────────────────────────────────────────
@@ -114,12 +113,38 @@ export default function EditProductForm({ product }: { product: ApiProduct }) {
 
     startTransition(async () => {
       try {
+        // Upload pending files dulu baru simpan
+        let finalImageUrls = [...imageUrls];
+
+        if (pendingFiles.length > 0) {
+          setUploadingImages(true);
+          try {
+            const formData = new FormData();
+            pendingFiles.forEach((f) => formData.append("files", f));
+            const res = await fetch("/api/upload", { method: "POST", body: formData });
+            if (!res.ok) throw new Error("Upload gagal");
+            const data = await res.json();
+            const uploadedUrls: string[] = data.urls ?? [];
+            finalImageUrls = [...finalImageUrls, ...uploadedUrls];
+            // Cleanup blob URLs
+            pendingPreviews.forEach((p) => URL.revokeObjectURL(p));
+            setPendingFiles([]);
+            setPendingPreviews([]);
+          } catch {
+            setError("Upload gambar gagal. Coba lagi.");
+            setUploadingImages(false);
+            return;
+          } finally {
+            setUploadingImages(false);
+          }
+        }
+
         // Sisipkan badge ke awal description
         const descWithBadge = badge
           ? `[badge:${badge}] ${description.replace(/^\[badge:[A-Z0-9]+\]\s*/, "")}`
           : description.replace(/^\[badge:[A-Z0-9]+\]\s*/, "");
 
-        await editProduct(product.id, {
+        const result = await editProduct(product.id, {
           name: name.trim(),
           slug: toSlug(name),
           categoryId: categoryId || undefined,
@@ -127,9 +152,21 @@ export default function EditProductForm({ product }: { product: ApiProduct }) {
           price: Number(price),
           oldPrice: oldPrice ? Number(oldPrice) : undefined,
           stock: Number(stock) || 0,
-          images: imageUrls,
+          images: finalImageUrls,
           isActive,
         });
+
+        if (!result.success) {
+          if (result.error.includes("Session") || result.error.includes("login ulang")) {
+            handleSessionExpired();
+            return;
+          }
+          setError(result.error);
+          return;
+        }
+
+        queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
+        queryClient.invalidateQueries({ queryKey: ["admin", "product", product.id] });
         router.push("/dashboard-admin/admin/products");
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Gagal menyimpan produk");
@@ -164,10 +201,10 @@ export default function EditProductForm({ product }: { product: ApiProduct }) {
           </button>
           <button
             type="submit"
-            disabled={isPending}
+            disabled={isPending || uploadingImages}
             className="rounded-lg bg-[#064e3b] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#043b2d] disabled:opacity-60 disabled:translate-y-0"
           >
-            {isPending ? "Menyimpan..." : "Simpan Perubahan"}
+            {uploadingImages ? "Mengupload gambar..." : isPending ? "Menyimpan..." : "Simpan Perubahan"}
           </button>
         </div>
       </div>
@@ -326,12 +363,18 @@ export default function EditProductForm({ product }: { product: ApiProduct }) {
               </p>
               <p className="mt-1 text-[10px] text-[#707974]">PNG, JPG hingga 10MB</p>
               <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden"
-                onChange={(e) => handleFileUpload(Array.from(e.target.files ?? []))}
+                onChange={(e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  if (!files.length) return;
+                  addPendingFiles(files);
+                  if (fileInputRef.current) fileInputRef.current.value = "";
+                }}
               />
             </div>
 
-            {imageUrls.length > 0 && (
+            {(imageUrls.length > 0 || pendingPreviews.length > 0) && (
               <div className="mt-4 grid grid-cols-3 gap-2">
+                {/* Gambar sudah tersimpan */}
                 {imageUrls.map((url, i) => (
                   <div key={url} className="group relative aspect-square overflow-hidden rounded-lg border border-[#e1e3e4] bg-[#edeeef]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -340,16 +383,36 @@ export default function EditProductForm({ product }: { product: ApiProduct }) {
                       className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100">
                       <svg viewBox="0 0 24 24" className="h-3 w-3 fill-current"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
                     </button>
-                    {i === 0 && (
+                    {i === 0 && pendingPreviews.length === 0 && (
                       <span className="absolute bottom-1 left-1 rounded bg-[#064e3b] px-1.5 py-0.5 text-[9px] font-bold text-white">Utama</span>
                     )}
                   </div>
                 ))}
-                {imageUrls.length < 6 && Array.from({ length: Math.min(3 - (imageUrls.length % 3), 3) }).map((_, i) => (
-                  <div key={`empty-${i}`} className="aspect-square rounded-lg border border-dashed border-[#bfc9c3] bg-[#edeeef] flex items-center justify-center">
-                    <span className="material-symbols-outlined text-[#bfc9c3] text-xl">add</span>
+
+                {/* Gambar pending — belum diupload, hanya preview lokal */}
+                {pendingPreviews.map((preview, i) => (
+                  <div key={preview} className="group relative aspect-square overflow-hidden rounded-lg border-2 border-dashed border-[#064e3b]/40 bg-[#edeeef]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={preview} alt={`pending-${i}`} className="h-full w-full object-cover opacity-80" />
+                    <button type="button" onClick={() => removePending(i)}
+                      className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100">
+                      <svg viewBox="0 0 24 24" className="h-3 w-3 fill-current"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                    </button>
+                    {imageUrls.length === 0 && i === 0 && (
+                      <span className="absolute bottom-1 left-1 rounded bg-[#064e3b] px-1.5 py-0.5 text-[9px] font-bold text-white">Utama</span>
+                    )}
+                    <span className="absolute top-1 left-1 rounded bg-amber-500 px-1.5 py-0.5 text-[9px] font-bold text-white">Pending</span>
                   </div>
                 ))}
+
+                {/* Slot kosong */}
+                {(imageUrls.length + pendingPreviews.length) < 6 &&
+                  Array.from({ length: Math.min(3 - ((imageUrls.length + pendingPreviews.length) % 3), 3) }).map((_, i) => (
+                    <div key={`empty-${i}`} className="aspect-square rounded-lg border border-dashed border-[#bfc9c3] bg-[#edeeef] flex items-center justify-center">
+                      <span className="material-symbols-outlined text-[#bfc9c3] text-xl">add</span>
+                    </div>
+                  ))
+                }
               </div>
             )}
           </section>
@@ -449,9 +512,9 @@ export default function EditProductForm({ product }: { product: ApiProduct }) {
           className="flex-1 rounded-lg border border-[#bfc9c3] py-3 text-sm font-semibold text-[#191c1d]">
           Batal
         </button>
-        <button type="submit" disabled={isPending}
+        <button type="submit" disabled={isPending || uploadingImages}
           className="flex-1 rounded-lg bg-[#064e3b] py-3 text-sm font-semibold text-white disabled:opacity-60">
-          {isPending ? "Menyimpan..." : "Simpan"}
+          {uploadingImages ? "Mengupload..." : isPending ? "Menyimpan..." : "Simpan"}
         </button>
       </div>
     </form>

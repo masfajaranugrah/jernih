@@ -10,8 +10,10 @@ import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 
-// Gunakan path absolut relatif ke root project (bukan dist/)
-const uploadDir = join(__dirname, '..', '..', 'public', 'uploads');
+// Gunakan process.cwd() = root project, bukan __dirname (yang berubah di dist/)
+// Ini memastikan direktori uploads selalu di /project-root/public/uploads
+// dan tidak hilang saat npm run build
+const uploadDir = join(process.cwd(), 'public', 'uploads');
 if (!existsSync(uploadDir)) {
   mkdirSync(uploadDir, { recursive: true });
 }

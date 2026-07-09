@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { getCategoryOptions } from "@/lib/categories";
 import { createProduct } from "@/lib/product-actions";
+import { handleSessionExpired } from "@/lib/auth";
 import { useToast } from "@/app/dashboard-admin/components/Toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 const categoryOptions = getCategoryOptions();
 
@@ -27,6 +29,7 @@ const inputCls =
 
 export default function AddProductForm() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [isPending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { success, error: toastError } = useToast();
@@ -144,11 +147,16 @@ export default function AddProductForm() {
       });
 
       if (!result.success) {
+        if (result.error.includes("Session") || result.error.includes("login ulang")) {
+          handleSessionExpired();
+          return;
+        }
         toastError("Gagal menyimpan produk", result.error);
         return;
       }
 
       success("Produk berhasil disimpan!", `"${name.trim()}" telah ditambahkan ke katalog.`);
+      queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
       router.push("/dashboard-admin/admin/products");
     });
   }
