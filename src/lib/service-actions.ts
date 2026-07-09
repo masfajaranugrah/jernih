@@ -1,7 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 
 const API_URL = process.env.API_URL ?? "http://localhost:3001/api";
 
@@ -122,6 +122,7 @@ export async function createService(data: CreateServiceInput): Promise<ApiServic
     throw new Error(msg ?? `Gagal membuat jasa: ${res.status}`);
   }
 
+  updateTag("services");
   revalidatePath("/dashboard-admin/admin/services");
   revalidatePath("/jasa");
   revalidatePath("/");
@@ -155,6 +156,7 @@ export async function editService(
     throw new Error(msg ?? `Gagal mengupdate jasa: ${res.status}`);
   }
 
+  updateTag("services");
   revalidatePath("/dashboard-admin/admin/services");
   revalidatePath("/jasa");
   revalidatePath("/");
@@ -180,6 +182,7 @@ export async function deleteService(id: string): Promise<void> {
   if (!res.ok) {
     throw new Error(`Gagal menghapus jasa: ${res.status}`);
   }
+  updateTag("services");
   revalidatePath("/dashboard-admin/admin/services");
   revalidatePath("/jasa");
   revalidatePath("/");

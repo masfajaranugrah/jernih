@@ -1,7 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 
 const API_URL = process.env.API_URL ?? "http://localhost:3001/api";
 
@@ -44,6 +44,7 @@ async function authHeaders(): Promise<Record<string, string>> {
 
 /** Jalankan semua revalidation sekaligus */
 function revalidateProductCaches() {
+  updateTag("products");
   revalidatePath("/dashboard-admin/admin/products", "page");
   revalidatePath("/produk", "page");
   revalidatePath("/", "page");

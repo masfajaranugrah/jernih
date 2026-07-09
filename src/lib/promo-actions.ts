@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 
 const API_URL = process.env.API_URL ?? "http://localhost:3001/api";
 
@@ -141,6 +141,7 @@ export async function createPromo(
   const newCard: PromoCard = { ...data, id: `promo-${Date.now()}` };
   const updated = [...existing, newCard];
   const saved = await savePromoCards(updated, token);
+  updateTag("promos");
   revalidatePath("/dashboard-admin/admin/promo");
   revalidatePath("/");
   return saved;
@@ -153,6 +154,7 @@ export async function removePromo(
   const existing = await getPromoCardsFromBackend();
   const updated = existing.filter((p) => p.id !== id);
   const saved = await savePromoCards(updated, token);
+  updateTag("promos");
   revalidatePath("/dashboard-admin/admin/promo");
   revalidatePath("/");
   return saved;
