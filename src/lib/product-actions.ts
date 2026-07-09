@@ -22,6 +22,15 @@ export type CreateProductInput = {
   warranty?: string;
 };
 
+/** Jalankan semua revalidation sekaligus — tidak blocking satu per satu */
+function revalidateProductCaches() {
+  revalidateTag("products");
+  // revalidatePath tidak bisa di-await jadi cukup dipanggil bersamaan
+  revalidatePath("/dashboard-admin/admin/products");
+  revalidatePath("/produk");
+  revalidatePath("/");
+}
+
 /** Tambah produk baru ke database via backend API (dari admin dashboard) */
 export async function createProduct(data: CreateProductInput) {
   const payload = {
@@ -47,12 +56,9 @@ export async function createProduct(data: CreateProductInput) {
     throw new Error(err.message ?? `Gagal membuat produk: ${res.status}`);
   }
 
-  revalidateTag("products", "max");
-  revalidatePath("/dashboard-admin/admin/products");
-  revalidatePath("/produk");
-  revalidatePath("/");
-
-  return res.json();
+  const result = await res.json();
+  revalidateProductCaches();
+  return result;
 }
 
 /** Hapus produk dari database via backend API */
@@ -66,10 +72,7 @@ export async function removeProduct(id: string) {
     throw new Error(err.message ?? `Gagal menghapus produk: ${res.status}`);
   }
 
-  revalidateTag("products", "max");
-  revalidatePath("/dashboard-admin/admin/products");
-  revalidatePath("/produk");
-  revalidatePath("/");
+  revalidateProductCaches();
 
   // DELETE endpoint kadang return 204 No Content (body kosong)
   const text = await res.text();
@@ -89,10 +92,7 @@ export async function editProduct(id: string, data: Partial<CreateProductInput>)
     throw new Error(err.message ?? `Gagal mengupdate produk: ${res.status}`);
   }
 
-  revalidateTag("products", "max");
-  revalidatePath("/dashboard-admin/admin/products");
-  revalidatePath("/produk");
-  revalidatePath("/");
-
-  return res.json();
+  const result = await res.json();
+  revalidateProductCaches();
+  return result;
 }

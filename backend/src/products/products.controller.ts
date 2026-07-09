@@ -13,11 +13,13 @@ export class ProductsController {
 
   /**
    * POST /api/products/admin
-   * Tambah produk dari dashboard admin — tanpa JWT, mitraId otomatis dari admin
+   * Tambah produk dari dashboard admin.
+   * mitraId selalu Jernih Creatife Official Store — diambil dari cache service,
+   * tidak ada lookup DB ekstra. Satu request = satu INSERT saja.
    */
   @Post('admin')
-  createFromAdmin(@Body() body: CreateProductDto & { mitraId?: string }) {
-    return this.productsService.createFromAdmin(body);
+  createForAdmin(@Body() dto: CreateProductDto) {
+    return this.productsService.createForAdmin(dto);
   }
 
   /** POST /api/products (butuh JWT + mitraId dari token) */
@@ -55,13 +57,13 @@ export class ProductsController {
     return this.productsService.findOne(id);
   }
 
-  /** PATCH /api/products/:id — admin only, no JWT needed (protected by frontend middleware) */
+  /** PATCH /api/products/:id — admin only, dilindungi middleware frontend */
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateProductDto) {
     return this.productsService.update(id, dto);
   }
 
-  /** DELETE /api/products/:id — admin only, no JWT needed (protected by frontend middleware) */
+  /** DELETE /api/products/:id — admin only, dilindungi middleware frontend */
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.productsService.remove(id);

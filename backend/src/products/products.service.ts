@@ -1,25 +1,87 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 
 @Injectable()
-export class ProductsService {
+export class ProductsService implements OnModuleInit {
+  private readonly logger = new Logger(ProductsService.name);
+
+  /**
+   * mitraId mitra admin (Jernih Creatife Official Store).
+   * Di-resolve SEKALI saat module init — tidak ada DB query ulang tiap request.
+   *
+   * Prioritas resolusi:
+   *   1. env ADMIN_MITRA_ID  → langsung pakai, 0 DB query
+   *   2. storeName lookup    → query 1x ke DB lalu cache di memory
+   */
+  private adminMitraId: string | null = null;
+
   constructor(private prisma: PrismaService) {}
 
+  async onModuleInit() {
+    // ── Coba dari env dulu (zero DB query) ──────────────────────────────────
+    const envId = process.env.ADMIN_MITRA_ID?.trim();
+    if (envId) {
+      this.adminMitraId = envId;
+      this.logger.log(`✓ adminMitraId dari env: ${envId}`);
+      return;
+    }
+
+    // ── Fallback: lookup sekali dari DB lalu tulis log supaya bisa copy-paste ─
+    try {
+      const mitra = await this.prisma.mitra.findFirst({
+        where: { storeName: 'Eccomarket Official' },
+        select: { id: true },
+      });
+
+      if (mitra) {
+        this.adminMitraId = mitra.id;
+        this.logger.warn(
+          `ADMIN_MITRA_ID tidak ada di .env — ditemukan dari DB: "${mitra.id}". ` +
+          `Tambahkan ADMIN_MITRA_ID=${mitra.id} ke backend/.env agar startup lebih cepat.`,
+        );
+      } else {
+        this.logger.error(
+          'Mitra "Eccomarket Official" tidak ditemukan di DB. ' +
+          'Jalankan seed terlebih dahulu: cd backend && npx prisma db seed',
+        );
+      }
+    } catch (err) {
+      this.logger.error('Gagal lookup adminMitraId saat startup:', err);
+    }
+  }
+
+  // ── Helper: ambil adminMitraId atau lempar error jelas ─────────────────────
+  private getAdminMitraId(): string {
+    if (!this.adminMitraId) {
+      throw new InternalServerErrorException(
+        'Mitra admin belum dikonfigurasi. Pastikan seed sudah dijalankan dan ' +
+        'ADMIN_MITRA_ID ada di backend/.env.',
+      );
+    }
+    return this.adminMitraId;
+  }
+
+  // ── create: simpan produk ke mitra manapun (dipakai internal) ──────────────
   async create(mitraId: string, dto: CreateProductDto) {
     try {
       return await this.prisma.product.create({
         data: { mitraId, ...dto },
       });
     } catch (err: any) {
-      // PostgreSQL numeric overflow (code 22003)
       if (err?.message?.includes('numeric field overflow') || err?.code === '22003') {
         throw new BadRequestException(
           'Harga yang dimasukkan terlalu besar. Maksimum harga adalah Rp 9.999.999.999',
         );
       }
-      // Slug duplicate (unique constraint)
       if (err?.code === 'P2002') {
         throw new BadRequestException('Slug produk sudah digunakan, gunakan nama yang berbeda.');
       }
@@ -28,50 +90,13 @@ export class ProductsService {
   }
 
   /**
-   * Tambah produk dari dashboard admin.
-   * Otomatis cari user ADMIN + mitra-nya. Kalau belum ada mitra, buat otomatis.
+   * createForAdmin — dipakai oleh endpoint POST /products/admin.
+   * Selalu pakai mitraId dari cache (Jernih Creatife Official Store).
+   * Tidak ada DB query tambahan selain insert product itu sendiri.
    */
-  async createFromAdmin(dto: CreateProductDto & { mitraId?: string }) {
-    // Kalau mitraId sudah dikirim langsung, pakai itu
-    if (dto.mitraId) {
-      const { mitraId, ...productData } = dto;
-      return this.create(mitraId, productData);
-    }
-
-    // Cari user admin pertama yang punya mitra
-    let mitra = await this.prisma.mitra.findFirst({
-      where: { user: { role: 'ADMIN' } },
-    });
-
-    // Kalau belum ada, cari/buat user ADMIN dulu lalu buat mitranya
-    if (!mitra) {
-      let adminUser = await this.prisma.user.findFirst({
-        where: { role: 'ADMIN' },
-      });
-
-      if (!adminUser) {
-        // Buat admin user default kalau belum ada
-        adminUser = await this.prisma.user.create({
-          data: {
-            email: 'admin@eccomarket.id',
-            password: 'hashed-placeholder',
-            name: 'Admin Eccomarket',
-            role: 'ADMIN',
-          },
-        });
-      }
-
-      mitra = await this.prisma.mitra.create({
-        data: {
-          userId: adminUser.id,
-          storeName: 'Eccomarket Official',
-          isVerified: true,
-          isActive: true,
-        },
-      });
-    }
-
-    return this.create(mitra.id, dto);
+  async createForAdmin(dto: CreateProductDto) {
+    const mitraId = this.getAdminMitraId();
+    return this.create(mitraId, dto);
   }
 
   async findAll(query?: {
