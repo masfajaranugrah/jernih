@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { getHeroDataFromBackend } from "@/lib/hero-store";
 import HeroEditor from "./HeroEditor";
 

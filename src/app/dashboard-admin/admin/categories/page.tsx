@@ -2,6 +2,7 @@ import DashboardSidebar from "@/app/dashboard-admin/DashboardSidebar";
 import CategoriesAdminClient from "./CategoriesAdminClient";
 import { getCategories } from "@/lib/category-actions";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "Manajemen Kategori - Admin Jernih Creatife" };
 
 export default async function AdminCategoriesPage() {

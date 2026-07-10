@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import Link from "next/link";
 import DashboardSidebar from "@/app/dashboard-admin/DashboardSidebar";
 import PromoEditor from "./PromoEditor";
