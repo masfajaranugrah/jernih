@@ -1,9 +1,8 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import { useQuery } from "@tanstack/react-query";
 import { formatRupiah, type ApiProduct } from "@/lib/api";
 
@@ -42,7 +41,7 @@ function ProductCard({ product }: { product: ApiProduct }) {
   return (
     <Link
       href={`/produk/${product.slug}`}
-      className="group flex min-h-full flex-col overflow-hidden rounded-2xl border border-[#bfc9c3]/40 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#bfc9c3]/40 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
     >
       <div className="relative aspect-square overflow-hidden bg-[#edeeef]">
         <Image
@@ -80,7 +79,6 @@ function ProductCard({ product }: { product: ApiProduct }) {
   );
 }
 
-// Skeleton Card
 function SkeletonCard() {
   return (
     <div className="flex flex-col overflow-hidden rounded-2xl border border-[#bfc9c3]/40 bg-white shadow-sm">
@@ -97,9 +95,7 @@ function SkeletonCard() {
 
 export default function ProductSectionClient() {
   const [isMobile, setIsMobile] = useState(true);
-  const parentRef = useRef<HTMLDivElement>(null);
 
-  // TanStack Query — real-time, no cache
   const { data, isPending } = useQuery({
     queryKey: ["storefront-products"],
     queryFn: () => fetchProductsClient(8),
@@ -113,14 +109,6 @@ export default function ProductSectionClient() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  const rowVirtualizer = useVirtualizer({
-    horizontal: true,
-    count: products.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 172,
-    overscan: 2,
-  });
 
   if (isPending) {
     return (
@@ -136,33 +124,25 @@ export default function ProductSectionClient() {
 
   if (products.length === 0) return null;
 
+  // Mobile: simple horizontal scroll — no virtualizer to avoid height-collapse bugs
   if (isMobile) {
     return (
       <div
-        ref={parentRef}
-        className="mt-5 -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide relative"
+        className="mt-5 -mx-4 flex gap-3 overflow-x-auto px-4 pb-3"
         style={{ WebkitOverflowScrolling: "touch" }}
       >
-        <div style={{ width: `${rowVirtualizer.getTotalSize()}px`, height: "100%", position: "relative", display: "flex" }}>
-          {rowVirtualizer.getVirtualItems().map((virtualItem) => {
-            const product = products[virtualItem.index];
-            return (
-              <div
-                key={virtualItem.key}
-                style={{ position: "absolute", top: 0, left: 0, width: "160px", transform: `translateX(${virtualItem.start}px)` }}
-                className="flex-shrink-0"
-              >
-                <ProductCard product={product} />
-              </div>
-            );
-          })}
-        </div>
+        {products.map((product) => (
+          <div key={product.id} className="w-[160px] flex-none">
+            <ProductCard product={product} />
+          </div>
+        ))}
       </div>
     );
   }
 
+  // Desktop: 4-column grid
   return (
-    <div className="mt-5 md:grid md:grid-cols-4 md:gap-6">
+    <div className="mt-5 grid grid-cols-4 gap-6">
       {products.map((product) => (
         <div key={product.id}>
           <ProductCard product={product} />
