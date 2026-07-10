@@ -1,17 +1,99 @@
 "use client";
 
-import { useState, useTransition, useMemo } from "react";
-import {
-  createPromo,
-  removePromo,
-  fetchAllItemsForPromo,
-  type PromoPickerItem,
-  type PromoItemType,
-  type PromoCard,
-} from "@/lib/promo-actions";
+import { useState, useMemo } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getToken } from "@/lib/auth";
 
-type Props = { initial: PromoCard[] };
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
+
+// ── Types ────────────────────────────────────────────────────────────────────
+
+type PromoItemType = "produk" | "jasa" | "sewa";
+
+interface PromoPickerItem {
+  id: string;
+  type: PromoItemType;
+  name: string;
+  slug: string;
+  image: string;
+  priceLabel: string;
+  category: string;
+  linkHref: string;
+}
+
+interface PromoCard {
+  id: string;
+  title: string;
+  category: string;
+  price: string;
+  image: string;
+  linkHref: string;
+}
+
+// ── Client-side helpers ──────────────────────────────────────────────────────
+
+async function fetchAllItemsForPromo(): Promise<PromoPickerItem[]> {
+  const [produkRes, jasaRes, sewaRes] = await Promise.allSettled([
+    fetch(`${API_URL}/products?limit=100`),
+    fetch(`${API_URL}/services`),
+    fetch(`${API_URL}/rentals/items`),
+  ]);
+
+  const items: PromoPickerItem[] = [];
+
+  if (produkRes.status === "fulfilled" && produkRes.value.ok) {
+    const data = await produkRes.value.json();
+    const products: any[] = Array.isArray(data) ? data : data.data ?? [];
+    for (const p of products) {
+      items.push({
+        id: p.id,
+        type: "produk",
+        name: p.name,
+        slug: p.slug,
+        image: p.images?.[0] ?? "",
+        priceLabel: p.price ? "Rp " + parseFloat(p.price).toLocaleString("id-ID") : "-",
+        category: p.category?.name ?? "Produk",
+        linkHref: `/produk/${p.slug}`,
+      });
+    }
+  }
+
+  if (jasaRes.status === "fulfilled" && jasaRes.value.ok) {
+    const services: any[] = await jasaRes.value.json();
+    for (const s of services) {
+      items.push({
+        id: s.id,
+        type: "jasa",
+        name: s.name,
+        slug: s.slug,
+        image: s.images?.[0] ?? "",
+        priceLabel: s.priceFrom ? "Mulai Rp " + parseFloat(s.priceFrom).toLocaleString("id-ID") : "-",
+        category: s.category?.name ?? "Jasa",
+        linkHref: `/jasa/${s.slug}`,
+      });
+    }
+  }
+
+  if (sewaRes.status === "fulfilled" && sewaRes.value.ok) {
+    const rentals: any[] = await sewaRes.value.json();
+    for (const r of rentals) {
+      items.push({
+        id: r.id,
+        type: "sewa",
+        name: r.name,
+        slug: r.slug,
+        image: r.images?.[0] ?? "",
+        priceLabel: r.pricePerDay ? "Rp " + parseFloat(r.pricePerDay).toLocaleString("id-ID") + "/hari" : "-",
+        category: "Sewa",
+        linkHref: `/sewa`,
+      });
+    }
+  }
+
+  return items;
+}
+
+// ── Picker Modal ──────────────────────────────────────────────────────────────
 
 const TYPE_LABELS: Record<PromoItemType, string> = {
   produk: "Produk",
@@ -31,7 +113,6 @@ const TYPE_COLORS: Record<PromoItemType, string> = {
   sewa: "bg-orange-50 text-orange-700 border-orange-200",
 };
 
-// ── Picker Modal ──────────────────────────────────────────────────────────────
 function ItemPickerModal({
   allItems,
   onSelect,
@@ -63,21 +144,16 @@ function ItemPickerModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="flex h-[85vh] w-full max-w-2xl flex-col rounded-2xl bg-white shadow-2xl">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-[#e1e3e4] px-6 py-4">
           <div>
             <h3 className="font-bold text-[#191c1d] text-lg">Pilih Item untuk Promo</h3>
             <p className="text-xs text-[#707974] mt-0.5">{allItems.length} item tersedia</p>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-2 text-[#707974] hover:bg-[#edeeef] transition-colors"
-          >
+          <button onClick={onClose} className="rounded-lg p-2 text-[#707974] hover:bg-[#edeeef] transition-colors">
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
 
-        {/* Filter tabs */}
         <div className="flex gap-2 border-b border-[#e1e3e4] px-6 py-3 overflow-x-auto">
           {(["semua", "produk", "jasa", "sewa"] as const).map((t) => (
             <button
@@ -89,9 +165,7 @@ function ItemPickerModal({
                   : "bg-white text-[#707974] border-[#bfc9c3] hover:border-[#003527] hover:text-[#003527]"
               }`}
             >
-              {t !== "semua" && (
-                <span className="material-symbols-outlined text-xs">{TYPE_ICONS[t]}</span>
-              )}
+              {t !== "semua" && <span className="material-symbols-outlined text-xs">{TYPE_ICONS[t]}</span>}
               {t === "semua" ? "Semua" : TYPE_LABELS[t]}
               <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
                 activeType === t ? "bg-white/20" : "bg-[#f3f4f5]"
@@ -102,7 +176,6 @@ function ItemPickerModal({
           ))}
         </div>
 
-        {/* Search */}
         <div className="px-6 py-3 border-b border-[#e1e3e4]">
           <div className="relative">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#707974] text-base">search</span>
@@ -116,7 +189,6 @@ function ItemPickerModal({
           </div>
         </div>
 
-        {/* Item list */}
         <div className="flex-1 overflow-y-auto p-4">
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -136,32 +208,24 @@ function ItemPickerModal({
                   onClick={() => onSelect(item)}
                   className="group flex items-center gap-3 rounded-xl border border-[#e1e3e4] bg-white p-3 text-left transition-all hover:border-[#003527] hover:shadow-md active:scale-[0.98]"
                 >
-                  {/* Thumbnail */}
                   <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-[#edeeef]">
                     {item.image ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center">
-                        <span className="material-symbols-outlined text-2xl text-[#bfc9c3]">
-                          {TYPE_ICONS[item.type]}
-                        </span>
+                        <span className="material-symbols-outlined text-2xl text-[#bfc9c3]">{TYPE_ICONS[item.type]}</span>
                       </div>
                     )}
                   </div>
-                  {/* Info */}
                   <div className="min-w-0 flex-1">
-                    <p className="line-clamp-1 text-sm font-semibold text-[#191c1d] group-hover:text-[#003527]">
-                      {item.name}
-                    </p>
+                    <p className="line-clamp-1 text-sm font-semibold text-[#191c1d] group-hover:text-[#003527]">{item.name}</p>
                     <p className="text-xs font-bold text-[#064e3b] mt-0.5">{item.priceLabel}</p>
                     <span className={`mt-1 inline-block rounded-full border px-2 py-0.5 text-[10px] font-bold ${TYPE_COLORS[item.type]}`}>
                       {TYPE_LABELS[item.type]} · {item.category}
                     </span>
                   </div>
-                  <span className="material-symbols-outlined text-[#bfc9c3] text-base group-hover:text-[#003527]">
-                    add_circle
-                  </span>
+                  <span className="material-symbols-outlined text-[#bfc9c3] text-base group-hover:text-[#003527]">add_circle</span>
                 </button>
               ))}
             </div>
@@ -173,20 +237,97 @@ function ItemPickerModal({
 }
 
 // ── Komponen utama PromoEditor ─────────────────────────────────────────────────
-export default function PromoEditor({ initial }: Props) {
-  const [promos, setPromos] = useState<PromoCard[]>(initial);
-  const [isPending, startTransition] = useTransition();
+
+export default function PromoEditor({ promos }: { promos: PromoCard[] }) {
+  const queryClient = useQueryClient();
+  const [toast, setToast] = useState("");
   const [showPicker, setShowPicker] = useState(false);
   const [allItems, setAllItems] = useState<PromoPickerItem[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
-  const [toast, setToast] = useState("");
 
   function flash(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(""), 2500);
   }
 
-  // Fetch semua item saat picker dibuka
+  const createMutation = useMutation({
+    mutationFn: async (item: PromoPickerItem) => {
+      const token = getToken();
+      if (!token) throw new Error("Token tidak ditemukan, login ulang");
+
+      const existingRes = await fetch(`${API_URL}/settings/promo_cards`);
+      const existing: PromoCard[] = existingRes.ok ? (await existingRes.json()) : [];
+
+      if (existing.some((p) => p.linkHref === item.linkHref)) {
+        throw new Error("duplikat");
+      }
+
+      const newCard: PromoCard = {
+        id: `promo-${Date.now()}`,
+        title: item.name,
+        category: item.category,
+        price: item.priceLabel,
+        image: item.image,
+        linkHref: item.linkHref,
+      };
+
+      const res = await fetch(`${API_URL}/settings/promo_cards`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify([...existing, newCard]),
+      });
+
+      if (!res.ok) throw new Error("Gagal menyimpan promo ke backend");
+      return res.json() as Promise<PromoCard[]>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "promos"] });
+      flash("✓ Promo berhasil ditambahkan");
+    },
+    onError: (err: Error) => {
+      if (err.message === "duplikat") {
+        flash("⚠️ Item ini sudah ada di daftar promo");
+      } else {
+        flash("❌ " + err.message);
+      }
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const token = getToken();
+      if (!token) throw new Error("Token tidak ditemukan, login ulang");
+
+      const existingRes = await fetch(`${API_URL}/settings/promo_cards`);
+      const existing: PromoCard[] = existingRes.ok ? (await existingRes.json()) : [];
+      const updated = existing.filter((p) => p.id !== id);
+
+      const res = await fetch(`${API_URL}/settings/promo_cards`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updated),
+      });
+
+      if (!res.ok) throw new Error("Gagal menyimpan promo ke backend");
+      return res.json() as Promise<PromoCard[]>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "promos"] });
+      flash("✓ Promo dihapus");
+    },
+    onError: (err: Error) => {
+      flash("❌ " + err.message);
+    },
+  });
+
+  const isPending = createMutation.isPending || deleteMutation.isPending;
+
   async function openPicker() {
     setShowPicker(true);
     if (allItems.length === 0) {
@@ -202,52 +343,22 @@ export default function PromoEditor({ initial }: Props) {
 
   function handleSelect(item: PromoPickerItem) {
     setShowPicker(false);
-    // Cek duplikat
-    if (promos.some((p) => p.linkHref === item.linkHref)) {
-      flash("⚠️ Item ini sudah ada di daftar promo");
-      return;
-    }
-
-    const token = getToken();
-    if (!token) { flash("❌ Token tidak ditemukan, login ulang"); return; }
-
-    const data: Omit<PromoCard, "id"> = {
-      title: item.name,
-      category: item.category,
-      price: item.priceLabel,
-      image: item.image,
-      linkHref: item.linkHref,
-    };
-
-    startTransition(async () => {
-      const updated = await createPromo(data, token);
-      setPromos(updated);
-      flash("✓ Promo berhasil ditambahkan");
-    });
+    createMutation.mutate(item);
   }
 
   function handleDelete(id: string, title: string) {
     if (!confirm(`Hapus promo "${title}"?`)) return;
-    const token = getToken();
-    if (!token) { flash("❌ Token tidak ditemukan, login ulang"); return; }
-
-    startTransition(async () => {
-      const updated = await removePromo(id, token);
-      setPromos(updated);
-      flash("✓ Promo dihapus");
-    });
+    deleteMutation.mutate(id);
   }
 
   return (
     <div className="space-y-6">
-      {/* Toast */}
       {toast && (
         <div className="fixed top-5 right-5 z-[200] rounded-xl bg-[#003527] px-4 py-3 text-sm font-semibold text-white shadow-xl">
           {toast}
         </div>
       )}
 
-      {/* Picker modal */}
       {showPicker && (
         <ItemPickerModal
           allItems={loadingItems ? [] : allItems}
@@ -256,7 +367,6 @@ export default function PromoEditor({ initial }: Props) {
         />
       )}
 
-      {/* Header */}
       <div className="flex items-end justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-[#191c1d]">Promo Spesial</h2>
@@ -276,7 +386,6 @@ export default function PromoEditor({ initial }: Props) {
         )}
       </div>
 
-      {/* Daftar promo aktif */}
       {promos.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#bfc9c3] py-20 text-center">
           <span className="material-symbols-outlined text-6xl text-[#bfc9c3] mb-4">local_offer</span>
@@ -297,7 +406,6 @@ export default function PromoEditor({ initial }: Props) {
               key={promo.id}
               className="group relative overflow-hidden rounded-xl border border-[#e1e3e4] bg-white shadow-sm transition-shadow hover:shadow-md"
             >
-              {/* Card preview */}
               <div className="relative aspect-[4/3] overflow-hidden bg-[#edeeef]">
                 {promo.image ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -329,7 +437,6 @@ export default function PromoEditor({ initial }: Props) {
                 </div>
               </div>
 
-              {/* Footer card */}
               <div className="flex items-center justify-between border-t border-[#e1e3e4] bg-[#f8f9fa] px-4 py-3">
                 <span className="max-w-[140px] truncate text-[11px] text-[#707974]">
                   {promo.linkHref}
@@ -346,7 +453,6 @@ export default function PromoEditor({ initial }: Props) {
             </div>
           ))}
 
-          {/* Slot kosong + tombol tambah */}
           {promos.length < 6 && (
             <button
               onClick={openPicker}
@@ -364,7 +470,6 @@ export default function PromoEditor({ initial }: Props) {
         </div>
       )}
 
-      {/* Info */}
       <div className="flex items-start gap-3 rounded-xl border border-[#064e3b]/15 bg-[#064e3b]/5 p-4">
         <span className="material-symbols-outlined text-[#064e3b] text-xl flex-shrink-0">info</span>
         <p className="text-xs leading-relaxed text-[#003527]">

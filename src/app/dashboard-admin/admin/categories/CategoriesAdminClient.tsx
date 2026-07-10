@@ -1,19 +1,21 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/app/dashboard-admin/components/Toast";
-import { createCategory, updateCategory, deleteCategory, type ApiCategory } from "@/lib/category-actions";
+import { getToken } from "@/lib/auth";
+import type { ApiCategory } from "@/lib/category-actions";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
 
 export default function CategoriesAdminClient({
-  initialCategories,
+  categories,
 }: {
-  initialCategories: ApiCategory[];
+  categories: ApiCategory[];
 }) {
+  const queryClient = useQueryClient();
   const { success: toastSuccess, error: toastError } = useToast();
-  const [categories, setCategories] = useState<ApiCategory[]>(initialCategories);
-  const [isPending, startTransition] = useTransition();
 
-  // ── Form State ──────────────────────────────────────────────────────────────
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("category");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -24,36 +26,86 @@ export default function CategoriesAdminClient({
     setEditingId(null);
   }
 
+  const createMutation = useMutation({
+    mutationFn: async (data: { name: string; icon: string }) => {
+      const token = getToken();
+      if (!token) throw new Error("Token tidak ditemukan, login ulang");
+      const res = await fetch(`${API_URL}/categories`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message ?? "Gagal menambahkan kategori");
+      }
+      return res.json() as Promise<ApiCategory>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "categories"] });
+      toastSuccess("Berhasil menambahkan kategori");
+      resetForm();
+    },
+    onError: (err: Error) => {
+      toastError("Gagal menambahkan kategori", err.message);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: { name?: string; icon?: string } }) => {
+      const token = getToken();
+      if (!token) throw new Error("Token tidak ditemukan, login ulang");
+      const res = await fetch(`${API_URL}/categories/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message ?? "Gagal mengubah kategori");
+      }
+      return res.json() as Promise<ApiCategory>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "categories"] });
+      toastSuccess("Berhasil memperbarui kategori");
+      resetForm();
+    },
+    onError: (err: Error) => {
+      toastError("Gagal memperbarui kategori", err.message);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const token = getToken();
+      if (!token) throw new Error("Token tidak ditemukan, login ulang");
+      const res = await fetch(`${API_URL}/categories/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Gagal menghapus kategori");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "categories"] });
+      toastSuccess("Berhasil menghapus kategori");
+    },
+    onError: (err: Error) => {
+      toastError("Gagal menghapus kategori", err.message);
+    },
+  });
+
+  const isPending = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
     if (!name.trim()) return toastError("Nama kategori wajib diisi");
 
-    startTransition(async () => {
-      if (editingId) {
-        // Edit mode
-        const res = await updateCategory(editingId, { name: name.trim(), icon: icon.trim() });
-        if (res.success) {
-          toastSuccess("Berhasil memperbarui kategori");
-          setCategories(prev =>
-            prev.map(c => (c.id === editingId ? res.data : c))
-          );
-          resetForm();
-        } else {
-          toastError("Gagal memperbarui kategori", res.error);
-        }
-      } else {
-        // Create mode
-        const res = await createCategory({ name: name.trim(), icon: icon.trim() });
-        if (res.success) {
-          toastSuccess("Berhasil menambahkan kategori");
-          setCategories(prev => [...prev, res.data]);
-          resetForm();
-        } else {
-          toastError("Gagal menambahkan kategori", res.error);
-        }
-      }
-    });
+    if (editingId) {
+      updateMutation.mutate({ id: editingId, data: { name: name.trim(), icon: icon.trim() } });
+    } else {
+      createMutation.mutate({ name: name.trim(), icon: icon.trim() });
+    }
   }
 
   function handleEditClick(category: ApiCategory) {
@@ -64,16 +116,7 @@ export default function CategoriesAdminClient({
 
   function handleDeleteClick(id: string) {
     if (!confirm("Apakah Anda yakin ingin menghapus kategori ini?")) return;
-
-    startTransition(async () => {
-      const res = await deleteCategory(id);
-      if (res.success) {
-        toastSuccess("Berhasil menghapus kategori");
-        setCategories(prev => prev.filter(c => c.id !== id));
-      } else {
-        toastError("Gagal menghapus kategori", res.error);
-      }
-    });
+    deleteMutation.mutate(id);
   }
 
   return (
