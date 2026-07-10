@@ -73,10 +73,10 @@ export default function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`text-base font-bold tracking-wide transition-colors hover:text-[#064e3b] ${
+                  className={`text-base font-bold tracking-wide transition-colors border-b-2 pb-1 hover:text-[#064e3b] ${
                     isActive
-                      ? "border-b-2 border-[#064e3b] pb-1 text-[#064e3b]"
-                      : "text-[#404944]"
+                      ? "border-[#064e3b] text-[#064e3b]"
+                      : "border-transparent text-[#404944]"
                   }`}
                 >
                   {link.label}

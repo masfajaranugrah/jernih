@@ -33,6 +33,7 @@ function ProductCard({ product }: { product: ApiProduct }) {
   if (!product) return null;
   const badgeMatch = product.description?.match(/^\[badge:([A-Z0-9]+)\]/);
   const badge = badgeMatch ? badgeMatch[1] : product.oldPrice ? "SALE" : null;
+  const sellerName = "Jernih Creative Official";
   const badgeColors: Record<string, string> = {
     SALE: "bg-[#ba1a1a]", NEW: "bg-[#064e3b]", HOT: "bg-orange-500",
     DISKON: "bg-[#1d4ed8]", TERBATAS: "bg-[#7c3aed]",
@@ -57,22 +58,22 @@ function ProductCard({ product }: { product: ApiProduct }) {
           </div>
         )}
       </div>
-      <div className="flex flex-1 flex-col gap-2 p-3 sm:p-4">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-[#064e3b]">
-          {product.category?.name}
-        </span>
-        <h3 className="line-clamp-2 text-sm font-medium leading-snug text-[#191c1d] sm:text-base">
+      <div className="flex flex-1 flex-col p-3 sm:p-4">
+        <h3 className="line-clamp-2 min-h-[38px] text-sm font-semibold leading-snug text-[#191c1d] sm:min-h-[44px] sm:text-base">
           {product.name}
         </h3>
-        <div className="mt-auto flex items-center gap-1 text-sm font-semibold text-[#575e70]">
-          <Icon className="text-base text-amber-500">star</Icon>
-          {product.rating}
-        </div>
-        <div className="border-t border-[#bfc9c3]/30 pt-3">
+        <div className="mt-3">
           {product.oldPrice ? (
             <div className="text-xs text-[#707974] line-through">{formatRupiah(product.oldPrice)}</div>
           ) : null}
           <div className="text-base font-bold text-[#064e3b] sm:text-lg">{formatRupiah(product.price)}</div>
+        </div>
+        <div className="mt-3 flex items-center gap-1 text-sm font-semibold text-[#575e70]">
+          <Icon className="text-base text-amber-500">star</Icon>
+          {product.rating ?? 0}
+        </div>
+        <div className="mt-auto border-t border-[#bfc9c3]/30 pt-3">
+          <p className="line-clamp-1 text-[11px] font-semibold text-[#064e3b] sm:text-xs">{sellerName}</p>
         </div>
       </div>
     </Link>
@@ -112,9 +113,9 @@ export default function ProductSectionClient() {
 
   if (isPending) {
     return (
-      <div className="mt-5 -mx-4 flex gap-3 overflow-x-hidden px-4 pb-2 md:mx-0 md:grid md:grid-cols-4 md:gap-6 md:overflow-visible md:px-0 md:pb-0">
+      <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-6">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="w-[160px] flex-shrink-0 md:w-auto">
+          <div key={i}>
             <SkeletonCard />
           </div>
         ))}
@@ -124,15 +125,12 @@ export default function ProductSectionClient() {
 
   if (products.length === 0) return null;
 
-  // Mobile: simple horizontal scroll — no virtualizer to avoid height-collapse bugs
+  // Mobile: two-column grid to match the product listing page.
   if (isMobile) {
     return (
-      <div
-        className="mt-5 -mx-4 flex gap-3 overflow-x-auto px-4 pb-3"
-        style={{ WebkitOverflowScrolling: "touch" }}
-      >
+      <div className="mt-5 grid grid-cols-2 gap-3">
         {products.map((product) => (
-          <div key={product.id} className="w-[160px] flex-none">
+          <div key={product.id}>
             <ProductCard product={product} />
           </div>
         ))}

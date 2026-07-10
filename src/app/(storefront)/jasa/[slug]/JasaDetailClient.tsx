@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { ApiService } from "@/lib/service-actions";
 
@@ -39,6 +39,93 @@ function cleanDescription(description: string | null | undefined) {
   const start = description.indexOf("||PACKAGES_START||");
   if (start === -1) return description.trim();
   return description.slice(0, start).trim();
+}
+
+async function copyCurrentUrl() {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      return true;
+    } catch {
+      // Some browsers expose Clipboard API but reject it outside secure contexts.
+    }
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = window.location.href;
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+  const copied = document.execCommand("copy");
+  document.body.removeChild(textarea);
+  return copied;
+}
+
+function ServiceShareActions({ title }: { title: string }) {
+  const [mounted, setMounted] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  async function copyServiceLink() {
+    const ok = await copyCurrentUrl();
+    setCopied(ok);
+    setCopyFailed(!ok);
+    window.setTimeout(() => {
+      setCopied(false);
+      setCopyFailed(false);
+    }, 1800);
+  }
+
+  async function shareService() {
+    const shareData = {
+      title,
+      text: `Lihat jasa ${title} di Jernih Creative`,
+      url: window.location.href,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
+    }
+
+    await copyServiceLink();
+  }
+
+  if (!mounted) return null;
+
+  return (
+    <div className="pt-2">
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={shareService}
+          className="flex h-11 items-center justify-center gap-2 rounded-xl border border-[#bfc9c3] bg-white px-3 text-sm font-semibold text-[#003527] transition hover:border-[#003527] hover:bg-[#f3f4f5]"
+        >
+          <span className="material-symbols-outlined text-base">share</span>
+          Bagikan
+        </button>
+        <button
+          type="button"
+          onClick={copyServiceLink}
+          className="flex h-11 items-center justify-center gap-2 rounded-xl border border-[#bfc9c3] bg-white px-3 text-sm font-semibold text-[#003527] transition hover:border-[#003527] hover:bg-[#f3f4f5]"
+        >
+          <span className="material-symbols-outlined text-base">{copied ? "check" : "content_copy"}</span>
+          {copied ? "Tersalin" : "Copy Link"}
+        </button>
+      </div>
+      {copyFailed ? <p className="mt-2 text-xs font-medium text-red-600">Link gagal disalin. Salin URL dari address bar.</p> : null}
+    </div>
+  );
 }
 
 export default function JasaDetailClient({ service }: { service: ApiService }) {
@@ -149,6 +236,7 @@ export default function JasaDetailClient({ service }: { service: ApiService }) {
                 {service.category?.name ?? "Layanan Terpopuler"}
               </span>
               <h1 className="text-2xl md:text-3xl font-bold text-[#003527] leading-tight">{service.name}</h1>
+              <ServiceShareActions title={service.name} />
             </div>
 
             {/* Rating */}

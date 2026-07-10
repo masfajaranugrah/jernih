@@ -1,58 +1,66 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { formatRupiah, type ApiProduct } from "@/lib/api";
-import { useWindowVirtualizer } from "@tanstack/react-virtual";
 
 function ProductCard({ product }: { product: ApiProduct }) {
+  const badgeMatch = product.description?.match(/^\[badge:([A-Z0-9]+)\]/);
+  const badge = badgeMatch ? badgeMatch[1] : product.oldPrice ? "SALE" : null;
+  const sellerName = "Jernih Creative Official";
+  const colors: Record<string, string> = {
+    SALE: "bg-[#ba1a1a]",
+    NEW: "bg-[#064e3b]",
+    HOT: "bg-orange-500",
+    DISKON: "bg-[#1d4ed8]",
+    TERBATAS: "bg-[#7c3aed]",
+  };
+
   return (
     <Link
       href={`/produk/${product.slug}`}
-      className="group bg-white shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer rounded-xl flex flex-col h-full"
+      className="group flex h-full flex-col overflow-hidden rounded-xl bg-white shadow-[0px_4px_20px_rgba(0,0,0,0.04)]"
     >
-      <div className="relative aspect-[4/5] overflow-hidden bg-[#edeeef] shrink-0">
+      <div className="relative aspect-square overflow-hidden bg-[#edeeef]">
         {product.images[0] ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={product.images[0]}
             alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+            className="w-full h-full object-cover"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-[#bfc9c3]">
             <span className="text-5xl">📷</span>
           </div>
         )}
-        {(() => {
-          const badgeMatch = product.description?.match(/^\[badge:([A-Z0-9]+)\]/);
-          const badge = badgeMatch ? badgeMatch[1] : product.oldPrice ? "SALE" : null;
-          if (!badge) return null;
-          const colors: Record<string, string> = {
-            SALE: "bg-[#ba1a1a]", NEW: "bg-[#064e3b]", HOT: "bg-orange-500",
-            DISKON: "bg-[#1d4ed8]", TERBATAS: "bg-[#7c3aed]",
-          };
-          return (
-            <div className={`absolute top-3 left-3 font-black text-[10px] px-2 py-1 uppercase tracking-tight text-white rounded ${colors[badge] ?? "bg-[#ba1a1a]"}`}>
-              {badge}
-            </div>
-          );
-        })()}
+        {badge && (
+          <div className={`absolute top-3 left-3 rounded px-2 py-1 text-[10px] font-black uppercase tracking-tight text-white ${colors[badge] ?? "bg-[#ba1a1a]"}`}>
+            {badge}
+          </div>
+        )}
       </div>
-      <div className="p-4 space-y-1 flex-grow flex flex-col justify-between">
-        <div className="space-y-1">
-          <p className="text-[10px] font-medium text-[#707974] uppercase tracking-widest">
-            {product.category?.name ?? "Produk"}
-          </p>
-          <h2 className="text-sm font-semibold text-[#191c1d] group-hover:text-[#003527] transition-colors leading-tight line-clamp-2">
-            {product.name}
-          </h2>
+      <div className="flex flex-1 flex-col p-3 sm:p-4">
+        <h2 className="line-clamp-2 min-h-[38px] text-sm font-semibold leading-snug text-[#191c1d] sm:min-h-[44px] sm:text-base">
+          {product.name}
+        </h2>
+        <div className="mt-3">
           {product.oldPrice && (
-            <p className="text-xs text-[#707974] line-through">{formatRupiah(product.oldPrice)}</p>
+            <p className="text-xs text-[#707974] line-through sm:text-sm">{formatRupiah(product.oldPrice)}</p>
           )}
-          <p className="text-base font-bold text-[#003527]">{formatRupiah(product.price)}</p>
+          <p className="text-lg font-bold leading-tight text-[#003527] sm:text-xl">{formatRupiah(product.price)}</p>
         </div>
-        <p className="text-[10px] text-[#707974] mt-2">oleh Jernih Creative Official</p>
+        <div className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-[#575e70] sm:text-base">
+          <span className="material-symbols-outlined text-[26px] text-amber-500" style={{ fontVariationSettings: "'FILL' 1" }}>
+            star
+          </span>
+          <span>{product.rating ?? 0}</span>
+        </div>
+        <div className="mt-auto border-t border-[#bfc9c3]/30 pt-3">
+          <p className="line-clamp-1 text-[11px] font-semibold text-[#064e3b] sm:text-xs">
+            {sellerName}
+          </p>
+        </div>
       </div>
     </Link>
   );
@@ -85,28 +93,6 @@ export default function ProdukPageClient({
   const [activeFilter, setActiveFilter] = useState<FilterState>(DEFAULT_FILTER);
   const [draftFilter, setDraftFilter] = useState<FilterState>(DEFAULT_FILTER);
 
-  // ── SSR Hydration Guard ──
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // ── Column Detection ──
-  const [cols, setCols] = useState(2);
-  useEffect(() => {
-    if (!mounted) return;
-    const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setCols(3);
-      } else {
-        setCols(2);
-      }
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [mounted]);
-
   // ── Apply filter ────────────────────────────────────────────────────────────
   const filtered = products
     .filter((p) => {
@@ -121,27 +107,12 @@ export default function ProdukPageClient({
     .sort((a, b) => {
       if (activeFilter.sortBy === "harga_asc") return parseFloat(a.price) - parseFloat(b.price);
       if (activeFilter.sortBy === "harga_desc") return parseFloat(b.price) - parseFloat(a.price);
-      return 0;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
   const activeCount =
     (activeFilter.category !== "all" ? 1 : 0) +
     (activeFilter.priceMin || activeFilter.priceMax ? 1 : 0);
-
-  // ── Chunking Rows for Virtual Grid ──
-  const rows: ApiProduct[][] = [];
-  for (let i = 0; i < filtered.length; i += cols) {
-    rows.push(filtered.slice(i, i + cols));
-  }
-
-  // ── TanStack Virtualizer ──
-  const parentRef = useRef<HTMLDivElement>(null);
-  const rowVirtualizer = useWindowVirtualizer({
-    count: rows.length,
-    estimateSize: () => 380,
-    scrollMargin: parentRef.current?.offsetTop ?? 0,
-    overscan: 3,
-  });
 
   function openFilter() {
     setDraftFilter(activeFilter);
@@ -265,11 +236,11 @@ export default function ProdukPageClient({
         .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24; vertical-align:middle; }
       `}</style>
 
-      <div className="max-w-[1280px] mx-auto px-4 md:px-12 pt-8 pb-20 flex flex-col md:flex-row gap-10">
+      <div className="mx-auto flex max-w-[1680px] flex-col gap-6 px-4 pt-8 pb-20 md:flex-row md:gap-10 md:px-8 lg:px-12 xl:gap-14 2xl:px-16">
 
         {/* ── Sidebar desktop ── */}
-        <aside className="hidden md:block w-60 flex-shrink-0">
-          <div className="sticky top-24 bg-white rounded-xl border border-[#e1e3e4] p-5 shadow-sm">
+        <aside className="hidden w-64 flex-shrink-0 md:block xl:w-72">
+          <div className="sticky top-24 rounded-2xl border border-[#e1e3e4] bg-white p-5 shadow-sm xl:p-6">
             <div className="flex items-center justify-between mb-5">
               <h3 className="font-bold text-sm text-[#191c1d]">Filter</h3>
               {activeCount > 0 && (
@@ -337,12 +308,12 @@ export default function ProdukPageClient({
             </div>
           </div>
 
-          <div className="border-b border-[#bfc9c3] mb-6" />
+          <div className="mb-7 border-b border-[#bfc9c3]" />
 
           {resolvedSearch && (
             <div className="mb-6 bg-white border border-[#bfc9c3]/30 rounded-xl p-4 flex items-center justify-between shadow-sm">
               <p className="text-sm text-[#404944]">
-                Hasil pencarian untuk: <strong className="text-[#064e3b]">"{resolvedSearch}"</strong>
+                Hasil pencarian untuk: <strong className="text-[#064e3b]">&quot;{resolvedSearch}&quot;</strong>
               </p>
               <Link href="/produk" className="text-xs font-semibold text-[#ba1a1a] hover:underline">
                 Hapus Pencarian
@@ -364,54 +335,11 @@ export default function ProdukPageClient({
               </button>
             </div>
           ) : (
-            <>
-              {!mounted ? (
-                /* Fallback static grid for SSR (SEO friendly) */
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filtered.map((product: ApiProduct) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </div>
-              ) : (
-                /* High performance Virtualized Grid for client view */
-                <div
-                  ref={parentRef}
-                  style={{
-                    height: `${rowVirtualizer.getTotalSize()}px`,
-                    width: "100%",
-                    position: "relative",
-                  }}
-                >
-                  {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                    const rowItems = rows[virtualRow.index] || [];
-                    return (
-                      <div
-                        key={virtualRow.key}
-                        style={{
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          width: "100%",
-                          height: `${virtualRow.size}px`,
-                          transform: `translateY(${virtualRow.start - rowVirtualizer.options.scrollMargin}px)`,
-                        }}
-                        className="grid grid-cols-2 lg:grid-cols-3 gap-4"
-                      >
-                        {rowItems.map((product) => (
-                          <ProductCard key={product.id} product={product} />
-                        ))}
-                        {/* Placeholder columns if row is not full to maintain exact grid width layout */}
-                        {rowItems.length < cols &&
-                          Array.from({ length: cols - rowItems.length }).map((_, idx) => (
-                            <div key={`empty-${idx}`} className="invisible" />
-                          ))
-                        }
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </>
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4 xl:gap-5">
+              {filtered.map((product: ApiProduct) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
           )}
         </main>
       </div>

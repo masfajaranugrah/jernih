@@ -8,7 +8,7 @@ const PROTECTED_PREFIX = "/dashboard-admin";
 /** Halaman login — tidak perlu diproteksi */
 const LOGIN_PAGE = "/dashboard-admin/admin/login";
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Jangan proteksi halaman login itu sendiri
