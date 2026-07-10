@@ -10,6 +10,7 @@ const navItems = [
     { href: "/dashboard-admin/admin/hero", icon: "image", label: "Hero Banner" },
   { href: "/dashboard-admin/admin/homepage", icon: "tune", label: "Homepage" },
   { href: "/dashboard-admin/admin/products", icon: "inventory_2", label: "Produk" },
+  { href: "/dashboard-admin/admin/categories", icon: "category", label: "Kategori" },
   { href: "/dashboard-admin/admin/services", icon: "design_services", label: "Jasa" },
   { href: "/dashboard-admin/admin/promo", icon: "local_offer", label: "Promo" },
   { href: "/dashboard-admin/admin/pesanan", icon: "shopping_bag", label: "Pesanan" },

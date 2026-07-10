@@ -15,6 +15,7 @@ import { HeroModule } from './hero/hero.module';
 import { ComplaintsModule } from './complaints/complaints.module';
 import { UploadModule } from './upload/upload.module';
 import { SettingsModule } from './settings/settings.module';
+import { CategoriesModule } from './categories/categories.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { SettingsModule } from './settings/settings.module';
     ComplaintsModule,
     UploadModule,
     SettingsModule,
+    CategoriesModule,
   ],
 })
 export class AppModule {}

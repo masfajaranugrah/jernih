@@ -1,15 +1,13 @@
 "use client";
 
-import { useState, useRef, useTransition } from "react";
+import { useState, useRef, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { getCategoryOptions } from "@/lib/categories";
 import { createProduct } from "@/lib/product-actions";
+import { getCategories, type ApiCategory } from "@/lib/category-actions";
 import { handleSessionExpired } from "@/lib/auth";
 import { useToast } from "@/app/dashboard-admin/components/Toast";
 import { useQueryClient } from "@tanstack/react-query";
-
-const categoryOptions = getCategoryOptions();
 
 function Field({
   label, required = false, children,
@@ -33,6 +31,30 @@ export default function AddProductForm() {
   const [isPending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { success, error: toastError } = useToast();
+
+  // ── Categories from DB ───────────────────────────────────────────────────────
+  const [dbCategories, setDbCategories] = useState<ApiCategory[]>([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    async function loadCategories() {
+      const cats = await getCategories();
+      setDbCategories(cats);
+    }
+    loadCategories();
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // ── Form state ──────────────────────────────────────────────────────────────
   const [name, setName] = useState("");
@@ -225,24 +247,61 @@ export default function AddProductForm() {
                     placeholder="akan-terisi-otomatis"
                   />
                 </Field>
-                <Field label="Kategori" required>
-                  <select
-                    className={inputCls}
-                    value={categoryId}
-                    onChange={(e) => setCategoryId(e.target.value)}
-                  >
-                    <option value="">-- Pilih Kategori --</option>
-                    {categoryOptions.map((opt) => (
-                      <option
-                        key={opt.value}
-                        value={opt.value}
-                        disabled={opt.isParent}
-                        style={{ fontWeight: opt.isParent ? 700 : 400 }}
-                      >
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
+                 <Field label="Kategori" required>
+                  <div className="relative" ref={dropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setDropdownOpen(!dropdownOpen)}
+                      className={`${inputCls} flex items-center justify-between text-left`}
+                      style={{ height: "46px" }}
+                    >
+                      <span className="truncate">
+                        {dbCategories.find((c) => c.id === categoryId)?.name ?? "-- Pilih Kategori --"}
+                      </span>
+                      <span className="material-symbols-outlined text-[#707974] select-none">
+                        {dropdownOpen ? "arrow_drop_up" : "arrow_drop_down"}
+                      </span>
+                    </button>
+
+                    {dropdownOpen && (
+                      <div className="absolute left-0 right-0 mt-1 z-50 rounded-xl border border-[#bfc9c3] bg-white p-2.5 shadow-lg max-h-60 overflow-y-auto">
+                        <input
+                          type="text"
+                          className="w-full mb-2 rounded-lg border border-[#bfc9c3] bg-[#f8f9fa] px-3 py-2 text-xs outline-none focus:border-[#003527]"
+                          placeholder="Cari kategori..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <div className="space-y-0.5">
+                          {dbCategories.filter((c) =>
+                            c.name.toLowerCase().includes(searchQuery.toLowerCase())
+                          ).length === 0 ? (
+                            <div className="px-3 py-2 text-xs text-[#707974] italic">Kategori tidak ditemukan</div>
+                          ) : (
+                            dbCategories
+                              .filter((c) => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                              .map((cat) => (
+                                <button
+                                  key={cat.id}
+                                  type="button"
+                                  className={`w-full text-left px-3 py-2 text-xs rounded-lg transition-colors hover:bg-[#e7e8e9] ${
+                                    cat.id === categoryId ? "bg-[#064e3b]/10 font-bold text-[#064e3b]" : "text-[#191c1d]"
+                                  }`}
+                                  onClick={() => {
+                                    setCategoryId(cat.id);
+                                    setDropdownOpen(false);
+                                    setSearchQuery("");
+                                  }}
+                                >
+                                  {cat.name}
+                                </button>
+                              ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </Field>
               </div>
             </div>

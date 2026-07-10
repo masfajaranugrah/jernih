@@ -24,6 +24,7 @@ const hero_module_1 = require("./hero/hero.module");
 const complaints_module_1 = require("./complaints/complaints.module");
 const upload_module_1 = require("./upload/upload.module");
 const settings_module_1 = require("./settings/settings.module");
+const categories_module_1 = require("./categories/categories.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -46,6 +47,7 @@ exports.AppModule = AppModule = __decorate([
             complaints_module_1.ComplaintsModule,
             upload_module_1.UploadModule,
             settings_module_1.SettingsModule,
+            categories_module_1.CategoriesModule,
         ],
     })
 ], AppModule);

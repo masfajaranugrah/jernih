@@ -1,9 +1,12 @@
 import DashboardSidebar from "@/app/dashboard-admin/DashboardSidebar";
-import AddProductForm from "../AddProductForm";
+import CategoriesAdminClient from "./CategoriesAdminClient";
+import { getCategories } from "@/lib/category-actions";
 
-export const metadata = { title: "Tambah Produk - Admin Jernih Creatife" };
+export const metadata = { title: "Manajemen Kategori - Admin Jernih Creatife" };
 
-export default function NewProductPage() {
+export default async function AdminCategoriesPage() {
+  const categories = await getCategories();
+
   return (
     <div className="min-h-screen bg-[#f8f9fa]">
       <style>{`
@@ -14,16 +17,15 @@ export default function NewProductPage() {
       <DashboardSidebar />
 
       <div className="lg:ml-64 min-h-screen flex flex-col pb-24 lg:pb-0">
-        {/* Top bar */}
         <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-[#e1e3e4] bg-white/90 px-6 shadow-sm backdrop-blur">
           <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-[#003527]">inventory_2</span>
-            <h1 className="text-[#003527] font-bold text-lg">Admin — Produk</h1>
+            <span className="material-symbols-outlined text-[#003527]">category</span>
+            <h1 className="text-[#003527] font-bold text-lg">Manajemen Kategori</h1>
           </div>
         </header>
 
-        <main className="w-full px-4 sm:px-6 lg:px-10 py-8">
-          <AddProductForm />
+        <main className="p-6">
+          <CategoriesAdminClient initialCategories={categories} />
         </main>
       </div>
     </div>
