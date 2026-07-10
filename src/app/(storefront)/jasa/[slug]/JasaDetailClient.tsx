@@ -413,37 +413,6 @@ export default function JasaDetailClient({ service }: { service: ApiService }) {
           </div>
         </section>
       </main>
-
-      {/* Footer */}
-      <footer className="bg-[#e7e8e9] w-full py-16 border-t border-[#bfc9c3]">
-        <div className="max-w-[1280px] mx-auto px-6 md:px-12 flex flex-col md:flex-row justify-between items-start gap-10">
-          <div className="space-y-4 max-w-sm">
-            <h2 className="text-[#003527] font-bold text-2xl">Jernih Creatife</h2>
-            <p className="text-[#707974] text-base">Platform jasa profesional terpercaya untuk kebutuhan Anda.</p>
-          </div>
-          <div className="grid grid-cols-2 gap-10">
-            <div className="space-y-3">
-              <h4 className="font-semibold text-xs uppercase tracking-wider text-[#191c1d]">Bantuan</h4>
-              <ul className="space-y-2 text-[#707974]">
-                {["Hubungi Kami", "Syarat & Ketentuan", "Pusat Bantuan"].map((item) => (
-                  <li key={item}><a href="#" className="text-sm hover:text-[#003527] transition-colors">{item}</a></li>
-                ))}
-              </ul>
-            </div>
-            <div className="space-y-3">
-              <h4 className="font-semibold text-xs uppercase tracking-wider text-[#191c1d]">Legal</h4>
-              <ul className="space-y-2 text-[#707974]">
-                {["Kebijakan Privasi", "Syarat & Ketentuan"].map((item) => (
-                  <li key={item}><a href="#" className="text-sm hover:text-[#003527] transition-colors">{item}</a></li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-        <div className="max-w-[1280px] mx-auto px-6 md:px-12 mt-10 pt-5 border-t border-[#bfc9c3]">
-          <p className="text-xs text-[#707974]">© 2024 Jernih Creatife. All rights reserved.</p>
-        </div>
-      </footer>
     </div>
   );
 }

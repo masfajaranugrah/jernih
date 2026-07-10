@@ -175,12 +175,6 @@ export default async function NotFound() {
           </div>
         </div>
       </section>
-
-      {/* Footer minimal */}
-      <footer className="border-t border-[#e1e3e4] bg-[#f8f9fa] py-8 text-center">
-        <p className="text-sm font-bold text-[#003527]">Jernih Creative</p>
-        <p className="mt-1 text-xs text-[#707974]">© 2024 JernihCreative. All rights reserved.</p>
-      </footer>
     </div>
   );
 }

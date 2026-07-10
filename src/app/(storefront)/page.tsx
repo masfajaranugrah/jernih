@@ -186,19 +186,6 @@ export default function Home() {
         <SewaSection />
 
       </main>
-
-      {/* ── Footer ── */}
-      <footer className="flex w-full flex-col items-center justify-between gap-5 border-t border-[#bfc9c3] bg-[#f3f4f5] px-4 py-10 text-center md:flex-row md:px-8">
-        <div className="text-2xl font-bold text-[#064e3b]">Jernih Creatife</div>
-        <div className="flex flex-wrap justify-center gap-5 text-xs font-semibold text-[#404944]">
-          {["Privacy Policy", "Terms of Service", "Contact Us", "Help Center"].map((item) => (
-            <a key={item} href="#" className="underline hover:text-[#064e3b]">
-              {item}
-            </a>
-          ))}
-        </div>
-        <p className="text-xs font-medium text-[#404944]">© 2024 Jernih Creatife. All rights reserved.</p>
-      </footer>
     </>
   );
 }
