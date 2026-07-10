@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { fetchProducts } from "@/lib/api";
 import ProductSectionClient from "./ProductSectionClient";
 
 function Icon({ children, className = "" }: { children: string; className?: string }) {
@@ -10,16 +9,7 @@ function Icon({ children, className = "" }: { children: string; className?: stri
   );
 }
 
-export default async function ProductSection() {
-  let products;
-  try {
-    products = await fetchProducts({ limit: 8 });
-  } catch {
-    return null;
-  }
-
-  if (products.length === 0) return null;
-
+export default function ProductSection() {
   return (
     <section>
       <div className="flex items-end justify-between gap-4">
@@ -28,7 +18,8 @@ export default async function ProductSection() {
           Lihat Semua <Icon className="text-base">arrow_forward</Icon>
         </Link>
       </div>
-      <ProductSectionClient products={products} />
+      {/* Data fetching real-time via TanStack Query (no Next.js cache) */}
+      <ProductSectionClient />
     </section>
   );
 }

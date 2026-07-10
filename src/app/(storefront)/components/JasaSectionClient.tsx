@@ -4,17 +4,36 @@ import { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { useQuery } from "@tanstack/react-query";
 import type { ApiService } from "@/lib/service-actions";
 import { formatRupiah } from "@/lib/api";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
+
+async function fetchServicesClient(limit = 4): Promise<ApiService[]> {
+  try {
+    const res = await fetch(`${API_URL}/services?limit=${limit}`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    if (Array.isArray(json)) return json;
+    if (Array.isArray(json?.data)) return json.data;
+    return [];
+  } catch {
+    return [];
+  }
+}
+
 function ServiceCard({ service }: { service: ApiService }) {
+  if (!service) return null;
   return (
     <Link
       href={`/jasa/${service.slug}`}
       className="group overflow-hidden rounded-2xl border border-[#bfc9c3]/40 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg block h-full"
     >
       <div className="relative aspect-square overflow-hidden bg-[#edeeef]">
-        {service.images[0] ? (
+        {service.images && service.images[0] ? (
           <Image
             src={service.images[0]}
             alt={service.name}
@@ -49,16 +68,34 @@ function ServiceCard({ service }: { service: ApiService }) {
   );
 }
 
-export default function JasaSectionClient({ services }: { services: ApiService[] }) {
-  const [mounted, setMounted] = useState(false);
+function SkeletonCard() {
+  return (
+    <div className="flex flex-col overflow-hidden rounded-2xl border border-[#bfc9c3]/40 bg-white shadow-sm">
+      <div className="aspect-square animate-pulse bg-[#edeeef]" />
+      <div className="flex flex-col gap-2 p-3 sm:p-4">
+        <div className="h-2.5 w-16 animate-pulse rounded bg-[#edeeef]" />
+        <div className="h-3.5 w-full animate-pulse rounded bg-[#edeeef]" />
+        <div className="mt-4 h-4 w-24 animate-pulse rounded bg-[#edeeef]" />
+      </div>
+    </div>
+  );
+}
+
+export default function JasaSectionClient() {
   const [isMobile, setIsMobile] = useState(true);
   const parentRef = useRef<HTMLDivElement>(null);
 
+  // TanStack Query v5 — gunakan isPending, bukan isLoading
+  const { data, isPending } = useQuery({
+    queryKey: ["storefront-services"],
+    queryFn: () => fetchServicesClient(4),
+  });
+
+  // Pastikan selalu array, tidak pernah undefined
+  const services: ApiService[] = Array.isArray(data) ? data : [];
+
   useEffect(() => {
-    setMounted(true);
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -68,18 +105,32 @@ export default function JasaSectionClient({ services }: { services: ApiService[]
     horizontal: true,
     count: services.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 172, // 160px card width + 12px gap
+    estimateSize: () => 172,
     overscan: 2,
   });
 
-  if (!mounted) {
+  if (isPending) {
     return (
-      <div className="mt-5 -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide md:mx-0 md:grid md:grid-cols-4 md:gap-6 md:overflow-visible md:px-0 md:pb-0">
-        {services.map((svc) => (
-          <div key={svc.id} className="w-[160px] flex-shrink-0 snap-start md:w-auto">
-            <ServiceCard service={svc} />
+      <div className="mt-5 -mx-4 flex gap-3 overflow-x-hidden px-4 pb-2 md:mx-0 md:grid md:grid-cols-4 md:gap-6 md:overflow-visible md:px-0 md:pb-0">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="w-[160px] flex-shrink-0 md:w-auto">
+            <SkeletonCard />
           </div>
         ))}
+      </div>
+    );
+  }
+
+  if (services.length === 0) {
+    return (
+      <div className="mt-5 w-full rounded-2xl border border-dashed border-[#bfc9c3] bg-white px-6 py-10 text-center">
+        <p className="text-sm font-semibold text-[#404944]">Jasa tidak tersedia saat ini</p>
+        <Link
+          href="/jasa"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-[#bfc9c3] px-4 py-1.5 text-xs font-semibold text-[#404944] transition-colors hover:border-[#064e3b] hover:text-[#064e3b]"
+        >
+          Lihat Halaman Jasa
+        </Link>
       </div>
     );
   }
@@ -89,9 +140,7 @@ export default function JasaSectionClient({ services }: { services: ApiService[]
       <div
         ref={parentRef}
         className="mt-5 -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide relative"
-        style={{
-          WebkitOverflowScrolling: "touch",
-        }}
+        style={{ WebkitOverflowScrolling: "touch" }}
       >
         <div
           style={{

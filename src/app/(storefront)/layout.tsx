@@ -1,4 +1,5 @@
 import Navbar from "@/app/(storefront)/Navbar";
+import StorefrontProviders from "./StorefrontProviders";
 
 export default function StorefrontLayout({
   children,
@@ -6,9 +7,9 @@ export default function StorefrontLayout({
   children: React.ReactNode;
 }) {
   return (
-    <>
+    <StorefrontProviders>
       <Navbar />
       {children}
-    </>
+    </StorefrontProviders>
   );
 }

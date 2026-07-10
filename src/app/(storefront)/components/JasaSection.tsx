@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { fetchServices } from "@/lib/service-actions";
 import JasaSectionClient from "./JasaSectionClient";
 
 function ArrowIcon() {
@@ -10,28 +9,7 @@ function ArrowIcon() {
   );
 }
 
-function EmptyState() {
-  return (
-    <div className="w-full rounded-2xl border border-dashed border-[#bfc9c3] bg-white px-6 py-10 text-center">
-      <p className="text-sm font-semibold text-[#404944]">Jasa tidak tersedia saat ini</p>
-      <Link
-        href="/jasa"
-        className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-[#bfc9c3] px-4 py-1.5 text-xs font-semibold text-[#404944] transition-colors hover:border-[#064e3b] hover:text-[#064e3b]"
-      >
-        Lihat Halaman Jasa
-      </Link>
-    </div>
-  );
-}
-
-export default async function JasaSection() {
-  let services;
-  try {
-    services = await fetchServices();
-  } catch {
-    return null;
-  }
-
+export default function JasaSection() {
   return (
     <section>
       <div className="flex items-end justify-between gap-4">
@@ -40,11 +18,8 @@ export default async function JasaSection() {
           Lihat Semua <ArrowIcon />
         </Link>
       </div>
-      {services.length === 0 ? (
-        <div className="mt-5"><EmptyState /></div>
-      ) : (
-        <JasaSectionClient services={services.slice(0, 4)} />
-      )}
+      {/* Data fetching real-time via TanStack Query (no Next.js cache) */}
+      <JasaSectionClient />
     </section>
   );
 }

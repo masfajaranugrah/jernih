@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { getHeroDataFromBackend } from "@/lib/hero-store";
-import { HeroSkeleton, PromoSkeleton, ProductSkeleton } from "./components/Skeletons";
+import { HeroSkeleton, PromoSkeleton } from "./components/Skeletons";
 import PromoSection from "./components/PromoSection";
 import ProductSection from "./components/ProductSection";
 import JasaSection from "./components/JasaSection";
@@ -180,17 +180,10 @@ export default function Home() {
           <PromoSection />
         </Suspense>
 
-        <Suspense fallback={<ProductSkeleton />}>
-          <ProductSection />
-        </Suspense>
-
-        <Suspense fallback={<ProductSkeleton />}>
-          <JasaSection />
-        </Suspense>
-
-        <Suspense fallback={<ProductSkeleton />}>
-          <SewaSection />
-        </Suspense>
+        {/* Sections di bawah ini pakai TanStack Query — data real-time tanpa Next.js cache */}
+        <ProductSection />
+        <JasaSection />
+        <SewaSection />
 
       </main>
 
