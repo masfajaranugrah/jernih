@@ -285,7 +285,7 @@ export default function SewaPageClient({ items, categories, resolvedSearch }: Pr
               <select
                 value={activeFilter.sortBy}
                 onChange={(e) => setActiveFilter((p) => ({ ...p, sortBy: e.target.value }))}
-                className="text-xs font-semibold text-[#003527] bg-white border border-[#e1e3e4] rounded-lg px-3 py-2 outline-none cursor-pointer"
+                className="h-10 text-xs font-semibold text-[#003527] bg-white border border-[#e1e3e4] rounded-lg px-3 outline-none cursor-pointer"
               >
                 <option value="terbaru">Terbaru</option>
                 <option value="rating">Rating ↓</option>
@@ -294,7 +294,7 @@ export default function SewaPageClient({ items, categories, resolvedSearch }: Pr
               </select>
               <button
                 onClick={openFilter}
-                className="md:hidden relative flex items-center gap-1.5 rounded-lg border border-[#e1e3e4] bg-white px-3 py-2 text-xs font-semibold text-[#191c1d]"
+                className="md:hidden relative flex h-10 items-center gap-1.5 rounded-lg border border-[#e1e3e4] bg-white px-3 text-xs font-semibold text-[#191c1d]"
               >
                 <span className="material-symbols-outlined text-base">tune</span>
                 Filter

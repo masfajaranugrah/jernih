@@ -6,10 +6,10 @@ import { useState } from "react";
 import SearchOverlay from "@/app/(storefront)/SearchOverlay";
 
 const navLinks = [
-  { label: "Beranda", href: "/" },
-  { label: "Produk", href: "/produk" },
-  { label: "Sewa", href: "/sewa" },
-  { label: "Jasa", href: "/jasa" },
+  { label: "Beranda", href: "/", icon: "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" },
+  { label: "Produk", href: "/produk", icon: "M19 6h-2c0-2.76-2.24-5-5-5S7 3.24 7 6H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-7-3c1.66 0 3 1.34 3 3H9c0-1.66 1.34-3 3-3zm7 17H5V8h14v12z" },
+  { label: "Sewa", href: "/sewa", icon: "M12.65 10C11.83 7.67 9.59 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.59 0 4.83-1.67 5.65-4H17v3h3v-3h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z" },
+  { label: "Jasa", href: "/jasa", icon: "M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.3C.5 6.7.9 9.8 2.9 11.8c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.6z" },
 ];
 
 function StorefrontIcon() {
@@ -22,16 +22,8 @@ function StorefrontIcon() {
 
 function SearchIcon() {
   return (
-    <svg className="inline-block h-[1em] w-[1em] fill-current" viewBox="0 0 24 24" aria-hidden="true">
+    <svg className="inline-block h-[1.4em] w-[1.4em] fill-current" viewBox="0 0 24 24" aria-hidden="true">
       <path d="m19.6 21-6.3-6.3a7 7 0 1 1 1.4-1.4l6.3 6.3-1.4 1.4ZM9 14a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z" />
-    </svg>
-  );
-}
-
-function PersonIcon() {
-  return (
-    <svg className="inline-block h-[1em] w-[1em] fill-current" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-8 9a8 8 0 0 1 16 0H4Z" />
     </svg>
   );
 }
@@ -63,12 +55,12 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 w-full bg-[#f8f9fa]/90 shadow-sm backdrop-blur">
-        <div className="flex items-center justify-between gap-4 px-4 py-4 md:px-8">
+      <nav className="sticky top-0 z-50 w-full bg-[#f8f9fa]/95 shadow-sm backdrop-blur-md">
+        <div className="flex items-center justify-between gap-3 px-4 py-3 md:px-8 md:py-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 text-[#064e3b]">
+          <Link href="/" className="flex items-center gap-2 text-[#064e3b]">
             <StorefrontIcon />
-            <span className="text-xl font-bold sm:text-2xl">Jernih Creatife</span>
+            <span className="text-lg font-bold sm:text-2xl">Jernih Creatife</span>
           </Link>
 
           {/* Desktop nav links */}
@@ -94,81 +86,93 @@ export default function Navbar() {
           </div>
 
           {/* Right icons */}
-          <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex items-center gap-0.5">
             <button
               aria-label="Cari"
               onClick={() => setSearchOpen(true)}
-              className="rounded-full p-2 text-[#404944] transition hover:bg-[#e1e3e4] hover:text-[#064e3b]"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#404944] transition hover:bg-[#e1e3e4] hover:text-[#064e3b]"
             >
               <SearchIcon />
             </button>
-            {/* <button
-              aria-label="Akun"
-              className="rounded-full p-2 text-[#404944] transition hover:bg-[#e1e3e4] hover:text-[#064e3b]"
-            >
-              <PersonIcon />
-            </button> */}
 
             {/* Burger — mobile only */}
             <button
               aria-label={mobileOpen ? "Tutup menu" : "Buka menu"}
               onClick={() => setMobileOpen((v) => !v)}
-              className="rounded-full p-2 text-[#404944] transition hover:bg-[#e1e3e4] hover:text-[#064e3b] md:hidden"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#404944] transition hover:bg-[#e1e3e4] hover:text-[#064e3b] md:hidden"
             >
               {mobileOpen ? <CloseIcon /> : <BurgerIcon />}
             </button>
           </div>
         </div>
-
-        {/* Mobile dropdown menu */}
-        {mobileOpen && (
-          <div className="border-t border-[#e1e3e4] bg-white px-4 py-3 md:hidden">
-            <ul className="flex flex-col gap-1">
-              {navLinks.map((link) => {
-                const isActive =
-                  pathname === link.href ||
-                  (link.href !== "/" && pathname.startsWith(link.href));
-                return (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      onClick={handleLinkClick}
-                      className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition-colors ${
-                        isActive
-                          ? "bg-[#064e3b] text-white"
-                          : "text-[#404944] hover:bg-[#f3f4f5] hover:text-[#064e3b]"
-                      }`}
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-
-            {/* Divider + akun */}
-            {/* <div className="mt-3 border-t border-[#e1e3e4] pt-3">
-              <Link
-                href="/login"
-                onClick={handleLinkClick}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold text-[#404944] hover:bg-[#f3f4f5] hover:text-[#064e3b] transition-colors"
-              >
-                <PersonIcon />
-                Masuk / Daftar
-              </Link>
-            </div> */}
-          </div>
-        )}
       </nav>
 
-      {/* Overlay backdrop saat mobile menu terbuka */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/20 md:hidden"
-          onClick={() => setMobileOpen(false)}
-          aria-hidden="true"
-        />
-      )}
+      {/* ── Mobile Sidebar Overlay ── */}
+      {/* Backdrop */}
+      <div
+        className={`fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm transition-opacity duration-300 md:hidden ${
+          mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={() => setMobileOpen(false)}
+        aria-hidden="true"
+      />
+
+      {/* Sidebar drawer — slides in from left */}
+      <div
+        className={`fixed inset-y-0 left-0 z-[70] flex w-[80vw] max-w-[320px] flex-col bg-white shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:hidden ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {/* Sidebar header */}
+        <div className="flex items-center justify-between border-b border-[#e8ecea] px-5 py-4">
+          <Link
+            href="/"
+            onClick={handleLinkClick}
+            className="flex items-center gap-2 text-[#064e3b]"
+          >
+            <StorefrontIcon />
+            <span className="text-base font-bold">Jernih Creatife</span>
+          </Link>
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-[#404944] hover:bg-[#f0f2f1] transition"
+            aria-label="Tutup menu"
+          >
+            <CloseIcon />
+          </button>
+        </div>
+
+        {/* Nav links */}
+        <nav className="flex flex-col gap-1 p-4 flex-1">
+          {navLinks.map((link) => {
+            const isActive =
+              pathname === link.href ||
+              (link.href !== "/" && pathname.startsWith(link.href));
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={handleLinkClick}
+                className={`flex items-center gap-4 rounded-2xl px-4 py-3.5 text-[15px] font-semibold transition-all ${
+                  isActive
+                    ? "bg-[#064e3b] text-white shadow-sm"
+                    : "text-[#404944] hover:bg-[#f0f4f2] hover:text-[#064e3b]"
+                }`}
+              >
+                <svg className="h-5 w-5 fill-current shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d={link.icon} />
+                </svg>
+                {link.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Sidebar footer */}
+        <div className="border-t border-[#e8ecea] px-5 py-4">
+          <p className="text-xs text-[#9ea8a2]">© 2025 Jernih Creatife</p>
+        </div>
+      </div>
 
       {/* Search Overlay */}
       <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
