@@ -7,6 +7,7 @@ import PromoSection from "./components/PromoSection";
 import ProductSection from "./components/ProductSection";
 import JasaSection from "./components/JasaSection";
 import SewaSection from "./components/SewaSection";
+import StorefrontFooter from "./StorefrontFooter";
 
 // ── Hero Section — async server component tersendiri ─────────────────────────
 async function HeroContent() {
@@ -138,7 +139,7 @@ async function HeroContent() {
           )}
           <div className="absolute inset-0 bg-black/40" />
           <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[#064e3b]/20 blur-3xl" />
-          <div className="absolute -bottom-6 -left-6 h-28 w-28 rounded-full bg-blue-500/20 blur-2xl" />
+          <div className="absolute -bottom-6 -left-6 h-28 w-28 rounded-full bg-[#064e3b]/20 blur-2xl" />
           <div className="relative z-10 flex h-full flex-col items-center justify-center p-5 text-center text-white">
             {b2.tagline && (
               <span className="mb-3 rounded-full bg-[#064e3b]/20 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#4ade80]">
@@ -186,6 +187,8 @@ export default function Home() {
         <SewaSection />
 
       </main>
+
+      <StorefrontFooter />
     </>
   );
 }

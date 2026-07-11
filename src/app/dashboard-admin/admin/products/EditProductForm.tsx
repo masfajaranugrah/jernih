@@ -521,7 +521,7 @@ export default function EditProductForm({ product }: { product: ApiProduct }) {
                 { val: "SALE", label: "SALE", bg: "bg-[#ba1a1a]", text: "text-white" },
                 { val: "NEW", label: "NEW", bg: "bg-[#064e3b]", text: "text-white" },
                 { val: "HOT", label: "HOT 🔥", bg: "bg-orange-500", text: "text-white" },
-                { val: "DISKON", label: "DISKON", bg: "bg-[#1d4ed8]", text: "text-white" },
+                { val: "DISKON", label: "DISKON", bg: "bg-[#064e3b]", text: "text-white" },
                 { val: "TERBATAS", label: "TERBATAS", bg: "bg-[#7c3aed]", text: "text-white" },
               ].map((opt) => (
                 <button
@@ -545,7 +545,7 @@ export default function EditProductForm({ product }: { product: ApiProduct }) {
                   badge === "SALE" ? "bg-[#ba1a1a] text-white" :
                   badge === "NEW" ? "bg-[#064e3b] text-white" :
                   badge === "HOT" ? "bg-orange-500 text-white" :
-                  badge === "DISKON" ? "bg-[#1d4ed8] text-white" :
+                  badge === "DISKON" ? "bg-[#064e3b] text-white" :
                   badge === "TERBATAS" ? "bg-[#7c3aed] text-white" : ""
                 }`}>{badge}</span>
                 <span className="text-xs text-[#707974]">akan tampil di pojok gambar produk</span>

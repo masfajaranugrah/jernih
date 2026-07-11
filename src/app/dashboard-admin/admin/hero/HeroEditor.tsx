@@ -212,7 +212,7 @@ export default function HeroEditor({ initial }: Props) {
                 {i === 2 && (
                   <>
                     <div className="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-[#064e3b]/20 blur-2xl" />
-                    <div className="absolute -bottom-3 -left-3 h-14 w-14 rounded-full bg-blue-500/20 blur-xl" />
+                    <div className="absolute -bottom-3 -left-3 h-14 w-14 rounded-full bg-[#064e3b]/20 blur-xl" />
                   </>
                 )}
 

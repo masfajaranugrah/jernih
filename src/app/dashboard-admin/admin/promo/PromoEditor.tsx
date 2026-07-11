@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getToken } from "@/lib/auth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
@@ -30,6 +30,32 @@ interface PromoCard {
   linkHref: string;
 }
 
+type RawProduct = {
+  id: string;
+  name: string;
+  slug: string;
+  images?: string[];
+  price?: string | number;
+  category?: { name?: string };
+};
+
+type RawService = {
+  id: string;
+  name: string;
+  slug: string;
+  images?: string[];
+  priceFrom?: string | number;
+  category?: { name?: string };
+};
+
+type RawRental = {
+  id: string;
+  name: string;
+  slug: string;
+  images?: string[];
+  pricePerDay?: string | number;
+};
+
 // ── Client-side helpers ──────────────────────────────────────────────────────
 
 async function fetchAllItemsForPromo(): Promise<PromoPickerItem[]> {
@@ -43,7 +69,7 @@ async function fetchAllItemsForPromo(): Promise<PromoPickerItem[]> {
 
   if (produkRes.status === "fulfilled" && produkRes.value.ok) {
     const data = await produkRes.value.json();
-    const products: any[] = Array.isArray(data) ? data : data.data ?? [];
+    const products: RawProduct[] = Array.isArray(data) ? data : data.data ?? [];
     for (const p of products) {
       items.push({
         id: p.id,
@@ -51,7 +77,7 @@ async function fetchAllItemsForPromo(): Promise<PromoPickerItem[]> {
         name: p.name,
         slug: p.slug,
         image: p.images?.[0] ?? "",
-        priceLabel: p.price ? "Rp " + parseFloat(p.price).toLocaleString("id-ID") : "-",
+        priceLabel: p.price ? "Rp " + parseFloat(String(p.price)).toLocaleString("id-ID") : "-",
         category: p.category?.name ?? "Produk",
         linkHref: `/produk/${p.slug}`,
       });
@@ -59,7 +85,7 @@ async function fetchAllItemsForPromo(): Promise<PromoPickerItem[]> {
   }
 
   if (jasaRes.status === "fulfilled" && jasaRes.value.ok) {
-    const services: any[] = await jasaRes.value.json();
+    const services: RawService[] = await jasaRes.value.json();
     for (const s of services) {
       items.push({
         id: s.id,
@@ -67,7 +93,7 @@ async function fetchAllItemsForPromo(): Promise<PromoPickerItem[]> {
         name: s.name,
         slug: s.slug,
         image: s.images?.[0] ?? "",
-        priceLabel: s.priceFrom ? "Mulai Rp " + parseFloat(s.priceFrom).toLocaleString("id-ID") : "-",
+        priceLabel: s.priceFrom ? "Mulai Rp " + parseFloat(String(s.priceFrom)).toLocaleString("id-ID") : "-",
         category: s.category?.name ?? "Jasa",
         linkHref: `/jasa/${s.slug}`,
       });
@@ -75,7 +101,7 @@ async function fetchAllItemsForPromo(): Promise<PromoPickerItem[]> {
   }
 
   if (sewaRes.status === "fulfilled" && sewaRes.value.ok) {
-    const rentals: any[] = await sewaRes.value.json();
+    const rentals: RawRental[] = await sewaRes.value.json();
     for (const r of rentals) {
       items.push({
         id: r.id,
@@ -83,7 +109,7 @@ async function fetchAllItemsForPromo(): Promise<PromoPickerItem[]> {
         name: r.name,
         slug: r.slug,
         image: r.images?.[0] ?? "",
-        priceLabel: r.pricePerDay ? "Rp " + parseFloat(r.pricePerDay).toLocaleString("id-ID") + "/hari" : "-",
+        priceLabel: r.pricePerDay ? "Rp " + parseFloat(String(r.pricePerDay)).toLocaleString("id-ID") + "/hari" : "-",
         category: "Sewa",
         linkHref: `/sewa`,
       });
@@ -108,17 +134,21 @@ const TYPE_ICONS: Record<PromoItemType, string> = {
 };
 
 const TYPE_COLORS: Record<PromoItemType, string> = {
-  produk: "bg-blue-50 text-blue-700 border-blue-200",
+  produk: "bg-[#064e3b]/5 text-[#064e3b] border-[#064e3b]/20",
   jasa: "bg-emerald-50 text-emerald-700 border-emerald-200",
   sewa: "bg-orange-50 text-orange-700 border-orange-200",
 };
 
 function ItemPickerModal({
   allItems,
+  isLoading,
+  isError,
   onSelect,
   onClose,
 }: {
   allItems: PromoPickerItem[];
+  isLoading: boolean;
+  isError: boolean;
   onSelect: (item: PromoPickerItem) => void;
   onClose: () => void;
 }) {
@@ -190,7 +220,25 @@ function ItemPickerModal({
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">
-          {filtered.length === 0 ? (
+          {isLoading ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {[1, 2, 3, 4, 5, 6].map((item) => (
+                <div key={item} className="flex items-center gap-3 rounded-xl border border-[#e1e3e4] bg-white p-3">
+                  <div className="h-14 w-14 rounded-lg bg-[#edeeef] animate-pulse" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-3/4 rounded bg-[#edeeef] animate-pulse" />
+                    <div className="h-3 w-1/2 rounded bg-[#edeeef] animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : isError ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <span className="material-symbols-outlined text-5xl text-[#bfc9c3] mb-3">error</span>
+              <p className="font-semibold text-[#404944]">Gagal memuat item</p>
+              <p className="mt-1 text-sm text-[#707974]">Periksa koneksi backend lalu buka ulang modal</p>
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <span className="material-symbols-outlined text-5xl text-[#bfc9c3] mb-3">search_off</span>
               <p className="font-semibold text-[#404944]">Tidak ada item</p>
@@ -242,8 +290,16 @@ export default function PromoEditor({ promos }: { promos: PromoCard[] }) {
   const queryClient = useQueryClient();
   const [toast, setToast] = useState("");
   const [showPicker, setShowPicker] = useState(false);
-  const [allItems, setAllItems] = useState<PromoPickerItem[]>([]);
-  const [loadingItems, setLoadingItems] = useState(false);
+
+  const {
+    data: allItems = [],
+    isLoading: isLoadingItems,
+    isError: isItemsError,
+  } = useQuery({
+    queryKey: ["admin", "promo-picker-items"],
+    queryFn: fetchAllItemsForPromo,
+    enabled: showPicker,
+  });
 
   function flash(msg: string) {
     setToast(msg);
@@ -328,17 +384,8 @@ export default function PromoEditor({ promos }: { promos: PromoCard[] }) {
 
   const isPending = createMutation.isPending || deleteMutation.isPending;
 
-  async function openPicker() {
+  function openPicker() {
     setShowPicker(true);
-    if (allItems.length === 0) {
-      setLoadingItems(true);
-      try {
-        const items = await fetchAllItemsForPromo();
-        setAllItems(items);
-      } finally {
-        setLoadingItems(false);
-      }
-    }
   }
 
   function handleSelect(item: PromoPickerItem) {
@@ -361,7 +408,9 @@ export default function PromoEditor({ promos }: { promos: PromoCard[] }) {
 
       {showPicker && (
         <ItemPickerModal
-          allItems={loadingItems ? [] : allItems}
+          allItems={allItems}
+          isLoading={isLoadingItems}
+          isError={isItemsError}
           onSelect={handleSelect}
           onClose={() => setShowPicker(false)}
         />

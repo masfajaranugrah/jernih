@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import SidebarPelanggan from "../Sidebar";
 
 const tabs = ["Semua", "Belum Bayar", "Dikemas", "Dikirim", "Selesai"];
 
@@ -212,68 +211,59 @@ export default function OrdersPelangganPage() {
       : orders.filter((o) => o.status === activeTab);
 
   return (
-    <div className="bg-[#f8f9fa] text-[#191c1d] min-h-screen antialiased flex">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block');
-        .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
-      `}</style>
-
-      <SidebarPelanggan />
-
-      <main className="flex-1 md:ml-64 p-6 md:p-10 max-w-[1280px] mx-auto overflow-x-hidden pb-24 md:pb-10">
-        {/* Page heading */}
-        <div className="mb-10">
-          <h1
-            className="text-[#191c1d] font-semibold tracking-tight mb-1"
-            style={{ fontSize: "36px", lineHeight: "1.2", letterSpacing: "-0.02em" }}
-          >
-            Pesanan Saya
-          </h1>
-          <p className="text-[#707974] text-base">
-            Pantau status pesanan dan riwayat belanja Anda.
-          </p>
-        </div>
-
-        {/* Tabs */}
-        <div
-          className="flex overflow-x-auto gap-6 border-b border-[#bfc9c3] mb-8"
-          style={{ scrollbarWidth: "none" }}
+    <>
+      {/* Page heading */}
+      <div className="mb-10">
+        <h1
+          className="text-[#191c1d] font-semibold tracking-tight mb-1"
+          style={{ fontSize: "36px", lineHeight: "1.2", letterSpacing: "-0.02em" }}
         >
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`pb-3 text-sm font-semibold whitespace-nowrap transition-colors border-b-2 ${
-                activeTab === tab
-                  ? "border-[#003527] text-[#003527]"
-                  : "border-transparent text-[#707974] hover:text-[#003527]"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+          Pesanan Saya
+        </h1>
+        <p className="text-[#707974] text-base">
+          Pantau status pesanan dan riwayat belanja Anda.
+        </p>
+      </div>
 
-        {/* Orders bento grid */}
-        {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <span className="material-symbols-outlined text-6xl text-[#bfc9c3] mb-4">
-              shopping_bag
-            </span>
-            <p className="text-[#707974] text-base">Tidak ada pesanan di kategori ini.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            {filtered.map((order) =>
-              order.items.length > 1 || order.extraItems ? (
-                <MultiItemCard key={order.id} order={order} />
-              ) : (
-                <SingleItemCard key={order.id} order={order} />
-              )
-            )}
-          </div>
-        )}
-      </main>
+      {/* Tabs */}
+      <div
+        className="flex overflow-x-auto gap-6 border-b border-[#bfc9c3] mb-8"
+        style={{ scrollbarWidth: "none" }}
+      >
+        {tabs.map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`pb-3 text-sm font-semibold whitespace-nowrap transition-colors border-b-2 ${
+              activeTab === tab
+                ? "border-[#003527] text-[#003527]"
+                : "border-transparent text-[#707974] hover:text-[#003527]"
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {/* Orders bento grid */}
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <span className="material-symbols-outlined text-6xl text-[#bfc9c3] mb-4">
+            shopping_bag
+          </span>
+          <p className="text-[#707974] text-base">Tidak ada pesanan di kategori ini.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {filtered.map((order) =>
+            order.items.length > 1 || order.extraItems ? (
+              <MultiItemCard key={order.id} order={order} />
+            ) : (
+              <SingleItemCard key={order.id} order={order} />
+            )
+          )}
+        </div>
+      )}
 
       {/* Support FAB */}
       <button
@@ -282,6 +272,6 @@ export default function OrdersPelangganPage() {
       >
         <span className="material-symbols-outlined">support_agent</span>
       </button>
-    </div>
+    </>
   );
 }

@@ -454,9 +454,9 @@ export default function RegisterMitraForm() {
           {/* Footer links */}
           <p className="mt-4 text-center text-sm text-[#404944]">
             Sudah punya akun?{" "}
-            <Link href="/login" className="text-[#003527] font-semibold hover:underline">Masuk</Link>
+            <Link href="/dashboard/pelanggan/login" className="text-[#003527] font-semibold hover:underline">Masuk</Link>
             <span className="mx-1 text-[#bfc9c3]">·</span>
-            <Link href="/register" className="text-[#003527] font-semibold hover:underline">Daftar sebagai pelanggan</Link>
+            <Link href="/dashboard/pelanggan/register" className="text-[#003527] font-semibold hover:underline">Daftar sebagai pelanggan</Link>
           </p>
         </div>
       </main>

@@ -20,7 +20,11 @@ const DEFAULT_FILTER: FilterState = {
 };
 
 function formatRupiah(val: string | number) {
-  return "Rp " + parseFloat(String(val)).toLocaleString("id-ID");
+  const num = parseFloat(String(val));
+  if (isNaN(num)) return "Rp 0";
+  const int = Math.floor(num);
+  const formatted = int.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return "Rp " + formatted;
 }
 
 // ── Sub-component ServiceCard (dipakai SSR fallback & virtualizer) ──
@@ -107,7 +111,7 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
   useEffect(() => {
     if (!mounted) return;
     const handleResize = () => {
-      setCols(window.innerWidth >= 1024 ? 3 : window.innerWidth >= 640 ? 2 : 1);
+      setCols(window.innerWidth >= 1280 ? 4 : window.innerWidth >= 1024 ? 3 : window.innerWidth >= 640 ? 2 : 1);
     };
     handleResize();
     window.addEventListener("resize", handleResize);
@@ -240,7 +244,7 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
   );
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] text-[#191c1d]">
+    <div className="min-h-screen bg-[#f8f9fa] text-[#191c1d]" suppressHydrationWarning>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0,0&display=block');
         .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24; vertical-align:middle; }
@@ -248,11 +252,11 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
         .premium-shadow:hover { box-shadow:0px 12px 40px rgba(0,0,0,0.08); transform:translateY(-4px); }
       `}</style>
 
-      <div className="max-w-[1280px] mx-auto px-4 md:px-12 pt-8 pb-20 flex flex-col md:flex-row gap-10">
+      <div className="mx-auto flex max-w-[1680px] flex-col gap-6 px-4 pt-8 pb-20 md:flex-row md:gap-10 md:px-8 lg:px-12 xl:gap-14 2xl:px-16">
 
         {/* Sidebar desktop */}
-        <aside className="hidden md:block w-60 flex-shrink-0">
-          <div className="sticky top-24 bg-white rounded-xl border border-[#e1e3e4] p-5 shadow-sm">
+        <aside className="hidden w-64 flex-shrink-0 md:block xl:w-72">
+          <div className="sticky top-24 rounded-2xl border border-[#e1e3e4] bg-white p-5 shadow-sm xl:p-6">
             <div className="flex items-center justify-between mb-5">
               <h3 className="font-bold text-sm text-[#191c1d]">Filter</h3>
               {activeCount > 0 && (
@@ -341,7 +345,7 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
             <>
               {!mounted ? (
                 /* SSR Fallback: static grid untuk SEO */
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4 xl:gap-5">
                   {filtered.map((svc) => (
                     <ServiceCard key={svc.id} svc={svc} />
                   ))}
@@ -369,7 +373,7 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
                           height: `${virtualRow.size}px`,
                           transform: `translateY(${virtualRow.start - rowVirtualizer.options.scrollMargin}px)`,
                         }}
-                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+                        className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4 xl:gap-5"
                       >
                         {rowItems.map((svc) => (
                           <ServiceCard key={svc.id} svc={svc} />

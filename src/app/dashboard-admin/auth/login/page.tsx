@@ -149,7 +149,7 @@ function LoginPageContent() {
             <div className="flex-1 border-t border-[#bfc9c3]" />
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3">
-            <Link href="/register"
+            <Link href="/dashboard/pelanggan/register"
               className="flex items-center justify-center px-4 py-3 border-2 border-[#bfc9c3] rounded-lg text-[#191c1d] text-xs sm:text-sm font-semibold bg-white hover:bg-[#edeeef] transition-all text-center">
               Daftar sebagai Pembeli
             </Link>

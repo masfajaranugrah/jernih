@@ -36,7 +36,7 @@ function ProductCard({ product }: { product: ApiProduct }) {
   const sellerName = "Jernih Creative Official";
   const badgeColors: Record<string, string> = {
     SALE: "bg-[#ba1a1a]", NEW: "bg-[#064e3b]", HOT: "bg-orange-500",
-    DISKON: "bg-[#1d4ed8]", TERBATAS: "bg-[#7c3aed]",
+    DISKON: "bg-[#064e3b]", TERBATAS: "bg-[#7c3aed]",
   };
 
   return (

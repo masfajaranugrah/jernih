@@ -4,12 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, FormEvent, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { setToken } from "@/lib/auth";
 
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const from = searchParams.get("from") ?? "/dashboard";
+  const from = searchParams.get("from") ?? "/dashboard/pelanggan";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,30 +21,18 @@ function LoginPageContent() {
     setLoading(true);
 
     try {
-      // ── Sementara (sebelum backend aktif): simulasi login ──────────────────
-      // Ganti blok ini dengan fetch ke /api/auth/login saat backend sudah jalan:
-      //
-      // const res = await fetch("http://localhost:3001/api/auth/login", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({ email, password }),
-      // });
-      // if (!res.ok) throw new Error("Email atau password salah");
-      // const { access_token } = await res.json();
-      // setToken(access_token);
-      //
-      // ── Demo mode: terima credential apa pun ───────────────────────────────
-      await new Promise((r) => setTimeout(r, 600)); // simulasi network delay
-      if (!email || !password) throw new Error("Email dan password wajib diisi");
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || data.message || "Email atau password salah");
 
-      // Buat fake JWT payload untuk demo
-      const fakePayload = btoa(JSON.stringify({ sub: "demo-user", email, role: "ADMIN" }));
-      const fakeToken = `header.${fakePayload}.signature`;
-      setToken(fakeToken);
-      // ── Akhir demo mode ────────────────────────────────────────────────────
-
-      router.push(from);
-      router.refresh(); // paksa middleware re-evaluate
+      const slug = data.user.name.toLowerCase().replace(/\s+/g, "-");
+      localStorage.setItem("mh_user", JSON.stringify({ name: data.user.name, slug }));
+      router.push(`/dashboard/pelanggan/${slug}/`);
+      router.refresh();
     } catch (err: any) {
       setError(err.message ?? "Terjadi kesalahan");
     } finally {
@@ -80,7 +67,7 @@ function LoginPageContent() {
             Welcome back
           </h3>
           <p className="mt-2 text-[#404944] text-sm sm:text-base">
-            Masuk ke akun Jernih Creatife Anda.
+            Masuk ke akun pelanggan Jernih Creatife Anda.
           </p>
         </div>
 
@@ -141,23 +128,19 @@ function LoginPageContent() {
           </button>
         </form>
 
-        {/* Register links */}
-        <div className="mt-6">
-          <div className="relative flex items-center">
-            <div className="flex-1 border-t border-[#bfc9c3]" />
-            <span className="px-3 text-[#404944] text-xs uppercase tracking-wider">Belum punya akun?</span>
-            <div className="flex-1 border-t border-[#bfc9c3]" />
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <Link href="/register"
-              className="flex items-center justify-center px-4 py-3 border-2 border-[#bfc9c3] rounded-lg text-[#191c1d] text-xs sm:text-sm font-semibold bg-white hover:bg-[#edeeef] transition-all text-center">
-              Daftar sebagai Pembeli
+        <div className="mt-6 text-center space-y-2">
+          <p className="text-sm text-[#404944]">
+            Belum punya akun?{" "}
+            <Link href="/dashboard/pelanggan/register" className="font-bold text-[#003527] hover:underline">
+              Daftar
             </Link>
-            <Link href="/register-mitra"
-              className="flex items-center justify-center px-4 py-3 border-2 border-[#bfc9c3] rounded-lg text-[#191c1d] text-xs sm:text-sm font-semibold bg-white hover:bg-[#edeeef] transition-all text-center">
-              Daftar sebagai Mitra
+          </p>
+          <p className="text-sm text-[#404944]">
+            Daftar sebagai mitra?{" "}
+            <Link href="/register-mitra" className="font-bold text-[#003527] hover:underline">
+              Daftar Mitra
             </Link>
-          </div>
+          </p>
         </div>
       </div>
     </main>

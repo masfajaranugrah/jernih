@@ -513,7 +513,7 @@ export default function SearchOverlay({ isOpen, onClose }: Props) {
                     {results.map((item) => {
                       const badgeColors: Record<string, string> = {
                         produk: "bg-[#064e3b]/10 text-[#064e3b]",
-                        sewa: "bg-blue-600/10 text-blue-700",
+                        sewa: "bg-[#064e3b]/10 text-[#064e3b]",
                         jasa: "bg-purple-600/10 text-purple-700",
                       };
                       const typeLabel: Record<string, string> = {

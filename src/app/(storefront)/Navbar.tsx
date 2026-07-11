@@ -1,9 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
 import SearchOverlay from "@/app/(storefront)/SearchOverlay";
+
+interface UserData {
+  name: string;
+  slug: string;
+}
 
 const navLinks = [
   { label: "Beranda", href: "/", icon: "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" },
@@ -46,11 +51,47 @@ function CloseIcon() {
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [user, setUser] = useState<UserData | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("mh_user");
+    if (stored) {
+      try {
+        setUser(JSON.parse(stored));
+      } catch {}
+    }
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   function handleLinkClick() {
     setMobileOpen(false);
+  }
+
+  function handleLogout() {
+    localStorage.removeItem("mh_user");
+    document.cookie = "mh_token=; path=/; max-age=0; SameSite=Lax";
+    setUser(null);
+    setDropdownOpen(false);
+    router.push("/");
+    router.refresh();
+  }
+
+  function getInitial(name: string) {
+    return name.charAt(0).toUpperCase();
   }
 
   return (
@@ -63,8 +104,8 @@ export default function Navbar() {
             <span className="text-lg font-bold sm:text-2xl">Jernih Creatife</span>
           </Link>
 
-          {/* Desktop nav links */}
-          <div className="hidden items-center gap-8 md:flex">
+          {/* Desktop nav links — center */}
+          <div className="hidden items-center justify-center gap-8 flex-1 md:flex">
             {navLinks.map((link) => {
               const isActive =
                 pathname === link.href ||
@@ -85,8 +126,8 @@ export default function Navbar() {
             })}
           </div>
 
-          {/* Right icons */}
-          <div className="flex items-center gap-0.5">
+          {/* Desktop right: Search + Login/Register / Avatar */}
+          <div className="hidden items-center gap-3 md:flex">
             <button
               aria-label="Cari"
               onClick={() => setSearchOpen(true)}
@@ -94,12 +135,69 @@ export default function Navbar() {
             >
               <SearchIcon />
             </button>
+            {user ? (
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setDropdownOpen((v) => !v)}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-[#064e3b] text-white text-sm font-bold transition hover:bg-[#043b2d]"
+                >
+                  {getInitial(user.name)}
+                </button>
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-52 origin-top-right rounded-xl bg-white shadow-lg ring-1 ring-black/5 overflow-hidden z-50">
+                    <Link
+                      href={`/dashboard/pelanggan/${user.slug}/`}
+                      onClick={() => setDropdownOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-[#191c1d] hover:bg-[#f0f4f2] transition"
+                    >
+                      <svg className="h-5 w-5 fill-current text-[#707974]" viewBox="0 0 24 24">
+                        <path d="M4 13h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1Zm0 8h6a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1Zm10 0h6a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1Zm0-18v4a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1Z" />
+                      </svg>
+                      Dashboard saya
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-[#ba1a1a] hover:bg-[#ffdad6] transition text-left"
+                    >
+                      <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                        <path d="M5 3h6a1 1 0 0 1 1 1v2h-2V5H5v14h5v2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm12.59 5.59L20.17 11H10v2h10.17l-2.58 2.59L19 17l5-5-5-5-1.41 1.59Z" />
+                      </svg>
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/dashboard/pelanggan/login"
+                  className="rounded-lg border border-[#064e3b] px-4 py-2 text-sm font-bold text-[#064e3b] transition hover:bg-[#064e3b] hover:text-white"
+                >
+                  Masuk
+                </Link>
+                <Link
+                  href="/dashboard/pelanggan/register"
+                  className="rounded-lg bg-[#064e3b] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#043b2d]"
+                >
+                  Daftar
+                </Link>
+              </div>
+            )}
+          </div>
 
-            {/* Burger — mobile only */}
+          {/* Mobile right: Search + Burger */}
+          <div className="flex items-center gap-0.5 md:hidden">
+            <button
+              aria-label="Cari"
+              onClick={() => setSearchOpen(true)}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#404944] transition hover:bg-[#e1e3e4] hover:text-[#064e3b]"
+            >
+              <SearchIcon />
+            </button>
             <button
               aria-label={mobileOpen ? "Tutup menu" : "Buka menu"}
               onClick={() => setMobileOpen((v) => !v)}
-              className="flex h-10 w-10 items-center justify-center rounded-full text-[#404944] transition hover:bg-[#e1e3e4] hover:text-[#064e3b] md:hidden"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#404944] transition hover:bg-[#e1e3e4] hover:text-[#064e3b]"
             >
               {mobileOpen ? <CloseIcon /> : <BurgerIcon />}
             </button>
@@ -169,8 +267,54 @@ export default function Navbar() {
         </nav>
 
         {/* Sidebar footer */}
-        <div className="border-t border-[#e8ecea] px-5 py-4">
-          <p className="text-xs text-[#9ea8a2]">© 2025 Jernih Creatife</p>
+        <div className="border-t border-[#e8ecea] px-5 py-4 space-y-3">
+          {user ? (
+            <div className="space-y-2">
+              <div className="flex items-center gap-3 px-1">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#064e3b] text-white text-sm font-bold">
+                  {getInitial(user.name)}
+                </div>
+                <span className="text-sm font-semibold text-[#191c1d] truncate">{user.name}</span>
+              </div>
+              <Link
+                href={`/dashboard/pelanggan/${user.slug}/`}
+                onClick={handleLinkClick}
+                className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold text-[#191c1d] hover:bg-[#f0f4f2] transition"
+              >
+                <svg className="h-5 w-5 fill-current text-[#707974]" viewBox="0 0 24 24">
+                  <path d="M4 13h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1Zm0 8h6a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1Zm10 0h6a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1Zm0-18v4a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1Z" />
+                </svg>
+                Dashboard saya
+              </Link>
+              <button
+                onClick={() => { handleLogout(); handleLinkClick(); }}
+                className="flex items-center gap-3 w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-[#ba1a1a] hover:bg-[#ffdad6] transition"
+              >
+                <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                  <path d="M5 3h6a1 1 0 0 1 1 1v2h-2V5H5v14h5v2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm12.59 5.59L20.17 11H10v2h10.17l-2.58 2.59L19 17l5-5-5-5-1.41 1.59Z" />
+                </svg>
+                Logout
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Link
+                href="/dashboard/pelanggan/login"
+                onClick={handleLinkClick}
+                className="flex-1 rounded-xl border border-[#064e3b] py-2.5 text-center text-sm font-bold text-[#064e3b] transition hover:bg-[#064e3b] hover:text-white"
+              >
+                Masuk
+              </Link>
+              <Link
+                href="/dashboard/pelanggan/register"
+                onClick={handleLinkClick}
+                className="flex-1 rounded-xl bg-[#064e3b] py-2.5 text-center text-sm font-bold text-white transition hover:bg-[#043b2d]"
+              >
+                Daftar
+              </Link>
+            </div>
+          )}
+          <p className="text-xs text-[#9ea8a2] text-center">© 2025 Jernih Creatife</p>
         </div>
       </div>
 

@@ -1,5 +1,4 @@
 import Navbar from "@/app/(storefront)/Navbar";
-import StorefrontFooter from "@/app/(storefront)/StorefrontFooter";
 import StorefrontProviders from "./StorefrontProviders";
 
 export default function StorefrontLayout({
@@ -11,7 +10,6 @@ export default function StorefrontLayout({
     <StorefrontProviders>
       <Navbar />
       {children}
-      <StorefrontFooter />
     </StorefrontProviders>
   );
 }

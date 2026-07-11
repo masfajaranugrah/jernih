@@ -70,9 +70,9 @@ const styles: Record<ToastType, { wrapper: string; icon: string; progress: strin
     progress: "bg-[#b45309]",
   },
   info: {
-    wrapper: "bg-white border-l-4 border-[#1d4ed8]",
-    icon: "text-[#1d4ed8] bg-[#1d4ed8]/10",
-    progress: "bg-[#1d4ed8]",
+    wrapper: "bg-white border-l-4 border-[#064e3b]",
+    icon: "text-[#064e3b] bg-[#064e3b]/10",
+    progress: "bg-[#064e3b]",
   },
 };
 

@@ -21,6 +21,13 @@ const menuItems = [
     color: "bg-[#0a3d62]/10 text-[#0a3d62]",
   },
   {
+    href: "/dashboard-admin/admin/categories",
+    icon: "category",
+    label: "Kategori",
+    desc: "Kelola kategori produk dan jasa",
+    color: "bg-[#725c00]/10 text-[#725c00]",
+  },
+  {
     href: "/dashboard-admin/admin/promo",
     icon: "local_offer",
     label: "Promo",
@@ -86,6 +93,7 @@ export default function AdminPage() {
               <Link
                 key={item.label}
                 href={item.href}
+                prefetch={false}
                 className="bg-white border border-[#e1e3e4] rounded-xl p-6 flex items-start gap-5 hover:border-[#003527] hover:shadow-md transition-all group"
               >
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${item.color}`}>
@@ -109,6 +117,7 @@ export default function AdminPage() {
             <h3 className="text-sm font-semibold text-[#707974] uppercase tracking-widest mb-4">Aksi Cepat</h3>
             <div className="flex flex-wrap gap-3">
               <Link
+                prefetch={false}
                 href="/dashboard-admin/admin/products/new"
                 className="flex items-center gap-2 rounded-xl bg-[#064e3b] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:-translate-y-0.5 hover:bg-[#043b2d] transition-all"
               >
@@ -116,6 +125,7 @@ export default function AdminPage() {
                 Tambah Produk
               </Link>
               <Link
+                prefetch={false}
                 href="/dashboard-admin/admin/products"
                 className="flex items-center gap-2 rounded-xl border border-[#e1e3e4] bg-white px-5 py-3 text-sm font-semibold text-[#191c1d] hover:border-[#003527] hover:text-[#003527] transition-all"
               >
@@ -123,6 +133,15 @@ export default function AdminPage() {
                 Lihat Semua Produk
               </Link>
               <Link
+                prefetch={false}
+                href="/dashboard-admin/admin/categories"
+                className="flex items-center gap-2 rounded-xl border border-[#e1e3e4] bg-white px-5 py-3 text-sm font-semibold text-[#191c1d] hover:border-[#003527] hover:text-[#003527] transition-all"
+              >
+                <span className="material-symbols-outlined text-base">category</span>
+                Kelola Kategori
+              </Link>
+              <Link
+                prefetch={false}
                 href="/dashboard-admin/admin/services/new"
                 className="flex items-center gap-2 rounded-xl bg-[#064e3b] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:-translate-y-0.5 hover:bg-[#043b2d] transition-all"
               >
@@ -130,6 +149,7 @@ export default function AdminPage() {
                 Tambah Jasa
               </Link>
               <Link
+                prefetch={false}
                 href="/dashboard-admin/admin/services"
                 className="flex items-center gap-2 rounded-xl border border-[#e1e3e4] bg-white px-5 py-3 text-sm font-semibold text-[#191c1d] hover:border-[#003527] hover:text-[#003527] transition-all"
               >
@@ -137,6 +157,7 @@ export default function AdminPage() {
                 Lihat Semua Jasa
               </Link>
               <Link
+                prefetch={false}
                 href="/dashboard-admin/admin/promo"
                 className="flex items-center gap-2 rounded-xl border border-[#e1e3e4] bg-white px-5 py-3 text-sm font-semibold text-[#191c1d] hover:border-[#003527] hover:text-[#003527] transition-all"
               >

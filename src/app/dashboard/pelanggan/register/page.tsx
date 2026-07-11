@@ -1,18 +1,57 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
+import { useState, FormEvent, Suspense } from "react";
+import { useRouter } from "next/navigation";
 
-export const metadata = {
-  title: "Daftar - Jernih Creatife",
-  description: "Buat akun pelanggan Jernih Creatife.",
-};
+function RegisterPageContent() {
+  const router = useRouter();
 
-export default function RegisterPage() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [agree, setAgree] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError("");
+
+    if (!agree) {
+      setError("Anda harus menyetujui syarat layanan dan kebijakan privasi.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, phone, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || data.message || "Registrasi gagal");
+
+      const slug = data.user.name.toLowerCase().replace(/\s+/g, "-");
+      router.push(`/dashboard/pelanggan/${slug}/`);
+      router.refresh();
+    } catch (err: any) {
+      setError(err.message ?? "Terjadi kesalahan");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[#f8f9fa] flex flex-col lg:flex-row antialiased">
       {/* Left panel — branding, hidden on mobile/tablet */}
       <div className="relative hidden lg:flex lg:w-1/2 xl:w-3/5 flex-col justify-between overflow-hidden">
         <Image
-          src="https://lh3.googleusercontent.com/aida-public/AB6AXuBldZ4YF3zFjCxhbsi6Ir3mwX1p6IfF2n_BtZ7s2FTMhxx21a9Eo_P9rqIDV867wlovyg6Ca_CafMYzawNQaymO2Jz5LS3qFO34Q-iMMWOh2Sy3xGMA97f1NuQ75TYCAsmggGV8l2gv0PRjlDJ1nz71PeTnL1LQALxOg70jNdH-otpqbF88sojNQsCW-fFfTmj6cVkx1PekbJ_VEmslp4F8wLTT7I4vwsEHxToMzZeZHtLTbecmb6Ym"
+          src="https://lh3.googleusercontent.com/aida-public/AB6AXuBldZ4Y3FzFjCxhbsi6Ir3mwX1p6IfF2n_BtZ7s2FTMhxx21a9Eo_P9rqIDV867wlovyg6Ca_CafMYzawNQaymO2Jz5LS3qFO34Q-iMMWOh2Sy3xGMA97f1NuQ75TYCAsmggGV8l2gv0PRjlDJ1nz71PeTnL1LQALxOg70jNdH-otpqbF88sojNQsCW-fFfTmj6cVkx1PekbJ_VEmslp4F8wLTT7I4vwsEHxToMzZeZHtLTbecmb6Ym"
           alt="Luxury jewelry on marble surface"
           fill
           className="object-cover"
@@ -55,7 +94,13 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          <form className="space-y-4">
+          {error && (
+            <div className="mb-4 rounded-lg bg-[#ffdad6] border border-[#ba1a1a]/20 px-4 py-3 text-sm text-[#ba1a1a] font-medium">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Nama */}
             <div className="flex flex-col gap-1">
               <label className="text-xs sm:text-sm font-semibold text-[#191c1d]" htmlFor="reg-name">
@@ -70,6 +115,9 @@ export default function RegisterPage() {
                   id="reg-name"
                   placeholder="Masukkan nama lengkap"
                   autoComplete="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
                   className="h-12 w-full bg-transparent text-sm text-[#191c1d] outline-none placeholder:text-[#9ca3af]"
                 />
               </div>
@@ -89,6 +137,9 @@ export default function RegisterPage() {
                   id="reg-email"
                   placeholder="nama@email.com"
                   autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                   className="h-12 w-full bg-transparent text-sm text-[#191c1d] outline-none placeholder:text-[#9ca3af]"
                 />
               </div>
@@ -108,6 +159,9 @@ export default function RegisterPage() {
                   id="reg-phone"
                   placeholder="08xxxxxxxxxx"
                   autoComplete="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
                   className="h-12 w-full bg-transparent text-sm text-[#191c1d] outline-none placeholder:text-[#9ca3af]"
                 />
               </div>
@@ -127,6 +181,9 @@ export default function RegisterPage() {
                   id="reg-password"
                   placeholder="Buat password"
                   autoComplete="new-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                   className="h-12 w-full bg-transparent text-sm text-[#191c1d] outline-none placeholder:text-[#9ca3af]"
                 />
               </div>
@@ -134,22 +191,28 @@ export default function RegisterPage() {
 
             {/* Agree */}
             <label className="flex items-start gap-2 text-xs sm:text-sm text-[#404944] leading-5">
-              <input type="checkbox" className="mt-0.5 h-4 w-4 rounded border-[#bfc9c3] accent-[#003527] shrink-0" />
+              <input
+                type="checkbox"
+                checked={agree}
+                onChange={(e) => setAgree(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-[#bfc9c3] accent-[#003527] shrink-0"
+              />
               Saya menyetujui syarat layanan dan kebijakan privasi Jernih Creatife.
             </label>
 
             <button
-              type="button"
-              className="w-full h-12 rounded-xl bg-[#003527] text-sm font-bold text-white transition hover:bg-[#064e3b]"
+              type="submit"
+              disabled={loading}
+              className="w-full h-12 rounded-xl bg-[#003527] text-sm font-bold text-white transition hover:bg-[#064e3b] disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Daftar
+              {loading ? "Memproses..." : "Daftar"}
             </button>
           </form>
 
           <div className="mt-6 text-center space-y-2">
             <p className="text-sm text-[#404944]">
               Sudah punya akun?{" "}
-              <Link href="/login" className="font-bold text-[#003527] hover:underline">
+              <Link href="/dashboard/pelanggan/login" className="font-bold text-[#003527] hover:underline">
                 Masuk
               </Link>
             </p>
@@ -163,5 +226,17 @@ export default function RegisterPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#064e3b] border-t-transparent" />
+      </div>
+    }>
+      <RegisterPageContent />
+    </Suspense>
   );
 }

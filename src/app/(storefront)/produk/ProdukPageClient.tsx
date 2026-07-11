@@ -12,7 +12,7 @@ function ProductCard({ product }: { product: ApiProduct }) {
     SALE: "bg-[#ba1a1a]",
     NEW: "bg-[#064e3b]",
     HOT: "bg-orange-500",
-    DISKON: "bg-[#1d4ed8]",
+    DISKON: "bg-[#064e3b]",
     TERBATAS: "bg-[#7c3aed]",
   };
 

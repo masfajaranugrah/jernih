@@ -3,24 +3,24 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const navItems = [
-  { href: "/dashboard-pelanggan", icon: "dashboard", label: "Overview" },
-  { href: "/dashboard-pelanggan/orders", icon: "shopping_bag", label: "Orders" },
-  { href: "/dashboard-pelanggan/wishlist", icon: "favorite", label: "Wishlist" },
-  { href: "/dashboard-pelanggan/vouchers", icon: "confirmation_number", label: "Vouchers" },
-  { href: "/dashboard-pelanggan/chat", icon: "chat", label: "Chat" },
-  { href: "/dashboard-pelanggan/addresses", icon: "location_on", label: "Addresses" },
-];
-
-const bottomItems = [
-  { href: "/dashboard-pelanggan/profile", icon: "person", label: "Profile" },
-];
-
-export default function SidebarPelanggan() {
+export default function SidebarPelanggan({ nama }: { nama: string }) {
   const pathname = usePathname();
 
+  const navItems = [
+    { href: `/dashboard/pelanggan/${nama}`, icon: "dashboard", label: "Overview" },
+    { href: `/dashboard/pelanggan/${nama}/orders`, icon: "shopping_bag", label: "Orders" },
+    { href: `/dashboard/pelanggan/${nama}/wishlist`, icon: "favorite", label: "Wishlist" },
+    { href: `/dashboard/pelanggan/${nama}/vouchers`, icon: "confirmation_number", label: "Vouchers" },
+    { href: `/dashboard/pelanggan/${nama}/chat`, icon: "chat", label: "Chat" },
+    { href: `/dashboard/pelanggan/${nama}/addresses`, icon: "location_on", label: "Addresses" },
+  ];
+
+  const bottomItems = [
+    { href: `/dashboard/pelanggan/${nama}/profile`, icon: "person", label: "Profile" },
+  ];
+
   const isActive = (href: string) =>
-    href === "/dashboard-pelanggan"
+    href === `/dashboard/pelanggan/${nama}`
       ? pathname === href
       : pathname.startsWith(href);
 
@@ -113,7 +113,7 @@ export default function SidebarPelanggan() {
           );
         })}
         <Link
-          href="/dashboard-pelanggan/profile"
+          href={`/dashboard/pelanggan/${nama}/profile`}
           prefetch={false}
           className="flex flex-col items-center gap-0.5 px-3 py-1 text-[#707974]"
         >
