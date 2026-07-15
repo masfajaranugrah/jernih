@@ -36,7 +36,7 @@ async function HeroContent() {
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/20 to-transparent" />
           <div className="relative z-10 flex h-full max-w-2xl flex-col justify-center p-8 text-white sm:p-12">
-            <span className="mb-5 w-fit rounded-full bg-[#064e3b]/80 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white backdrop-blur-md">
+            <span className="mb-5 w-fit rounded-full bg-[#1e3a8a]/80 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white backdrop-blur-md">
               {main.badge}
             </span>
             <h1 className="text-4xl font-black leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl">
@@ -49,7 +49,7 @@ async function HeroContent() {
               {main.description}
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <span className="inline-block rounded-xl bg-white px-7 py-3.5 text-sm font-bold text-[#064e3b] transition-colors hover:bg-slate-100">
+              <span className="inline-block rounded-xl bg-white px-7 py-3.5 text-sm font-bold text-[#1e3a8a] transition-colors hover:bg-slate-100">
                 {main.ctaText}
               </span>
               <span className="inline-block rounded-xl border-2 border-white/30 px-7 py-3.5 text-sm font-bold text-white transition-all hover:bg-white/10">
@@ -87,11 +87,11 @@ async function HeroContent() {
             <div>
               {b0.tagline && <p className="mb-3 text-sm text-white/70">{b0.tagline}</p>}
               {b0.ctaText ? (
-                <button className="border-b-2 border-[#064e3b] pb-0.5 text-base font-bold text-white transition-all hover:border-white">
+                <button className="border-b-2 border-[#1e3a8a] pb-0.5 text-base font-bold text-white transition-all hover:border-white">
                   {b0.ctaText}
                 </button>
               ) : (
-                <span className="border-b-2 border-[#064e3b] pb-0.5 text-base font-bold text-white cursor-pointer">
+                <span className="border-b-2 border-[#1e3a8a] pb-0.5 text-base font-bold text-white cursor-pointer">
                   Pelajari Lebih
                 </span>
               )}
@@ -138,17 +138,17 @@ async function HeroContent() {
             />
           )}
           <div className="absolute inset-0 bg-black/40" />
-          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[#064e3b]/20 blur-3xl" />
-          <div className="absolute -bottom-6 -left-6 h-28 w-28 rounded-full bg-[#064e3b]/20 blur-2xl" />
+          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[#1e3a8a]/20 blur-3xl" />
+          <div className="absolute -bottom-6 -left-6 h-28 w-28 rounded-full bg-[#1e3a8a]/20 blur-2xl" />
           <div className="relative z-10 flex h-full flex-col items-center justify-center p-5 text-center text-white">
             {b2.tagline && (
-              <span className="mb-3 rounded-full bg-[#064e3b]/20 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#4ade80]">
+              <span className="mb-3 rounded-full bg-[#1e3a8a]/20 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[#a5b4fc]">
                 {b2.tagline}
               </span>
             )}
             <h3 className="text-2xl font-black italic tracking-tight sm:text-3xl">
               {b2.title.includes("X") ? (
-                <>{b2.title.split("X")[0]}<span className="text-[#4ade80]">X</span>{b2.title.split("X")[1]}</>
+                <>{b2.title.split("X")[0]}<span className="text-[#a5b4fc]">X</span>{b2.title.split("X")[1]}</>
               ) : b2.title}
             </h3>
             {b2.subtitle && <p className="mt-2 text-[11px] text-white/60">{b2.subtitle}</p>}

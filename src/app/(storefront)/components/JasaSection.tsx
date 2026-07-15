@@ -14,7 +14,7 @@ export default function JasaSection() {
     <section>
       <div className="flex items-end justify-between gap-4">
         <h2 className="text-2xl font-bold text-[#191c1d]">Jasa Profesional</h2>
-        <Link href="/jasa" className="flex items-center gap-1 text-sm font-bold text-[#064e3b] hover:underline">
+        <Link href="/jasa" className="flex items-center gap-1 text-sm font-bold text-[#1e3a8a] hover:underline">
           Lihat Semua <ArrowIcon />
         </Link>
       </div>

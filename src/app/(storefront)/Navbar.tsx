@@ -96,10 +96,10 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 w-full bg-[#f8f9fa]/95 shadow-sm backdrop-blur-md">
+      <nav className="sticky top-0 z-50 w-full bg-white/95 shadow-sm backdrop-blur-md">
         <div className="flex items-center justify-between gap-3 px-4 py-3 md:px-8 md:py-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 text-[#064e3b]">
+          <Link href="/" className="flex items-center gap-2 text-[#1e3a8a]">
             <StorefrontIcon />
             <span className="text-lg font-bold sm:text-2xl">Jernih Creatife</span>
           </Link>
@@ -114,10 +114,10 @@ export default function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`text-base font-bold tracking-wide transition-colors border-b-2 pb-1 hover:text-[#064e3b] ${
+                  className={`text-base font-bold tracking-wide transition-colors border-b-2 pb-1 hover:text-[#1e3a8a] ${
                     isActive
-                      ? "border-[#064e3b] text-[#064e3b]"
-                      : "border-transparent text-[#404944]"
+                      ? "border-[#1e3a8a] text-[#1e3a8a]"
+                      : "border-transparent text-[#475569]"
                   }`}
                 >
                   {link.label}
@@ -131,7 +131,7 @@ export default function Navbar() {
             <button
               aria-label="Cari"
               onClick={() => setSearchOpen(true)}
-              className="flex h-10 w-10 items-center justify-center rounded-full text-[#404944] transition hover:bg-[#e1e3e4] hover:text-[#064e3b]"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#475569] transition hover:bg-[#e2e8f0] hover:text-[#1e3a8a]"
             >
               <SearchIcon />
             </button>
@@ -139,7 +139,7 @@ export default function Navbar() {
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setDropdownOpen((v) => !v)}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-[#064e3b] text-white text-sm font-bold transition hover:bg-[#043b2d]"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1e3a8a] text-white text-sm font-bold transition hover:bg-[#1e40af]"
                 >
                   {getInitial(user.name)}
                 </button>
@@ -148,16 +148,16 @@ export default function Navbar() {
                     <Link
                       href={`/dashboard/pelanggan/${user.slug}/`}
                       onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-[#191c1d] hover:bg-[#f0f4f2] transition"
+                      className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-[#0f172a] hover:bg-[#f1f5f9] transition"
                     >
-                      <svg className="h-5 w-5 fill-current text-[#707974]" viewBox="0 0 24 24">
+                      <svg className="h-5 w-5 fill-current text-[#94a3b8]" viewBox="0 0 24 24">
                         <path d="M4 13h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1Zm0 8h6a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1Zm10 0h6a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1Zm0-18v4a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1Z" />
                       </svg>
                       Dashboard saya
                     </Link>
                     <button
                       onClick={handleLogout}
-                      className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-[#ba1a1a] hover:bg-[#ffdad6] transition text-left"
+                      className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-[#dc2626] hover:bg-[#fecaca] transition text-left"
                     >
                       <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
                         <path d="M5 3h6a1 1 0 0 1 1 1v2h-2V5H5v14h5v2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm12.59 5.59L20.17 11H10v2h10.17l-2.58 2.59L19 17l5-5-5-5-1.41 1.59Z" />
@@ -171,13 +171,13 @@ export default function Navbar() {
               <div className="flex items-center gap-2">
                 <Link
                   href="/dashboard/pelanggan/login"
-                  className="rounded-lg border border-[#064e3b] px-4 py-2 text-sm font-bold text-[#064e3b] transition hover:bg-[#064e3b] hover:text-white"
+                  className="rounded-lg border border-[#1e3a8a] px-4 py-2 text-sm font-bold text-[#1e3a8a] transition hover:bg-[#1e3a8a] hover:text-white"
                 >
                   Masuk
                 </Link>
                 <Link
                   href="/dashboard/pelanggan/register"
-                  className="rounded-lg bg-[#064e3b] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#043b2d]"
+                  className="rounded-lg bg-[#1e3a8a] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#1e40af]"
                 >
                   Daftar
                 </Link>
@@ -190,14 +190,14 @@ export default function Navbar() {
             <button
               aria-label="Cari"
               onClick={() => setSearchOpen(true)}
-              className="flex h-10 w-10 items-center justify-center rounded-full text-[#404944] transition hover:bg-[#e1e3e4] hover:text-[#064e3b]"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#475569] transition hover:bg-[#e2e8f0] hover:text-[#1e3a8a]"
             >
               <SearchIcon />
             </button>
             <button
               aria-label={mobileOpen ? "Tutup menu" : "Buka menu"}
               onClick={() => setMobileOpen((v) => !v)}
-              className="flex h-10 w-10 items-center justify-center rounded-full text-[#404944] transition hover:bg-[#e1e3e4] hover:text-[#064e3b]"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#475569] transition hover:bg-[#e2e8f0] hover:text-[#1e3a8a]"
             >
               {mobileOpen ? <CloseIcon /> : <BurgerIcon />}
             </button>
@@ -222,18 +222,18 @@ export default function Navbar() {
         }`}
       >
         {/* Sidebar header */}
-        <div className="flex items-center justify-between border-b border-[#e8ecea] px-5 py-4">
+        <div className="flex items-center justify-between border-b border-[#e2e8f0] px-5 py-4">
           <Link
             href="/"
             onClick={handleLinkClick}
-            className="flex items-center gap-2 text-[#064e3b]"
+            className="flex items-center gap-2 text-[#1e3a8a]"
           >
             <StorefrontIcon />
             <span className="text-base font-bold">Jernih Creatife</span>
           </Link>
           <button
             onClick={() => setMobileOpen(false)}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-[#404944] hover:bg-[#f0f2f1] transition"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-[#475569] hover:bg-[#f1f5f9] transition"
             aria-label="Tutup menu"
           >
             <CloseIcon />
@@ -253,8 +253,8 @@ export default function Navbar() {
                 onClick={handleLinkClick}
                 className={`flex items-center gap-4 rounded-2xl px-4 py-3.5 text-[15px] font-semibold transition-all ${
                   isActive
-                    ? "bg-[#064e3b] text-white shadow-sm"
-                    : "text-[#404944] hover:bg-[#f0f4f2] hover:text-[#064e3b]"
+                    ? "bg-[#1e3a8a] text-white shadow-sm"
+                    : "text-[#475569] hover:bg-[#f1f5f9] hover:text-[#1e3a8a]"
                 }`}
               >
                 <svg className="h-5 w-5 fill-current shrink-0" viewBox="0 0 24 24" aria-hidden="true">
@@ -267,28 +267,28 @@ export default function Navbar() {
         </nav>
 
         {/* Sidebar footer */}
-        <div className="border-t border-[#e8ecea] px-5 py-4 space-y-3">
+        <div className="border-t border-[#e2e8f0] px-5 py-4 space-y-3">
           {user ? (
             <div className="space-y-2">
               <div className="flex items-center gap-3 px-1">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#064e3b] text-white text-sm font-bold">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1e3a8a] text-white text-sm font-bold">
                   {getInitial(user.name)}
                 </div>
-                <span className="text-sm font-semibold text-[#191c1d] truncate">{user.name}</span>
+                <span className="text-sm font-semibold text-[#0f172a] truncate">{user.name}</span>
               </div>
               <Link
                 href={`/dashboard/pelanggan/${user.slug}/`}
                 onClick={handleLinkClick}
-                className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold text-[#191c1d] hover:bg-[#f0f4f2] transition"
+                className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold text-[#0f172a] hover:bg-[#f1f5f9] transition"
               >
-                <svg className="h-5 w-5 fill-current text-[#707974]" viewBox="0 0 24 24">
+                <svg className="h-5 w-5 fill-current text-[#94a3b8]" viewBox="0 0 24 24">
                   <path d="M4 13h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1Zm0 8h6a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1Zm10 0h6a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1Zm0-18v4a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1Z" />
                 </svg>
                 Dashboard saya
               </Link>
               <button
                 onClick={() => { handleLogout(); handleLinkClick(); }}
-                className="flex items-center gap-3 w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-[#ba1a1a] hover:bg-[#ffdad6] transition"
+                className="flex items-center gap-3 w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-[#dc2626] hover:bg-[#fecaca] transition"
               >
                 <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
                   <path d="M5 3h6a1 1 0 0 1 1 1v2h-2V5H5v14h5v2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm12.59 5.59L20.17 11H10v2h10.17l-2.58 2.59L19 17l5-5-5-5-1.41 1.59Z" />
@@ -301,20 +301,20 @@ export default function Navbar() {
               <Link
                 href="/dashboard/pelanggan/login"
                 onClick={handleLinkClick}
-                className="flex-1 rounded-xl border border-[#064e3b] py-2.5 text-center text-sm font-bold text-[#064e3b] transition hover:bg-[#064e3b] hover:text-white"
+                className="flex-1 rounded-xl border border-[#1e3a8a] py-2.5 text-center text-sm font-bold text-[#1e3a8a] transition hover:bg-[#1e3a8a] hover:text-white"
               >
                 Masuk
               </Link>
               <Link
                 href="/dashboard/pelanggan/register"
                 onClick={handleLinkClick}
-                className="flex-1 rounded-xl bg-[#064e3b] py-2.5 text-center text-sm font-bold text-white transition hover:bg-[#043b2d]"
+                className="flex-1 rounded-xl bg-[#1e3a8a] py-2.5 text-center text-sm font-bold text-white transition hover:bg-[#1e40af]"
               >
                 Daftar
               </Link>
             </div>
           )}
-          <p className="text-xs text-[#9ea8a2] text-center">© 2025 Jernih Creatife</p>
+          <p className="text-xs text-[#94a3b8] text-center">© 2025 Jernih Creatife</p>
         </div>
       </div>
 

@@ -35,8 +35,8 @@ function ProductCard({ product }: { product: ApiProduct }) {
   const badge = badgeMatch ? badgeMatch[1] : product.oldPrice ? "SALE" : null;
   const sellerName = "Jernih Creative Official";
   const badgeColors: Record<string, string> = {
-    SALE: "bg-[#ba1a1a]", NEW: "bg-[#064e3b]", HOT: "bg-orange-500",
-    DISKON: "bg-[#064e3b]", TERBATAS: "bg-[#7c3aed]",
+    SALE: "bg-[#ba1a1a]", NEW: "bg-[#1e3a8a]", HOT: "bg-orange-500",
+    DISKON: "bg-[#1e3a8a]", TERBATAS: "bg-[#7c3aed]",
   };
 
   return (
@@ -66,14 +66,14 @@ function ProductCard({ product }: { product: ApiProduct }) {
           {product.oldPrice ? (
             <div className="text-xs text-[#707974] line-through">{formatRupiah(product.oldPrice)}</div>
           ) : null}
-          <div className="text-base font-bold text-[#064e3b] sm:text-lg">{formatRupiah(product.price)}</div>
+          <div className="text-base font-bold text-[#1e3a8a] sm:text-lg">{formatRupiah(product.price)}</div>
         </div>
         <div className="mt-3 flex items-center gap-1 text-sm font-semibold text-[#575e70]">
           <Icon className="text-base text-amber-500">star</Icon>
           {product.rating ?? 0}
         </div>
         <div className="mt-auto border-t border-[#bfc9c3]/30 pt-3">
-          <p className="line-clamp-1 text-[11px] font-semibold text-[#064e3b] sm:text-xs">{sellerName}</p>
+          <p className="line-clamp-1 text-[11px] font-semibold text-[#1e3a8a] sm:text-xs">{sellerName}</p>
         </div>
       </div>
     </Link>

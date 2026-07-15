@@ -48,18 +48,18 @@ function ServiceCard({ service }: { service: ApiService }) {
             </svg>
           </div>
         )}
-        <div className="absolute top-2 left-2 rounded bg-[#064e3b] px-2 py-0.5 text-[10px] font-black uppercase text-white">
+        <div className="absolute top-2 left-2 rounded bg-[#1e3a8a] px-2 py-0.5 text-[10px] font-black uppercase text-white">
           Jasa
         </div>
       </div>
       <div className="p-3 sm:p-4">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-[#064e3b]">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#1e3a8a]">
           {service.category?.name ?? "Layanan Profesional"}
         </p>
         <h3 className="mt-2 line-clamp-2 text-sm font-medium text-[#191c1d] sm:text-base">
           {service.name}
         </h3>
-        <p className="mt-4 border-t border-[#bfc9c3]/30 pt-3 text-base font-bold text-[#064e3b] sm:text-lg">
+        <p className="mt-4 border-t border-[#bfc9c3]/30 pt-3 text-base font-bold text-[#1e3a8a] sm:text-lg">
           Mulai {formatRupiah(service.priceFrom)}
           <span className="text-xs font-normal text-[#707974]">/{service.unit}</span>
         </p>
@@ -127,7 +127,7 @@ export default function JasaSectionClient() {
         <p className="text-sm font-semibold text-[#404944]">Jasa tidak tersedia saat ini</p>
         <Link
           href="/jasa"
-          className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-[#bfc9c3] px-4 py-1.5 text-xs font-semibold text-[#404944] transition-colors hover:border-[#064e3b] hover:text-[#064e3b]"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-[#bfc9c3] px-4 py-1.5 text-xs font-semibold text-[#404944] transition-colors hover:border-[#1e3a8a] hover:text-[#1e3a8a]"
         >
           Lihat Halaman Jasa
         </Link>

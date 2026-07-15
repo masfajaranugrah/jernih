@@ -1,10 +1,11 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
 const companyLinks = [
   { label: "Services", href: "/jasa" },
   { label: "Products", href: "/produk" },
-  { label: "About Us", href: "#" },
+  { label: "About Us", href: "/tentang" },
 ];
 
 const legalLinks = [
@@ -13,16 +14,34 @@ const legalLinks = [
 ];
 
 const paymentMethods = [
-  { label: "Visa", icon: "card" },
-  { label: "Mastercard", icon: "card" },
-  { label: "GoPay", icon: "wallet" },
-  { label: "ShopeePay", icon: "wallet" },
+  { src: "/pyment/bca.png.webp", label: "BCA" },
+  { src: "/pyment/mandiri.png.webp", label: "Mandiri" },
+  { src: "/pyment/bni.png.webp", label: "BNI" },
+  { src: "/pyment/cimb-niaga.png.webp", label: "CIMB Niaga" },
+  { src: "/pyment/permata-2.png.webp", label: "Permata" },
+  { src: "/pyment/visa.png.webp", label: "Visa" },
+  { src: "/pyment/mastercard.png.webp", label: "Mastercard" },
+  { src: "/pyment/jcb.png.webp", label: "JCB" },
+  { src: "/pyment/gopay.png.webp", label: "GoPay" },
+  { src: "/pyment/dana.png.webp", label: "DANA" },
+  { src: "/pyment/ovo-2.png.webp", label: "OVO" },
+  { src: "/pyment/linkaja.png.webp", label: "LinkAja" },
+  { src: "/pyment/sakuku.png.webp", label: "SakuKu" },
+  { src: "/pyment/jenius.png.webp", label: "Jenius" },
+  { src: "/pyment/kredivo.png.webp", label: "Kredivo" },
+  { src: "/pyment/home-credit.png.webp", label: "Home Credit" },
+  { src: "/pyment/alfamart-2.png.webp", label: "Alfamart" },
+  { src: "/pyment/indomaret-footer-2.png.webp", label: "Indomaret" },
+  { src: "/pyment/oneklik.png.webp", label: "OneKlik" },
 ];
 
 const shippingMethods = [
-  { label: "JNE", icon: "truck" },
-  { label: "J&T", icon: "box" },
-  { label: "SiCepat", icon: "speed" },
+  { src: "/pyment/JNE.png.webp", label: "JNE" },
+  { src: "/pyment/JnT.png.webp", label: "J&T" },
+  { src: "/pyment/Sicepat.png.webp", label: "SiCepat" },
+  { src: "/pyment/Gosend.png.webp", label: "GoSend" },
+  { src: "/pyment/Wahana.png.webp", label: "Wahana" },
+  { src: "/pyment/Anteraja.png.webp", label: "Anteraja" },
 ];
 
 function FooterIcon({ name, className = "" }: { name: string; className?: string }) {
@@ -46,72 +65,79 @@ function FooterIcon({ name, className = "" }: { name: string; className?: string
 
 export default function StorefrontFooter() {
   return (
-    <footer
-      className="w-full bg-[#003527] text-white"
-      style={{
-        backgroundImage: "radial-gradient(rgba(176, 240, 214, 0.12) 1px, transparent 1px)",
-        backgroundSize: "32px 32px",
-      }}
-    >
-      <div className="mx-auto grid max-w-[1280px] grid-cols-1 gap-12 px-6 py-16 md:grid-cols-4 md:px-12 md:py-20">
-        <div className="space-y-6">
-          <div className="text-2xl font-extrabold tracking-tight text-white">Jernih Creative</div>
-          <p className="max-w-sm text-base leading-7 text-white/80">
-            Menyediakan segala produk, jasa, dan layanan sewa untuk kebutuhan kreatif Anda.
-          </p>
-        </div>
-
-        <div className="space-y-6">
-          <h4 className="text-sm font-bold uppercase tracking-[0.18em] text-[#b0f0d6]">Perusahaan</h4>
-          <nav className="flex flex-col gap-3" aria-label="Footer perusahaan">
-            {companyLinks.map((item) => (
-              <Link key={item.label} href={item.href} className="text-base text-white/80 transition-colors hover:text-[#b0f0d6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b0f0d6]">
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-
-        <div className="space-y-6">
-          <h4 className="text-sm font-bold uppercase tracking-[0.18em] text-[#b0f0d6]">Legal</h4>
-          <nav className="flex flex-col gap-3" aria-label="Footer legal">
-            {legalLinks.map((item) => (
-              <Link key={item.label} href={item.href} className={`text-base transition-colors hover:text-[#b0f0d6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b0f0d6] ${item.active ? "font-bold text-[#b0f0d6]" : "text-white/80"}`}>
-                {item.label}
-              </Link>
-            ))}
-            <div className="flex gap-6 pt-2 text-2xl text-white/80">
-              <FooterIcon name="public" className="cursor-pointer transition-colors hover:text-[#b0f0d6]" />
-              <FooterIcon name="leaf" className="cursor-pointer transition-colors hover:text-[#b0f0d6]" />
-              <FooterIcon name="analytics" className="cursor-pointer transition-colors hover:text-[#b0f0d6]" />
-            </div>
-          </nav>
-        </div>
-
-        <div className="space-y-6">
-          <h4 className="text-sm font-bold uppercase tracking-[0.18em] text-[#b0f0d6]">Metode Pembayaran</h4>
-          <div className="flex flex-wrap gap-x-6 gap-y-4 text-white/80">
-            {paymentMethods.map((item) => (
-              <div key={item.label} className="flex items-center gap-2">
-                <FooterIcon name={item.icon} className="text-2xl" />
-                <span className="text-xs font-medium">{item.label}</span>
-              </div>
-            ))}
+    <footer className="w-full bg-white">
+      <div className="border-t-2 border-dashed border-[#cbd5e1]">
+        <div className="mx-auto grid max-w-[1280px] grid-cols-1 gap-12 px-6 py-16 md:grid-cols-4 md:px-12 md:py-20">
+          <div className="space-y-6">
+            <div className="text-2xl font-extrabold tracking-tight text-[#1e3a8a]">Jernih Creative</div>
+            <p className="max-w-sm text-base leading-7 text-[#475569]">
+              Menyediakan segala produk, jasa, dan layanan sewa untuk kebutuhan kreatif Anda.
+            </p>
           </div>
-        </div>
-      </div>
 
-      <div className="w-full border-t border-white/5 bg-black/10">
-        <div className="mx-auto flex max-w-[1280px] flex-col items-center justify-between gap-6 px-6 py-6 md:flex-row md:px-12">
-          <div className="flex flex-wrap items-center justify-center gap-6 md:justify-start">
-            <span className="text-xs font-medium uppercase tracking-[0.22em] text-white/40">Pengiriman</span>
-            <div className="flex gap-4 text-xl text-white/60">
-              {shippingMethods.map((item) => (
-                <FooterIcon key={item.label} name={item.icon} className="transition-colors hover:text-[#b0f0d6]" />
+          <div className="space-y-6">
+            <h4 className="text-sm font-bold uppercase tracking-[0.18em] text-[#1e3a8a]">Perusahaan</h4>
+            <nav className="flex flex-col gap-3" aria-label="Footer perusahaan">
+              {companyLinks.map((item) => (
+                <Link key={item.label} href={item.href} className="text-base text-[#475569] transition-colors hover:text-[#1e3a8a]">
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          <div className="space-y-6">
+            <h4 className="text-sm font-bold uppercase tracking-[0.18em] text-[#1e3a8a]">Legal</h4>
+            <nav className="flex flex-col gap-3" aria-label="Footer legal">
+              {legalLinks.map((item) => (
+                <Link key={item.label} href={item.href} className={`text-base transition-colors hover:text-[#1e3a8a] ${item.active ? "font-bold text-[#1e3a8a]" : "text-[#475569]"}`}>
+                  {item.label}
+                </Link>
+              ))}
+              <div className="flex gap-6 pt-2 text-2xl text-[#475569]">
+                <FooterIcon name="public" className="cursor-pointer transition-colors hover:text-[#1e3a8a]" />
+                <FooterIcon name="leaf" className="cursor-pointer transition-colors hover:text-[#1e3a8a]" />
+                <FooterIcon name="analytics" className="cursor-pointer transition-colors hover:text-[#1e3a8a]" />
+              </div>
+            </nav>
+          </div>
+
+          <div className="space-y-6">
+            <h4 className="text-sm font-bold uppercase tracking-[0.18em] text-[#1e3a8a]">Metode Pembayaran</h4>
+            <div className="flex flex-wrap gap-3">
+              {paymentMethods.map((item) => (
+                <Image
+                  key={item.label}
+                  src={item.src}
+                  alt={item.label}
+                  width={48}
+                  height={32}
+                  className="h-8 w-auto rounded border border-[#e2e8f0] bg-white object-contain"
+                  unoptimized
+                />
               ))}
             </div>
           </div>
-          <div className="text-xs font-medium text-white/40">Jernih Creative © 2026</div>
+        </div>
+
+        <div className="border-t border-[#e2e8f0]">
+          <div className="mx-auto flex max-w-[1280px] flex-col items-center justify-between gap-6 px-6 py-6 md:flex-row md:px-12">
+            <div className="flex flex-wrap items-center justify-center gap-3 md:justify-start">
+              <span className="text-xs font-medium uppercase tracking-[0.22em] text-[#94a3b8]">Pengiriman</span>
+              {shippingMethods.map((item) => (
+                <Image
+                  key={item.label}
+                  src={item.src}
+                  alt={item.label}
+                  width={48}
+                  height={32}
+                  className="h-7 w-auto rounded border border-[#e2e8f0] bg-white object-contain"
+                  unoptimized
+                />
+              ))}
+            </div>
+            <div className="text-xs font-medium text-[#94a3b8]">Jernih Creative © 2026</div>
+          </div>
         </div>
       </div>
     </footer>

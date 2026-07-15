@@ -42,7 +42,7 @@ export default async function PromoSection() {
             )}
             <div className="absolute inset-x-3 bottom-3 text-white">
               <h3 className="text-xs font-bold">{promo.title}</h3>
-              <p className="mt-1 text-xl font-black text-[#b0f0d6]">{promo.price}</p>
+              <p className="mt-1 text-xl font-black text-[#a5b4fc]">{promo.price}</p>
               <span className="mt-3 block rounded-xl bg-white py-1.5 text-center text-xs font-bold text-[#191c1d]">
                 Lihat Detail
               </span>
