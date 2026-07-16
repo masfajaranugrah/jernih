@@ -4,7 +4,7 @@ import { UpdateServiceDto } from './dto/update-service.dto';
 export declare class ServicesService {
     private prisma;
     constructor(prisma: PrismaService);
-    create(mitraId: string, dto: CreateServiceDto): Promise<{
+    create(dto: CreateServiceDto): Promise<{
         id: string;
         name: string;
         slug: string;
@@ -15,7 +15,7 @@ export declare class ServicesService {
         rating: number;
         categoryId: string | null;
         images: string[];
-        mitraId: string;
+        mitraId: string | null;
         priceFrom: import("@prisma/client/runtime/library").Decimal;
         unit: string;
     }>;
@@ -44,7 +44,7 @@ export declare class ServicesService {
         rating: number;
         categoryId: string | null;
         images: string[];
-        mitraId: string;
+        mitraId: string | null;
         priceFrom: import("@prisma/client/runtime/library").Decimal;
         unit: string;
     })[]>;
@@ -74,7 +74,7 @@ export declare class ServicesService {
         rating: number;
         categoryId: string | null;
         images: string[];
-        mitraId: string;
+        mitraId: string | null;
         priceFrom: import("@prisma/client/runtime/library").Decimal;
         unit: string;
     }>;
@@ -104,7 +104,7 @@ export declare class ServicesService {
         rating: number;
         categoryId: string | null;
         images: string[];
-        mitraId: string;
+        mitraId: string | null;
         priceFrom: import("@prisma/client/runtime/library").Decimal;
         unit: string;
     }>;
@@ -119,7 +119,7 @@ export declare class ServicesService {
         rating: number;
         categoryId: string | null;
         images: string[];
-        mitraId: string;
+        mitraId: string | null;
         priceFrom: import("@prisma/client/runtime/library").Decimal;
         unit: string;
     }>;

@@ -149,7 +149,7 @@ model Product {
 
 model Service {
   id          String   @id @default(cuid())
-  mitraId     String
+  mitraId     String?
   categoryId  String?
   name        String
   slug        String   @unique
@@ -163,7 +163,7 @@ model Service {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  mitra      Mitra      @relation(fields: [mitraId], references: [id], onDelete: Cascade)
+  mitra      Mitra?     @relation(fields: [mitraId], references: [id], onDelete: SetNull)
   category   Category?  @relation(fields: [categoryId], references: [id])
   orderItems OrderItem[]
 
@@ -174,7 +174,7 @@ model Service {
 
 model RentalItem {
   id          String   @id @default(cuid())
-  mitraId     String
+  mitraId     String?
   name        String
   slug        String   @unique
   description String?

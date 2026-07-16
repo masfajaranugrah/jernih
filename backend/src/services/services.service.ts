@@ -7,15 +7,9 @@ import { UpdateServiceDto } from './dto/update-service.dto';
 export class ServicesService {
   constructor(private prisma: PrismaService) {}
 
-  /**
-   * Simpan jasa baru.
-   * mitraId selalu datang dari caller — tidak ada lookup DB di sini.
-   * Dipanggil dari:
-   *   - POST /services/admin  → mitraId dari header X-Mitra-Id (cookie login)
-   */
-  async create(mitraId: string, dto: CreateServiceDto) {
+  async create(dto: CreateServiceDto) {
     try {
-      return await this.prisma.service.create({ data: { mitraId, ...dto } });
+      return await this.prisma.service.create({ data: dto });
     } catch (err: any) {
       if (err?.message?.includes('numeric field overflow') || err?.code === '22003') {
         throw new BadRequestException('Harga terlalu besar. Maksimum adalah Rp 9.999.999.999');

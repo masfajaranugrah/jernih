@@ -17,10 +17,10 @@ export declare class ChatController {
     } & {
         id: string;
         createdAt: Date;
+        senderId: string;
         receiverId: string;
         message: string;
         imageUrl: string | null;
-        senderId: string;
         isRead: boolean;
     }>;
     inbox(req: any): Promise<{
@@ -38,10 +38,10 @@ export declare class ChatController {
         } & {
             id: string;
             createdAt: Date;
+            senderId: string;
             receiverId: string;
             message: string;
             imageUrl: string | null;
-            senderId: string;
             isRead: boolean;
         };
         unreadCount: number;
@@ -55,10 +55,10 @@ export declare class ChatController {
     } & {
         id: string;
         createdAt: Date;
+        senderId: string;
         receiverId: string;
         message: string;
         imageUrl: string | null;
-        senderId: string;
         isRead: boolean;
     })[]>;
     markRead(req: any, senderId: string): Promise<{

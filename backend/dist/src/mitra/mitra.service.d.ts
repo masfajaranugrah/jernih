@@ -62,7 +62,7 @@ export declare class MitraService {
             rating: number;
             categoryId: string | null;
             images: string[];
-            mitraId: string;
+            mitraId: string | null;
             priceFrom: import("@prisma/client/runtime/library").Decimal;
             unit: string;
         }[];

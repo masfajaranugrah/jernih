@@ -17,10 +17,10 @@ export declare class ChatService {
     } & {
         id: string;
         createdAt: Date;
+        senderId: string;
         receiverId: string;
         message: string;
         imageUrl: string | null;
-        senderId: string;
         isRead: boolean;
     }>;
     getConversation(userId: string, otherId: string): Promise<({
@@ -32,10 +32,10 @@ export declare class ChatService {
     } & {
         id: string;
         createdAt: Date;
+        senderId: string;
         receiverId: string;
         message: string;
         imageUrl: string | null;
-        senderId: string;
         isRead: boolean;
     })[]>;
     getInbox(userId: string): Promise<{
@@ -53,10 +53,10 @@ export declare class ChatService {
         } & {
             id: string;
             createdAt: Date;
+            senderId: string;
             receiverId: string;
             message: string;
             imageUrl: string | null;
-            senderId: string;
             isRead: boolean;
         };
         unreadCount: number;

@@ -1,7 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRentalDto } from './dto/create-rental.dto';
 import { UpdateRentalDto } from './dto/update-rental.dto';
+import { CreateRentalItemDto } from './dto/create-rental-item.dto';
+import { UpdateRentalItemDto } from './dto/update-rental-item.dto';
 
 @Injectable()
 export class RentalsService {
@@ -67,15 +69,51 @@ export class RentalsService {
   }
 
   // ── Rental Items ────────────────────────────────────────────────────────────
-  async findAllItems(query?: { search?: string }) {
+  async findAllItems(query?: { search?: string; all?: boolean }) {
+    const where: any = {};
+    if (!query?.all) where.isActive = true;
+    if (query?.search) {
+      where.name = { contains: query.search, mode: 'insensitive' };
+    }
     return this.prisma.rentalItem.findMany({
-      where: {
-        isActive: true,
-        ...(query?.search && {
-          name: { contains: query.search, mode: 'insensitive' },
-        }),
-      },
+      where,
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  async findItemById(id: string) {
+    const item = await this.prisma.rentalItem.findUnique({ where: { id } });
+    if (!item) throw new NotFoundException('Item sewa tidak ditemukan');
+    return item;
+  }
+
+  async findItemBySlug(slug: string) {
+    const item = await this.prisma.rentalItem.findUnique({ where: { slug } });
+    if (!item) throw new NotFoundException('Item sewa tidak ditemukan');
+    return item;
+  }
+
+  async createItem(dto: CreateRentalItemDto) {
+    return this.prisma.rentalItem.create({
+      data: {
+        name: dto.name,
+        slug: dto.slug,
+        description: dto.description,
+        pricePerDay: dto.pricePerDay,
+        deposit: dto.deposit,
+        images: dto.images ?? [],
+        isActive: dto.isActive ?? true,
+      },
+    });
+  }
+
+  async updateItem(id: string, dto: UpdateRentalItemDto) {
+    await this.findItemById(id);
+    return this.prisma.rentalItem.update({ where: { id }, data: dto });
+  }
+
+  async removeItem(id: string) {
+    await this.findItemById(id);
+    return this.prisma.rentalItem.delete({ where: { id } });
   }
 }

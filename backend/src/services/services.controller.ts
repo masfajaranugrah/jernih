@@ -1,28 +1,18 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Query, Headers, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards, Request } from '@nestjs/common';
 import { ServicesService } from './services.service';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('services')
 export class ServicesController {
   constructor(private servicesService: ServicesService) {}
 
-  /**
-   * POST /api/services/admin
-   * Tambah jasa dari dashboard admin.
-   * mitraId dibaca dari header X-Mitra-Id yang dikirim oleh Next.js server action.
-   * Header ini diisi dari cookie mh_mitra_id yang disimpan saat login.
-   * Hasil: 1 INSERT saja, 0 query ekstra.
-   */
+  /** POST /api/services/admin — tambah jasa (admin only) */
+  @UseGuards(JwtAuthGuard)
   @Post('admin')
-  createForAdmin(
-    @Headers('x-mitra-id') mitraId: string,
-    @Body() dto: CreateServiceDto,
-  ) {
-    if (!mitraId) {
-      throw new BadRequestException('Header X-Mitra-Id wajib ada. Silakan login ulang.');
-    }
-    return this.servicesService.create(mitraId, dto);
+  createForAdmin(@Request() req: any, @Body() dto: CreateServiceDto) {
+    return this.servicesService.create(dto);
   }
 
   /** GET /api/services?search=&categoryId= */
@@ -47,13 +37,15 @@ export class ServicesController {
     return this.servicesService.findOne(id);
   }
 
-  /** PATCH /api/services/:id — admin only, protected by frontend middleware */
+  /** PATCH /api/services/:id — admin only */
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateServiceDto) {
     return this.servicesService.update(id, dto);
   }
 
-  /** DELETE /api/services/:id — admin only, protected by frontend middleware */
+  /** DELETE /api/services/:id — admin only */
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.servicesService.remove(id);

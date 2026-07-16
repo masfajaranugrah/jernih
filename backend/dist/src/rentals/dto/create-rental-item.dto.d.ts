@@ -1,10 +1,9 @@
-export declare class CreateServiceDto {
-    categoryId?: string;
+export declare class CreateRentalItemDto {
     name: string;
     slug: string;
     description?: string;
-    priceFrom: number;
-    unit?: string;
+    pricePerDay: number;
+    deposit?: number;
     images?: string[];
     isActive?: boolean;
 }

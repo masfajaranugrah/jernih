@@ -16,9 +16,9 @@ let ServicesService = class ServicesService {
     constructor(prisma) {
         this.prisma = prisma;
     }
-    async create(mitraId, dto) {
+    async create(dto) {
         try {
-            return await this.prisma.service.create({ data: { mitraId, ...dto } });
+            return await this.prisma.service.create({ data: dto });
         }
         catch (err) {
             if (err?.message?.includes('numeric field overflow') || err?.code === '22003') {

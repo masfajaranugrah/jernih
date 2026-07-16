@@ -70,15 +70,49 @@ let RentalsService = class RentalsService {
         return this.prisma.rental.update({ where: { id }, data: dto });
     }
     async findAllItems(query) {
+        const where = {};
+        if (!query?.all)
+            where.isActive = true;
+        if (query?.search) {
+            where.name = { contains: query.search, mode: 'insensitive' };
+        }
         return this.prisma.rentalItem.findMany({
-            where: {
-                isActive: true,
-                ...(query?.search && {
-                    name: { contains: query.search, mode: 'insensitive' },
-                }),
-            },
+            where,
             orderBy: { createdAt: 'desc' },
         });
+    }
+    async findItemById(id) {
+        const item = await this.prisma.rentalItem.findUnique({ where: { id } });
+        if (!item)
+            throw new common_1.NotFoundException('Item sewa tidak ditemukan');
+        return item;
+    }
+    async findItemBySlug(slug) {
+        const item = await this.prisma.rentalItem.findUnique({ where: { slug } });
+        if (!item)
+            throw new common_1.NotFoundException('Item sewa tidak ditemukan');
+        return item;
+    }
+    async createItem(dto) {
+        return this.prisma.rentalItem.create({
+            data: {
+                name: dto.name,
+                slug: dto.slug,
+                description: dto.description,
+                pricePerDay: dto.pricePerDay,
+                deposit: dto.deposit,
+                images: dto.images ?? [],
+                isActive: dto.isActive ?? true,
+            },
+        });
+    }
+    async updateItem(id, dto) {
+        await this.findItemById(id);
+        return this.prisma.rentalItem.update({ where: { id }, data: dto });
+    }
+    async removeItem(id) {
+        await this.findItemById(id);
+        return this.prisma.rentalItem.delete({ where: { id } });
     }
 };
 exports.RentalsService = RentalsService;

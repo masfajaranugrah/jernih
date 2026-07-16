@@ -4,7 +4,7 @@ import { UpdateServiceDto } from './dto/update-service.dto';
 export declare class ServicesController {
     private servicesService;
     constructor(servicesService: ServicesService);
-    createForAdmin(mitraId: string, dto: CreateServiceDto): Promise<{
+    createForAdmin(req: any, dto: CreateServiceDto): Promise<{
         id: string;
         name: string;
         slug: string;
@@ -15,7 +15,7 @@ export declare class ServicesController {
         rating: number;
         categoryId: string | null;
         images: string[];
-        mitraId: string;
+        mitraId: string | null;
         priceFrom: import("@prisma/client/runtime/library").Decimal;
         unit: string;
     }>;
@@ -40,7 +40,7 @@ export declare class ServicesController {
         rating: number;
         categoryId: string | null;
         images: string[];
-        mitraId: string;
+        mitraId: string | null;
         priceFrom: import("@prisma/client/runtime/library").Decimal;
         unit: string;
     })[]>;
@@ -70,7 +70,7 @@ export declare class ServicesController {
         rating: number;
         categoryId: string | null;
         images: string[];
-        mitraId: string;
+        mitraId: string | null;
         priceFrom: import("@prisma/client/runtime/library").Decimal;
         unit: string;
     }>;
@@ -100,7 +100,7 @@ export declare class ServicesController {
         rating: number;
         categoryId: string | null;
         images: string[];
-        mitraId: string;
+        mitraId: string | null;
         priceFrom: import("@prisma/client/runtime/library").Decimal;
         unit: string;
     }>;
@@ -115,7 +115,7 @@ export declare class ServicesController {
         rating: number;
         categoryId: string | null;
         images: string[];
-        mitraId: string;
+        mitraId: string | null;
         priceFrom: import("@prisma/client/runtime/library").Decimal;
         unit: string;
     }>;

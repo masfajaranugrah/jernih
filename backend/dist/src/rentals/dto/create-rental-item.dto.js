@@ -9,52 +9,49 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CreateServiceDto = void 0;
+exports.CreateRentalItemDto = void 0;
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
-class CreateServiceDto {
+class CreateRentalItemDto {
 }
-exports.CreateServiceDto = CreateServiceDto;
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], CreateServiceDto.prototype, "categoryId", void 0);
+exports.CreateRentalItemDto = CreateRentalItemDto;
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
-], CreateServiceDto.prototype, "name", void 0);
+], CreateRentalItemDto.prototype, "name", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
-], CreateServiceDto.prototype, "slug", void 0);
+], CreateRentalItemDto.prototype, "slug", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], CreateServiceDto.prototype, "description", void 0);
+], CreateRentalItemDto.prototype, "description", void 0);
 __decorate([
     (0, class_transformer_1.Type)(() => Number),
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.IsPositive)(),
     __metadata("design:type", Number)
-], CreateServiceDto.prototype, "priceFrom", void 0);
+], CreateRentalItemDto.prototype, "pricePerDay", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], CreateServiceDto.prototype, "unit", void 0);
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsPositive)(),
+    __metadata("design:type", Number)
+], CreateRentalItemDto.prototype, "deposit", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.IsString)({ each: true }),
     __metadata("design:type", Array)
-], CreateServiceDto.prototype, "images", void 0);
+], CreateRentalItemDto.prototype, "images", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
-], CreateServiceDto.prototype, "isActive", void 0);
-//# sourceMappingURL=create-service.dto.js.map
+], CreateRentalItemDto.prototype, "isActive", void 0);
+//# sourceMappingURL=create-rental-item.dto.js.map

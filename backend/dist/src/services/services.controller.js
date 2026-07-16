@@ -17,15 +17,13 @@ const common_1 = require("@nestjs/common");
 const services_service_1 = require("./services.service");
 const create_service_dto_1 = require("./dto/create-service.dto");
 const update_service_dto_1 = require("./dto/update-service.dto");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 let ServicesController = class ServicesController {
     constructor(servicesService) {
         this.servicesService = servicesService;
     }
-    createForAdmin(mitraId, dto) {
-        if (!mitraId) {
-            throw new common_1.BadRequestException('Header X-Mitra-Id wajib ada. Silakan login ulang.');
-        }
-        return this.servicesService.create(mitraId, dto);
+    createForAdmin(req, dto) {
+        return this.servicesService.create(dto);
     }
     findAll(search, categoryId, mitraId) {
         return this.servicesService.findAll({ search, categoryId, mitraId });
@@ -45,11 +43,12 @@ let ServicesController = class ServicesController {
 };
 exports.ServicesController = ServicesController;
 __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Post)('admin'),
-    __param(0, (0, common_1.Headers)('x-mitra-id')),
+    __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, create_service_dto_1.CreateServiceDto]),
+    __metadata("design:paramtypes", [Object, create_service_dto_1.CreateServiceDto]),
     __metadata("design:returntype", void 0)
 ], ServicesController.prototype, "createForAdmin", null);
 __decorate([
@@ -76,6 +75,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], ServicesController.prototype, "findOne", null);
 __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Patch)(':id'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
@@ -84,6 +84,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], ServicesController.prototype, "update", null);
 __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Delete)(':id'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),

@@ -9,6 +9,7 @@ export declare class HeroService {
         updatedAt: Date;
         description: string | null;
         imageUrl: string | null;
+        position: number;
         badge: string | null;
         title: string;
         titleSuffix: string | null;
@@ -21,7 +22,6 @@ export declare class HeroService {
         imageAlt: string | null;
         linkHref: string | null;
         align: string;
-        position: number;
     }[]>;
     findByPosition(position: number): Promise<{
         id: string;
@@ -29,6 +29,7 @@ export declare class HeroService {
         updatedAt: Date;
         description: string | null;
         imageUrl: string | null;
+        position: number;
         badge: string | null;
         title: string;
         titleSuffix: string | null;
@@ -41,7 +42,6 @@ export declare class HeroService {
         imageAlt: string | null;
         linkHref: string | null;
         align: string;
-        position: number;
     }>;
     upsert(position: number, dto: UpdateHeroBannerDto): Promise<{
         id: string;
@@ -49,6 +49,7 @@ export declare class HeroService {
         updatedAt: Date;
         description: string | null;
         imageUrl: string | null;
+        position: number;
         badge: string | null;
         title: string;
         titleSuffix: string | null;
@@ -61,7 +62,6 @@ export declare class HeroService {
         imageAlt: string | null;
         linkHref: string | null;
         align: string;
-        position: number;
     }>;
     resetAll(): Promise<{
         message: string;
