@@ -18,14 +18,6 @@ const navLinks = [
   { label: "Jasa", href: "/jasa", icon: "M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.3C.5 6.7.9 9.8 2.9 11.8c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.6z" },
 ];
 
-function StorefrontIcon() {
-  return (
-    <svg className="inline-block h-[1em] w-[1em] fill-current text-3xl" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 10h16l-1-5H5l-1 5Zm1 2v8h14v-8h-2v6h-4v-6H5Zm2 0h4v6H7v-6Z" />
-    </svg>
-  );
-}
-
 function SearchIcon() {
   return (
     <svg className="inline-block h-[1.4em] w-[1.4em] fill-current" viewBox="0 0 24 24" aria-hidden="true">
@@ -168,9 +160,9 @@ export default function Navbar() {
       <nav className="sticky top-0 z-50 w-full bg-white/95 shadow-sm backdrop-blur-md">
         <div className="flex items-center justify-between gap-3 px-4 py-3 md:px-8 md:py-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 text-[#1e3a8a]">
-            <StorefrontIcon />
-            <span className="text-lg font-bold sm:text-2xl">Jernih Creatife</span>
+          <Link href="/" className="flex items-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.svg" alt="Jernih Creatife" className="h-9 w-auto sm:h-11" />
           </Link>
 
           {/* Desktop nav links — center */}
@@ -322,10 +314,10 @@ export default function Navbar() {
           <Link
             href="/"
             onClick={handleLinkClick}
-            className="flex items-center gap-2 text-[#1e3a8a]"
+            className="flex items-center"
           >
-            <StorefrontIcon />
-            <span className="text-base font-bold">Jernih Creatife</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.svg" alt="Jernih Creatife" className="h-9 w-auto" />
           </Link>
           <button
             onClick={() => setMobileOpen(false)}

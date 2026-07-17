@@ -59,21 +59,46 @@ let ProductsService = class ProductsService {
                 price: { lte: Number(query.maxPrice) },
             }),
         };
+        const findManyArgs = {
+            where,
+            orderBy: { createdAt: 'desc' },
+            skip,
+            take: limit,
+        };
+        if (query?.light) {
+            findManyArgs.select = {
+                id: true,
+                name: true,
+                slug: true,
+                price: true,
+                oldPrice: true,
+                images: true,
+                rating: true,
+                totalSold: true,
+                createdAt: true,
+                description: true,
+                categoryId: true,
+                category: { select: { id: true, name: true, slug: true } },
+            };
+        }
+        else {
+            findManyArgs.include = {
+                category: { select: { id: true, name: true, slug: true } },
+                types: { where: { isActive: true } },
+            };
+        }
         const [data, total] = await Promise.all([
-            this.prisma.product.findMany({
-                where,
-                include: {
-                    category: { select: { id: true, name: true, slug: true } },
-                    types: { where: { isActive: true } },
-                },
-                orderBy: { createdAt: 'desc' },
-                skip,
-                take: limit,
-            }),
+            this.prisma.product.findMany(findManyArgs),
             this.prisma.product.count({ where }),
         ]);
+        const shaped = query?.light
+            ? data.map((p) => ({
+                ...p,
+                images: Array.isArray(p.images) ? p.images.slice(0, 1) : [],
+            }))
+            : data;
         return {
-            data,
+            data: shaped,
             meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
         };
     }

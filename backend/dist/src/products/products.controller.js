@@ -25,9 +25,10 @@ let ProductsController = class ProductsController {
     create(dto) {
         return this.productsService.create(dto);
     }
-    findAll(search, categoryId, minPrice, maxPrice, page, limit) {
+    findAll(search, categoryId, minPrice, maxPrice, page, limit, light) {
         return this.productsService.findAll({
             search, categoryId, minPrice, maxPrice, page, limit,
+            light: light === 'true' || light === '1',
         });
     }
     findBySlug(slug) {
@@ -60,8 +61,9 @@ __decorate([
     __param(3, (0, common_1.Query)('maxPrice')),
     __param(4, (0, common_1.Query)('page')),
     __param(5, (0, common_1.Query)('limit')),
+    __param(6, (0, common_1.Query)('light')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, Number, Number, Number, Number]),
+    __metadata("design:paramtypes", [String, String, Number, Number, Number, Number, String]),
     __metadata("design:returntype", void 0)
 ], ProductsController.prototype, "findAll", null);
 __decorate([

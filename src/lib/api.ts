@@ -43,6 +43,7 @@ export async function fetchProducts(params?: {
   limit?: number;
   page?: number;
   noCache?: boolean;
+  light?: boolean;
 }): Promise<ApiProduct[]> {
   try {
     const qs = new URLSearchParams();
@@ -50,6 +51,7 @@ export async function fetchProducts(params?: {
     if (params?.categoryId) qs.set("categoryId", params.categoryId);
     if (params?.limit) qs.set("limit", String(params.limit));
     if (params?.page) qs.set("page", String(params.page));
+    if (params?.light) qs.set("light", "true");
 
     const url = `${API_URL}/products${qs.toString() ? `?${qs}` : ""}`;
 

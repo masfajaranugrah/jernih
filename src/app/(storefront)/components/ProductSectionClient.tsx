@@ -9,7 +9,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
 
 async function fetchProductsClient(limit = 12): Promise<ApiProduct[]> {
   try {
-    const res = await fetch(`${API_URL}/products?limit=${limit}`, {
+    const res = await fetch(`${API_URL}/products?limit=${limit}&light=true`, {
       cache: "no-store",
     });
     if (!res.ok) return [];

@@ -36,7 +36,7 @@ const staticItems = [
 
 export default async function NotFound() {
   // Ambil produk dari backend untuk rekomendasi
-  const products = await fetchProducts({ limit: 6 });
+  const products = await fetchProducts({ limit: 6, light: true });
 
   // Gabung produk dari DB + item statis, acak
   const allItems = [

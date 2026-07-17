@@ -39,6 +39,7 @@ export class ProductsService {
     maxPrice?: number;
     page?: number;
     limit?: number;
+    light?: boolean;
   }) {
     const page = Math.max(1, Number(query?.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(query?.limit) || 20));
@@ -61,22 +62,52 @@ export class ProductsService {
       }),
     };
 
+    // Mode light: hanya field yang dipakai kartu list (home & /produk).
+    // Relasi types tidak diambil, dan images dipotong jadi 1 di bawah.
+    const findManyArgs: any = {
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
+    };
+
+    if (query?.light) {
+      findManyArgs.select = {
+        id: true,
+        name: true,
+        slug: true,
+        price: true,
+        oldPrice: true,
+        images: true,
+        rating: true,
+        totalSold: true,
+        createdAt: true,
+        description: true,
+        categoryId: true,
+        category: { select: { id: true, name: true, slug: true } },
+      };
+    } else {
+      findManyArgs.include = {
+        category: { select: { id: true, name: true, slug: true } },
+        types: { where: { isActive: true } },
+      };
+    }
+
     const [data, total] = await Promise.all([
-      this.prisma.product.findMany({
-        where,
-        include: {
-          category: { select: { id: true, name: true, slug: true } },
-          types: { where: { isActive: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-      }),
+      this.prisma.product.findMany(findManyArgs),
       this.prisma.product.count({ where }),
     ]);
 
+    // Kartu list hanya butuh gambar pertama — kirim maksimal 1 saja.
+    const shaped = query?.light
+      ? data.map((p: any) => ({
+          ...p,
+          images: Array.isArray(p.images) ? p.images.slice(0, 1) : [],
+        }))
+      : data;
+
     return {
-      data,
+      data: shaped,
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }

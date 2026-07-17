@@ -18,7 +18,7 @@ export class ProductsController {
     return this.productsService.create(dto);
   }
 
-  /** GET /api/products?search=&categoryId=&page=&limit= */
+  /** GET /api/products?search=&categoryId=&page=&limit=&light= */
   @Get()
   findAll(
     @Query('search') search?: string,
@@ -27,9 +27,11 @@ export class ProductsController {
     @Query('maxPrice') maxPrice?: number,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Query('light') light?: string,
   ) {
     return this.productsService.findAll({
       search, categoryId, minPrice, maxPrice, page, limit,
+      light: light === 'true' || light === '1',
     });
   }
 

@@ -48,10 +48,9 @@ export default function DashboardSidebar() {
       <aside className="hidden lg:flex h-screen w-64 fixed left-0 top-0 bg-white border-r border-[#e1e3e4] flex-col py-6 px-3 overflow-y-auto z-50">
         {/* Brand */}
         <div className="mb-8 px-2">
-          <Link href="/">
-            <h1 className="text-[#003527] font-semibold tracking-tight" style={{ fontSize: "24px", lineHeight: "1.3" }}>
-              Jernih Creatife
-            </h1>
+          <Link href="/" className="inline-flex">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.svg" alt="Jernih Creatife" className="h-10 w-auto" />
           </Link>
           <p className="text-[#404944] text-xs mt-1 font-medium tracking-wide">Admin Dashboard</p>
         </div>

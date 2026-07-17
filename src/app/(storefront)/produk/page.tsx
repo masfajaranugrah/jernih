@@ -19,6 +19,7 @@ export default async function ProdukPage({ searchParams }: PageProps) {
     search: searchVal,
     categoryId: categoryIdVal,
     limit: 50,
+    light: true,
   });
 
   // Ambil kategori unik dari produk

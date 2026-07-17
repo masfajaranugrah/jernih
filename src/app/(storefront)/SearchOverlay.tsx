@@ -136,7 +136,7 @@ export default function SearchOverlay({ isOpen, onClose }: Props) {
             
             // Parallel fetches
             const [prodRes, rentRes, svcRes] = await Promise.all([
-              fetch(`${baseUrl}/products?limit=25`).then((r) => r.json()).catch(() => ({ data: [] })),
+              fetch(`${baseUrl}/products?limit=25&light=true`).then((r) => r.json()).catch(() => ({ data: [] })),
               fetch(`${baseUrl}/rentals/items`).then((r) => r.json()).catch(() => []),
               fetch(`${baseUrl}/services`).then((r) => r.json()).catch(() => []),
             ]);
