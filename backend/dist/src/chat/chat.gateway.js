@@ -16,11 +16,12 @@ exports.ChatGateway = void 0;
 const websockets_1 = require("@nestjs/websockets");
 const jwt_1 = require("@nestjs/jwt");
 const socket_io_1 = require("socket.io");
+const prisma_service_1 = require("../prisma/prisma.service");
 let ChatGateway = class ChatGateway {
-    constructor(jwtService) {
+    constructor(jwtService, prisma) {
         this.jwtService = jwtService;
+        this.prisma = prisma;
         this.connections = new Map();
-        this.lastSeen = new Map();
     }
     extractToken(client) {
         const authToken = client.handshake.auth?.token;
@@ -36,7 +37,7 @@ let ChatGateway = class ChatGateway {
         }
         return null;
     }
-    handleConnection(client) {
+    async handleConnection(client) {
         const token = this.extractToken(client);
         if (!token) {
             client.disconnect();
@@ -57,7 +58,7 @@ let ChatGateway = class ChatGateway {
             client.disconnect();
         }
     }
-    handleDisconnect(client) {
+    async handleDisconnect(client) {
         const userId = client.data?.userId;
         if (!userId)
             return;
@@ -65,12 +66,14 @@ let ChatGateway = class ChatGateway {
         const next = Math.max(0, prev - 1);
         if (next === 0) {
             this.connections.delete(userId);
-            const seenAt = new Date().toISOString();
-            this.lastSeen.set(userId, seenAt);
+            const seenAt = new Date();
+            await this.prisma.user
+                .update({ where: { id: userId }, data: { lastSeenAt: seenAt } })
+                .catch(() => { });
             this.server.emit('presence:update', {
                 userId,
                 online: false,
-                lastSeen: seenAt,
+                lastSeen: seenAt.toISOString(),
             });
         }
         else {
@@ -86,16 +89,29 @@ let ChatGateway = class ChatGateway {
             .to(body.receiverId)
             .emit('typing', { senderId: client.data.userId });
     }
-    handlePresenceQuery(client, body) {
+    async handlePresenceQuery(client, body) {
         if (!client.data.userId || !Array.isArray(body?.userIds))
             return;
         const state = {};
+        const unknownIds = body.userIds.filter((id) => typeof id === 'string' && !this.connections.has(id));
+        const dbRecords = unknownIds.length > 0
+            ? await this.prisma.user
+                .findMany({
+                where: { id: { in: unknownIds } },
+                select: { id: true, lastSeenAt: true },
+            })
+                .catch(() => [])
+            : [];
+        const dbMap = new Map(dbRecords.map((u) => [u.id, u.lastSeenAt]));
         for (const id of body.userIds) {
             if (typeof id !== 'string')
                 continue;
+            const online = (this.connections.get(id) ?? 0) > 0;
             state[id] = {
-                online: (this.connections.get(id) ?? 0) > 0,
-                lastSeen: this.lastSeen.get(id) ?? null,
+                online,
+                lastSeen: online
+                    ? null
+                    : (dbMap.get(id)?.toISOString() ?? null),
             };
         }
         client.emit('presence:state', state);
@@ -136,15 +152,20 @@ __decorate([
     __param(1, (0, websockets_1.MessageBody)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], ChatGateway.prototype, "handlePresenceQuery", null);
 exports.ChatGateway = ChatGateway = __decorate([
     (0, websockets_1.WebSocketGateway)({
         cors: {
-            origin: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
+            origin: process.env.CORS_ORIGIN?.split(',') ?? ['http://localhost:3000'],
             credentials: true,
         },
+        transports: ['websocket', 'polling'],
+        pingInterval: 25000,
+        pingTimeout: 20000,
+        path: '/api/socket.io',
     }),
-    __metadata("design:paramtypes", [jwt_1.JwtService])
+    __metadata("design:paramtypes", [jwt_1.JwtService,
+        prisma_service_1.PrismaService])
 ], ChatGateway);
 //# sourceMappingURL=chat.gateway.js.map

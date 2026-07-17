@@ -26,15 +26,15 @@ export declare class ChatService {
         };
     } & {
         id: string;
-        senderId: string;
-        receiverId: string;
+        createdAt: Date;
         message: string;
         imageUrl: string | null;
+        isRead: boolean;
+        senderId: string;
+        receiverId: string;
         videoUrl: string | null;
         productId: string | null;
         isDeleted: boolean;
-        isRead: boolean;
-        createdAt: Date;
     }>;
     getConversation(userId: string, otherId: string): Promise<({
         sender: {
@@ -56,15 +56,15 @@ export declare class ChatService {
         };
     } & {
         id: string;
-        senderId: string;
-        receiverId: string;
+        createdAt: Date;
         message: string;
         imageUrl: string | null;
+        isRead: boolean;
+        senderId: string;
+        receiverId: string;
         videoUrl: string | null;
         productId: string | null;
         isDeleted: boolean;
-        isRead: boolean;
-        createdAt: Date;
     })[]>;
     getInbox(userId: string): Promise<{
         lastMessage: {
@@ -87,15 +87,15 @@ export declare class ChatService {
             };
         } & {
             id: string;
-            senderId: string;
-            receiverId: string;
+            createdAt: Date;
             message: string;
             imageUrl: string | null;
+            isRead: boolean;
+            senderId: string;
+            receiverId: string;
             videoUrl: string | null;
             productId: string | null;
             isDeleted: boolean;
-            isRead: boolean;
-            createdAt: Date;
         };
         unreadCount: number;
     }[]>;

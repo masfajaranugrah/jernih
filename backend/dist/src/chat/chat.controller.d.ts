@@ -23,15 +23,15 @@ export declare class ChatController {
         };
     } & {
         id: string;
-        senderId: string;
-        receiverId: string;
+        createdAt: Date;
         message: string;
         imageUrl: string | null;
+        isRead: boolean;
+        senderId: string;
+        receiverId: string;
         videoUrl: string | null;
         productId: string | null;
         isDeleted: boolean;
-        isRead: boolean;
-        createdAt: Date;
     }>;
     inbox(req: any): Promise<{
         lastMessage: {
@@ -54,15 +54,15 @@ export declare class ChatController {
             };
         } & {
             id: string;
-            senderId: string;
-            receiverId: string;
+            createdAt: Date;
             message: string;
             imageUrl: string | null;
+            isRead: boolean;
+            senderId: string;
+            receiverId: string;
             videoUrl: string | null;
             productId: string | null;
             isDeleted: boolean;
-            isRead: boolean;
-            createdAt: Date;
         };
         unreadCount: number;
     }[]>;
@@ -94,15 +94,15 @@ export declare class ChatController {
         };
     } & {
         id: string;
-        senderId: string;
-        receiverId: string;
+        createdAt: Date;
         message: string;
         imageUrl: string | null;
+        isRead: boolean;
+        senderId: string;
+        receiverId: string;
         videoUrl: string | null;
         productId: string | null;
         isDeleted: boolean;
-        isRead: boolean;
-        createdAt: Date;
     })[]>;
     markRead(req: any, senderId: string): Promise<{
         message: string;

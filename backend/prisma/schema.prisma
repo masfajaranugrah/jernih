@@ -69,16 +69,17 @@ enum VoucherType {
 // ─── User ─────────────────────────────────────────────────────────────────────
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String
-  phone     String?
-  avatar    String?
-  role      Role     @default(CUSTOMER)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String    @id @default(cuid())
+  email      String    @unique
+  password   String
+  name       String
+  phone      String?
+  avatar     String?
+  role       Role      @default(CUSTOMER)
+  isActive   Boolean   @default(true)
+  lastSeenAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   // Relations
   mitra       Mitra?

@@ -1,21 +1,22 @@
 import { OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { JwtService } from '@nestjs/jwt';
 import { Server, Socket } from 'socket.io';
+import { PrismaService } from '../prisma/prisma.service';
 export declare class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private jwtService;
+    private prisma;
     server: Server;
     private readonly connections;
-    private readonly lastSeen;
-    constructor(jwtService: JwtService);
+    constructor(jwtService: JwtService, prisma: PrismaService);
     private extractToken;
-    handleConnection(client: Socket): void;
-    handleDisconnect(client: Socket): void;
+    handleConnection(client: Socket): Promise<void>;
+    handleDisconnect(client: Socket): Promise<void>;
     handleTyping(client: Socket, body: {
         receiverId?: string;
     }): void;
     handlePresenceQuery(client: Socket, body: {
         userIds?: string[];
-    }): void;
+    }): Promise<void>;
     emitNewMessage(msg: {
         senderId: string;
         receiverId: string;

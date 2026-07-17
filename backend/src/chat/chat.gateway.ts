@@ -9,21 +9,27 @@ import {
 } from '@nestjs/websockets';
 import { JwtService } from '@nestjs/jwt';
 import { Server, Socket } from 'socket.io';
+import { PrismaService } from '../prisma/prisma.service';
 
 /**
  * Gateway realtime chat.
  * Auth: JWT dari handshake.auth.token (admin) atau cookie mh_token (pelanggan).
  * Setiap user join room dengan nama userId-nya sendiri.
  *
- * Presence: dilacak in-memory. Satu user bisa punya banyak koneksi (banyak tab),
+ * Presence: dilacak in-memory + DB (lastSeenAt).
+ * Satu user bisa punya banyak koneksi (banyak tab),
  * jadi kita hitung socket per user. Online = punya >=1 socket aktif.
- * lastSeen hanya bertahan selama proses hidup (reset saat server restart).
+ * lastSeen disimpan ke database saat offline, jadi tahan server restart.
  */
 @WebSocketGateway({
   cors: {
-    origin: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
+    origin: process.env.CORS_ORIGIN?.split(',') ?? ['http://localhost:3000'],
     credentials: true,
   },
+  transports: ['websocket', 'polling'],
+  pingInterval: 25000,
+  pingTimeout: 20000,
+  path: '/api/socket.io',
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
@@ -31,10 +37,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   // userId → jumlah socket aktif
   private readonly connections = new Map<string, number>();
-  // userId → ISO timestamp terakhir online
-  private readonly lastSeen = new Map<string, string>();
 
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private jwtService: JwtService,
+    private prisma: PrismaService,
+  ) {}
 
   /** Ambil token dari handshake: auth.token dulu, lalu cookie mh_token */
   private extractToken(client: Socket): string | null {
@@ -50,7 +57,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return null;
   }
 
-  handleConnection(client: Socket) {
+  async handleConnection(client: Socket) {
     const token = this.extractToken(client);
     if (!token) {
       client.disconnect();
@@ -64,7 +71,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       const prev = this.connections.get(userId) ?? 0;
       this.connections.set(userId, prev + 1);
-      // Transisi offline → online: kabari semua client
       if (prev === 0) {
         this.server.emit('presence:update', { userId, online: true });
       }
@@ -73,21 +79,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  handleDisconnect(client: Socket) {
+  async handleDisconnect(client: Socket) {
     const userId = client.data?.userId as string | undefined;
     if (!userId) return;
 
     const prev = this.connections.get(userId) ?? 0;
     const next = Math.max(0, prev - 1);
     if (next === 0) {
-      // Socket terakhir user ini terputus → offline
       this.connections.delete(userId);
-      const seenAt = new Date().toISOString();
-      this.lastSeen.set(userId, seenAt);
+      const seenAt = new Date();
+      await this.prisma.user
+        .update({ where: { id: userId }, data: { lastSeenAt: seenAt } })
+        .catch(() => {});
       this.server.emit('presence:update', {
         userId,
         online: false,
-        lastSeen: seenAt,
+        lastSeen: seenAt.toISOString(),
       });
     } else {
       this.connections.set(userId, next);
@@ -101,7 +108,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() body: { receiverId?: string },
   ) {
     if (!client.data.userId || !body?.receiverId) return;
-    // Jangan pantulkan indikator ke pengetiknya sendiri
     if (body.receiverId === client.data.userId) return;
     this.server
       .to(body.receiverId)
@@ -113,18 +119,38 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * Balas hanya ke penanya lewat 'presence:state'.
    */
   @SubscribeMessage('presence:query')
-  handlePresenceQuery(
+  async handlePresenceQuery(
     @ConnectedSocket() client: Socket,
     @MessageBody() body: { userIds?: string[] },
   ) {
     if (!client.data.userId || !Array.isArray(body?.userIds)) return;
     const state: Record<string, { online: boolean; lastSeen: string | null }> =
       {};
+
+    const unknownIds = body.userIds.filter(
+      (id) => typeof id === 'string' && !this.connections.has(id),
+    );
+
+    const dbRecords =
+      unknownIds.length > 0
+        ? await this.prisma.user
+            .findMany({
+              where: { id: { in: unknownIds } },
+              select: { id: true, lastSeenAt: true },
+            })
+            .catch(() => [])
+        : [];
+
+    const dbMap = new Map(dbRecords.map((u) => [u.id, u.lastSeenAt]));
+
     for (const id of body.userIds) {
       if (typeof id !== 'string') continue;
+      const online = (this.connections.get(id) ?? 0) > 0;
       state[id] = {
-        online: (this.connections.get(id) ?? 0) > 0,
-        lastSeen: this.lastSeen.get(id) ?? null,
+        online,
+        lastSeen: online
+          ? null
+          : (dbMap.get(id)?.toISOString() ?? null),
       };
     }
     client.emit('presence:state', state);
@@ -146,7 +172,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.to(senderId).emit('messages:read', { readerId });
   }
 
-  /** Broadcast event tiket bantuan ke sekumpulan user (customer + admin) */
   emitTicketEvent(
     event: 'ticket:new' | 'ticket:message' | 'ticket:update',
     userIds: string[],
