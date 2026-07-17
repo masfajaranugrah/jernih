@@ -95,7 +95,7 @@ export default function HeroEditor({ initial }: Props) {
       {/* Header */}
       <header className="bg-white border-b border-[#e1e3e4] px-6 py-4 flex items-center justify-between sticky top-0 z-40 shadow-sm">
         <div className="flex items-center gap-3">
-          <Link href="/dashboard-admin/admin" className="text-[#707974] hover:text-[#003527] transition-colors">
+          <Link href="/dashboard-admin/orders" className="text-[#707974] hover:text-[#003527] transition-colors">
             <span className="material-symbols-outlined">arrow_back</span>
           </Link>
           <span className="material-symbols-outlined text-[#003527]">image</span>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import SearchOverlay from "@/app/(storefront)/SearchOverlay";
+import { getCartCount, CART_EVENT, WISHLIST_EVENT } from "@/lib/cart";
 
 interface UserData {
   name: string;
@@ -49,6 +50,36 @@ function CloseIcon() {
   );
 }
 
+function HeartIcon() {
+  return (
+    <svg className="inline-block h-[1.4em] w-[1.4em] fill-current" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m12 21-1.5-1.3C5.4 15.1 2 12 2 8.2 2 5.1 4.4 3 7.4 3c1.7 0 3.4.8 4.6 2.1A6.1 6.1 0 0 1 16.6 3C19.6 3 22 5.1 22 8.2c0 3.8-3.4 6.9-8.5 11.5L12 21Zm0-2.7.1-.1C16.8 14 20 11.1 20 8.2 20 6.2 18.5 5 16.6 5c-1.5 0-3 .9-3.6 2.2h-2C10.4 5.9 8.9 5 7.4 5 5.5 5 4 6.2 4 8.2c0 2.9 3.2 5.8 7.9 10l.1.1Z" />
+    </svg>
+  );
+}
+
+function CartIcon() {
+  return (
+    <svg className="inline-block h-[1.4em] w-[1.4em] fill-current" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2ZM1 2v2h2l3.6 7.6-1.4 2.4c-.7 1.3.3 3 1.8 3h12v-2H7l1.1-2h7.4c.8 0 1.4-.4 1.8-1l3.6-6.5c.4-.7-.1-1.5-.9-1.5H5.2L4.3 2H1Zm16 16c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2Z" />
+    </svg>
+  );
+}
+
+/** Ikon navbar dengan badge angka di pojok */
+function IconWithBadge({ count, children }: { count: number; children: React.ReactNode }) {
+  return (
+    <span className="relative inline-flex">
+      {children}
+      {count > 0 && (
+        <span className="absolute -right-1.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#dc2626] px-1 text-[10px] font-black leading-none text-white">
+          {count > 99 ? "99+" : count}
+        </span>
+      )}
+    </span>
+  );
+}
+
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -56,6 +87,8 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<UserData | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
+  const [wishlistCount, setWishlistCount] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -66,6 +99,42 @@ export default function Navbar() {
       } catch {}
     }
   }, []);
+
+  // Badge keranjang — sync dari localStorage + event perubahan
+  useEffect(() => {
+    setCartCount(getCartCount());
+    const sync = () => setCartCount(getCartCount());
+    window.addEventListener(CART_EVENT, sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener(CART_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+
+  // Badge wishlist — fetch dari API (butuh login); refresh saat ada perubahan
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchWishlistCount() {
+      try {
+        const res = await fetch("/api/wishlist", { cache: "no-store" });
+        if (!res.ok) {
+          if (!cancelled) setWishlistCount(0);
+          return;
+        }
+        const data = await res.json();
+        if (!cancelled) setWishlistCount(Array.isArray(data) ? data.length : 0);
+      } catch {
+        if (!cancelled) setWishlistCount(0);
+      }
+    }
+    fetchWishlistCount();
+    window.addEventListener(WISHLIST_EVENT, fetchWishlistCount);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(WISHLIST_EVENT, fetchWishlistCount);
+    };
+  }, [user]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -126,7 +195,7 @@ export default function Navbar() {
             })}
           </div>
 
-          {/* Desktop right: Search + Login/Register / Avatar */}
+          {/* Desktop right: Search + Wishlist + Cart + Login/Register / Avatar */}
           <div className="hidden items-center gap-3 md:flex">
             <button
               aria-label="Cari"
@@ -135,6 +204,24 @@ export default function Navbar() {
             >
               <SearchIcon />
             </button>
+            <Link
+              aria-label="Wishlist"
+              href={user ? `/dashboard/pelanggan/${user.slug}/wishlist` : "/dashboard/pelanggan/login?from=wishlist"}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#475569] transition hover:bg-[#e2e8f0] hover:text-[#1e3a8a]"
+            >
+              <IconWithBadge count={wishlistCount}>
+                <HeartIcon />
+              </IconWithBadge>
+            </Link>
+            <Link
+              aria-label="Keranjang"
+              href="/keranjang"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#475569] transition hover:bg-[#e2e8f0] hover:text-[#1e3a8a]"
+            >
+              <IconWithBadge count={cartCount}>
+                <CartIcon />
+              </IconWithBadge>
+            </Link>
             {user ? (
               <div className="relative" ref={dropdownRef}>
                 <button
@@ -185,7 +272,7 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile right: Search + Burger */}
+          {/* Mobile right: Search + Cart + Burger */}
           <div className="flex items-center gap-0.5 md:hidden">
             <button
               aria-label="Cari"
@@ -194,6 +281,15 @@ export default function Navbar() {
             >
               <SearchIcon />
             </button>
+            <Link
+              aria-label="Keranjang"
+              href="/keranjang"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-[#475569] transition hover:bg-[#e2e8f0] hover:text-[#1e3a8a]"
+            >
+              <IconWithBadge count={cartCount}>
+                <CartIcon />
+              </IconWithBadge>
+            </Link>
             <button
               aria-label={mobileOpen ? "Tutup menu" : "Buka menu"}
               onClick={() => setMobileOpen((v) => !v)}
@@ -251,7 +347,7 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 onClick={handleLinkClick}
-                className={`flex items-center gap-4 rounded-2xl px-4 py-3.5 text-[15px] font-semibold transition-all ${
+                className={`flex items-center gap-4 rounded-2xl px-4 py-3.5 text-[15px] font-bold transition-all ${
                   isActive
                     ? "bg-[#1e3a8a] text-white shadow-sm"
                     : "text-[#475569] hover:bg-[#f1f5f9] hover:text-[#1e3a8a]"
@@ -264,6 +360,38 @@ export default function Navbar() {
               </Link>
             );
           })}
+
+          {/* Wishlist & Keranjang */}
+          <Link
+            href={user ? `/dashboard/pelanggan/${user.slug}/wishlist` : "/dashboard/pelanggan/login?from=wishlist"}
+            onClick={handleLinkClick}
+            className="flex items-center justify-between rounded-2xl px-4 py-3.5 text-[15px] font-bold text-[#475569] transition-all hover:bg-[#f1f5f9] hover:text-[#1e3a8a]"
+          >
+            <span className="flex items-center gap-4">
+              <HeartIcon />
+              Wishlist
+            </span>
+            {wishlistCount > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#dc2626] px-1.5 text-[11px] font-black text-white">
+                {wishlistCount > 99 ? "99+" : wishlistCount}
+              </span>
+            )}
+          </Link>
+          <Link
+            href="/keranjang"
+            onClick={handleLinkClick}
+            className="flex items-center justify-between rounded-2xl px-4 py-3.5 text-[15px] font-bold text-[#475569] transition-all hover:bg-[#f1f5f9] hover:text-[#1e3a8a]"
+          >
+            <span className="flex items-center gap-4">
+              <CartIcon />
+              Keranjang
+            </span>
+            {cartCount > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#dc2626] px-1.5 text-[11px] font-black text-white">
+                {cartCount > 99 ? "99+" : cartCount}
+              </span>
+            )}
+          </Link>
         </nav>
 
         {/* Sidebar footer */}

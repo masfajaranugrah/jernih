@@ -35,6 +35,23 @@ export declare class VouchersService {
         quota: number;
         usedCount: number;
     }[]>;
+    findAvailable(userId: string): Promise<{
+        used: boolean;
+        id: string;
+        createdAt: Date;
+        isActive: boolean;
+        updatedAt: Date;
+        description: string | null;
+        startDate: Date | null;
+        endDate: Date | null;
+        code: string;
+        type: import(".prisma/client").$Enums.VoucherType;
+        value: import("@prisma/client/runtime/library").Decimal;
+        minPurchase: import("@prisma/client/runtime/library").Decimal;
+        maxDiscount: import("@prisma/client/runtime/library").Decimal | null;
+        quota: number;
+        usedCount: number;
+    }[]>;
     findOne(id: string): Promise<{
         id: string;
         createdAt: Date;

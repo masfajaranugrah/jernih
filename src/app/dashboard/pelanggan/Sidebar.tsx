@@ -7,11 +7,11 @@ export default function SidebarPelanggan({ nama }: { nama: string }) {
   const pathname = usePathname();
 
   const navItems = [
-    { href: `/dashboard/pelanggan/${nama}`, icon: "dashboard", label: "Overview" },
     { href: `/dashboard/pelanggan/${nama}/orders`, icon: "shopping_bag", label: "Orders" },
     { href: `/dashboard/pelanggan/${nama}/wishlist`, icon: "favorite", label: "Wishlist" },
     { href: `/dashboard/pelanggan/${nama}/vouchers`, icon: "confirmation_number", label: "Vouchers" },
     { href: `/dashboard/pelanggan/${nama}/chat`, icon: "chat", label: "Chat" },
+    { href: `/dashboard/pelanggan/${nama}/bantuan`, icon: "support_agent", label: "Bantuan" },
     { href: `/dashboard/pelanggan/${nama}/addresses`, icon: "location_on", label: "Addresses" },
   ];
 

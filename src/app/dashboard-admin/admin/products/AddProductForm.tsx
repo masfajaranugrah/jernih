@@ -75,6 +75,7 @@ export default function AddProductForm() {
   const [dragActive, setDragActive] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [badge, setBadge] = useState("");
+  const [types, setTypes] = useState<{ name: string; price: string; oldPrice: string; stock: string }[]>([]);
 
   // ── Slug otomatis ───────────────────────────────────────────────────────────
   function toSlug(str: string) {
@@ -166,6 +167,12 @@ export default function AddProductForm() {
         stock: Number(stock) || 0,
         images: finalImageUrls,
         isActive: true,
+        types: types.filter((t) => t.name.trim()).map((t) => ({
+          name: t.name.trim(),
+          price: Number(t.price),
+          oldPrice: t.oldPrice ? Number(t.oldPrice) : undefined,
+          stock: Number(t.stock) || 0,
+        })),
       });
 
       if (!result.success) {
@@ -498,6 +505,87 @@ export default function AddProductForm() {
                 />
               </Field>
             </div>
+          </section>
+
+          {/* Tipe / Varian Produk */}
+          <section className="rounded-xl border border-[#e1e3e4] bg-white p-6 shadow-sm">
+            <div className="mb-5 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#003527]">category</span>
+              <h3 className="text-xs font-bold uppercase tracking-widest text-[#707974]">
+                Tipe / Varian
+              </h3>
+            </div>
+            <p className="mb-4 text-xs text-[#707974]">
+              Jika produk memiliki beberapa varian (ukuran, warna, jumlah LED, dll), tambahkan di sini. Biarkan kosong jika tidak ada varian.
+            </p>
+            {types.map((t, i) => (
+              <div key={i} className="mb-3 rounded-lg border border-[#e1e3e4] bg-[#f8f9fa] p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#191c1d]">Varian {i + 1}</span>
+                  <button
+                    type="button"
+                    onClick={() => setTypes((prev) => prev.filter((_, idx) => idx !== i))}
+                    className="text-xs font-bold text-[#ba1a1a] hover:underline"
+                  >
+                    Hapus
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="col-span-2">
+                    <label className="mb-1 block text-[10px] font-semibold text-[#707974]">Nama Varian</label>
+                    <input
+                      type="text" className={"w-full rounded-lg border border-[#bfc9c3] bg-white px-3 py-2 text-xs outline-none focus:border-[#003527]"}
+                      placeholder="Contoh: 1 LED 1Pcs, Hitam, XL"
+                      value={t.name} onChange={(e) => {
+                        const next = [...types];
+                        next[i] = { ...next[i], name: e.target.value };
+                        setTypes(next);
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[10px] font-semibold text-[#707974]">Harga (Rp)</label>
+                    <input
+                      type="number" min="0" className={"w-full rounded-lg border border-[#bfc9c3] bg-white px-3 py-2 text-xs outline-none focus:border-[#003527]"}
+                      placeholder="0" value={t.price} onChange={(e) => {
+                        const next = [...types];
+                        next[i] = { ...next[i], price: e.target.value };
+                        setTypes(next);
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[10px] font-semibold text-[#707974]">Harga Coret (Rp)</label>
+                    <input
+                      type="number" min="0" className={"w-full rounded-lg border border-[#bfc9c3] bg-white px-3 py-2 text-xs outline-none focus:border-[#003527]"}
+                      placeholder="Opsional" value={t.oldPrice} onChange={(e) => {
+                        const next = [...types];
+                        next[i] = { ...next[i], oldPrice: e.target.value };
+                        setTypes(next);
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[10px] font-semibold text-[#707974]">Stok</label>
+                    <input
+                      type="number" min="0" className={"w-full rounded-lg border border-[#bfc9c3] bg-white px-3 py-2 text-xs outline-none focus:border-[#003527]"}
+                      placeholder="0" value={t.stock} onChange={(e) => {
+                        const next = [...types];
+                        next[i] = { ...next[i], stock: e.target.value };
+                        setTypes(next);
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setTypes((prev) => [...prev, { name: "", price: "", oldPrice: "", stock: "0" }])}
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-[#bfc9c3] py-2.5 text-xs font-bold text-[#707974] transition-colors hover:border-[#003527] hover:text-[#003527]"
+            >
+              + Tambah Varian
+            </button>
           </section>
 
           {/* Badge Promo */}

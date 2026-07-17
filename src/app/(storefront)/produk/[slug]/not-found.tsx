@@ -65,7 +65,7 @@ export default async function NotFound() {
       {/* Main hero section */}
       <main className="flex min-h-[70vh] flex-col items-center justify-center px-4 py-16 text-center relative overflow-hidden">
         {/* Background blobs */}
-        <div className="pointer-events-none absolute bottom-20 left-10 h-48 w-48 rounded-full bg-[#b0f0d6] opacity-20 blur-[80px]" />
+        <div className="pointer-events-none absolute bottom-20 left-10 h-48 w-48 rounded-full bg-[#dbeafe] opacity-20 blur-[80px]" />
         <div className="pointer-events-none absolute top-20 right-10 h-64 w-64 rounded-full bg-[#dce2f7] opacity-20 blur-[100px]" />
 
         {/* Floating icon */}
@@ -74,7 +74,7 @@ export default async function NotFound() {
         </div>
 
         {/* Text */}
-        <h1 className="mb-3 text-3xl font-bold tracking-tight text-[#003527] sm:text-4xl md:text-5xl">
+        <h1 className="mb-3 text-3xl font-bold tracking-tight text-[#1e3a8a] sm:text-4xl md:text-5xl">
           Maaf, Barang Tidak Ditemukan
         </h1>
         <p className="mb-8 max-w-md text-base text-[#707974]">
@@ -82,7 +82,7 @@ export default async function NotFound() {
         </p>
 
         {/* Search bar */}
-        <form action="/produk" method="get" className="mb-8 flex w-full max-w-md overflow-hidden rounded-full border border-[#bfc9c3] bg-white shadow-sm focus-within:ring-2 focus-within:ring-[#064e3b]">
+        <form action="/produk" method="get" className="mb-8 flex w-full max-w-md overflow-hidden rounded-full border border-[#bfc9c3] bg-white shadow-sm focus-within:ring-2 focus-within:ring-[#1e3a8a]">
           <div className="flex items-center pl-4 pr-2">
             <span className="material-symbols-outlined text-[#707974]">search</span>
           </div>
@@ -94,7 +94,7 @@ export default async function NotFound() {
           />
           <button
             type="submit"
-            className="m-1.5 rounded-full bg-[#064e3b] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#043b2d] active:scale-95"
+            className="m-1.5 rounded-full bg-[#1e3a8a] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#1e40af] active:scale-95"
           >
             Cari
           </button>
@@ -104,14 +104,14 @@ export default async function NotFound() {
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link
             href="/"
-            className="flex items-center gap-2 rounded-full bg-[#064e3b] px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-[#043b2d] hover:shadow-lg active:scale-95"
+            className="flex items-center gap-2 rounded-full bg-[#1e3a8a] px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-[#1e40af] hover:shadow-lg active:scale-95"
           >
             <span className="material-symbols-outlined text-base">home</span>
             Kembali ke Beranda
           </Link>
           <Link
             href="/produk"
-            className="flex items-center gap-2 rounded-full border border-[#bfc9c3] bg-white px-6 py-3 text-sm font-semibold text-[#191c1d] transition hover:border-[#064e3b] hover:text-[#064e3b] active:scale-95"
+            className="flex items-center gap-2 rounded-full border border-[#bfc9c3] bg-white px-6 py-3 text-sm font-semibold text-[#191c1d] transition hover:border-[#1e3a8a] hover:text-[#1e3a8a] active:scale-95"
           >
             <span className="material-symbols-outlined text-base">grid_view</span>
             Lihat Semua Produk
@@ -128,7 +128,7 @@ export default async function NotFound() {
             <Link
               key={cat.label}
               href={cat.href}
-              className="rounded-full border border-[#bfc9c3] px-4 py-2 text-xs font-semibold text-[#707974] transition hover:border-[#064e3b] hover:text-[#064e3b]"
+              className="rounded-full border border-[#bfc9c3] px-4 py-2 text-xs font-semibold text-[#707974] transition hover:border-[#1e3a8a] hover:text-[#1e3a8a]"
             >
               {cat.label}
             </Link>
@@ -139,7 +139,7 @@ export default async function NotFound() {
       {/* Recommendations */}
       <section className="bg-white py-16 px-4">
         <div className="mx-auto max-w-6xl">
-          <h2 className="mb-2 text-center text-2xl font-bold text-[#003527]">
+          <h2 className="mb-2 text-center text-2xl font-bold text-[#1e3a8a]">
             Rekomendasi Untuk Kamu
           </h2>
           <p className="mb-10 text-center text-sm text-[#707974]">
@@ -160,15 +160,15 @@ export default async function NotFound() {
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                   />
-                  <div className="absolute top-2 left-2 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#064e3b] shadow-sm">
+                  <div className="absolute top-2 left-2 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#1e3a8a] shadow-sm">
                     {item.type}
                   </div>
                 </div>
                 <div className="p-4">
-                  <h3 className="line-clamp-2 text-sm font-semibold text-[#191c1d] group-hover:text-[#003527]">
+                  <h3 className="line-clamp-2 text-sm font-semibold text-[#191c1d] group-hover:text-[#1e3a8a]">
                     {item.title}
                   </h3>
-                  <p className="mt-1 text-base font-bold text-[#064e3b]">{item.price}</p>
+                  <p className="mt-1 text-base font-bold text-[#191c1d]">{item.price}</p>
                 </div>
               </Link>
             ))}

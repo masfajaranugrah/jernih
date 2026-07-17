@@ -47,36 +47,29 @@ function ServiceCard({ svc }: { svc: ApiService }) {
             <span className="material-symbols-outlined text-5xl text-[#bfc9c3]">design_services</span>
           </div>
         )}
-        <div className="absolute top-3 left-3 bg-[#064e3b] text-white font-black text-[10px] px-2 py-1 uppercase tracking-tight rounded">
+        <div className="absolute top-3 left-3 bg-[#1e3a8a] text-white font-black text-[10px] px-2 py-1 uppercase tracking-tight rounded">
           Jasa
         </div>
       </div>
-      <div className="p-5">
-        <div className="flex justify-between items-start mb-1">
-          <h3 className="text-[#003527] font-semibold text-base leading-tight group-hover:underline line-clamp-2 flex-1">
-            {svc.name}
-          </h3>
-          {svc.rating > 0 && (
-            <div className="flex items-center gap-1 text-[#003527] flex-shrink-0 ml-2">
-              <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-              <span className="font-semibold text-sm">{svc.rating.toFixed(1)}</span>
-            </div>
-          )}
-        </div>
-        <p className="text-[10px] font-medium text-[#707974] uppercase tracking-widest mb-3">
+      <div className="p-4 space-y-1">
+        <h3 className="text-[#1e3a8a] font-semibold text-sm leading-tight group-hover:underline line-clamp-2">
+          {svc.name}
+        </h3>
+        <p className="text-[10px] font-medium text-[#707974] uppercase tracking-widest">
           {svc.category?.name ?? "Jasa"}
         </p>
-        <div className="flex justify-between items-end border-t border-[#e1e3e4] pt-3">
-          <div>
-            <span className="block text-xs text-[#707974]">Mulai dari</span>
-            <span className="text-base font-bold text-[#003527]">
-              {formatRupiah(svc.priceFrom)}
-              <span className="text-xs font-normal text-[#707974]">/{svc.unit}</span>
-            </span>
+        {svc.rating > 0 && (
+          <div className="flex items-center gap-1">
+            <span className="material-symbols-outlined text-yellow-400 text-[10px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+            <span className="text-[10px] font-semibold text-[#575e70]">{svc.rating.toFixed(1)}</span>
           </div>
-          <span className="bg-[#003527] text-white px-4 py-2 rounded-full font-semibold text-xs">
-            Lihat Detail
-          </span>
+        )}
+        <div className="pt-1 border-t border-[#e1e3e4]">
+          <span className="text-[10px] text-[#707974]">Mulai dari</span>
+          <p className="text-xs font-bold text-[#191c1d]">
+            {formatRupiah(svc.priceFrom)}
+            <span className="text-[10px] font-normal text-[#707974]">/{svc.unit}</span>
+          </p>
         </div>
       </div>
     </Link>
@@ -99,6 +92,7 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterState>(DEFAULT_FILTER);
   const [draftFilter, setDraftFilter] = useState<FilterState>(DEFAULT_FILTER);
+  const [visibleCount, setVisibleCount] = useState(12);
 
   // ── SSR Hydration Guard ──
   const [mounted, setMounted] = useState(false);
@@ -135,7 +129,8 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
       if (activeFilter.sortBy === "harga_desc") return pb - pa;
       if (activeFilter.sortBy === "rating") return b.rating - a.rating;
       return 0;
-    });
+    })
+    .slice(0, visibleCount);
 
   const activeCount =
     (activeFilter.category !== "all" ? 1 : 0) +
@@ -172,7 +167,7 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
               onClick={() => setDraftFilter((p) => ({ ...p, category: "all" }))}
               className={`flex items-center gap-3 w-full py-2.5 pl-3 rounded-lg text-sm font-semibold transition-all ${
                 draftFilter.category === "all"
-                  ? "text-[#003527] bg-[#f3f4f5] border-l-4 border-[#003527]"
+                  ? "text-[#1e3a8a] bg-[#f3f4f5] border-l-4 border-[#1e3a8a]"
                   : "text-[#707974] hover:bg-[#edeeef] border-l-4 border-transparent"
               }`}
             >
@@ -186,7 +181,7 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
                 onClick={() => setDraftFilter((p) => ({ ...p, category: cat }))}
                 className={`flex items-center gap-3 w-full py-2.5 pl-3 rounded-lg text-sm font-semibold transition-all ${
                   draftFilter.category === cat
-                    ? "text-[#003527] bg-[#f3f4f5] border-l-4 border-[#003527]"
+                    ? "text-[#1e3a8a] bg-[#f3f4f5] border-l-4 border-[#1e3a8a]"
                     : "text-[#707974] hover:bg-[#edeeef] border-l-4 border-transparent"
                 }`}
               >
@@ -215,7 +210,7 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
                 type="number" min="0" placeholder="0"
                 value={draftFilter.priceMin}
                 onChange={(e) => setDraftFilter((p) => ({ ...p, priceMin: e.target.value }))}
-                className="w-full pl-8 pr-3 py-2 text-sm border border-[#bfc9c3] rounded-lg bg-[#f8f9fa] outline-none focus:border-[#064e3b]"
+                className="w-full pl-8 pr-3 py-2 text-sm border border-[#bfc9c3] rounded-lg bg-[#f8f9fa] outline-none focus:border-[#1e3a8a]"
               />
             </div>
           </div>
@@ -227,12 +222,12 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
                 type="number" min="0" placeholder="Tidak terbatas"
                 value={draftFilter.priceMax}
                 onChange={(e) => setDraftFilter((p) => ({ ...p, priceMax: e.target.value }))}
-                className="w-full pl-8 pr-3 py-2 text-sm border border-[#bfc9c3] rounded-lg bg-[#f8f9fa] outline-none focus:border-[#064e3b]"
+                className="w-full pl-8 pr-3 py-2 text-sm border border-[#bfc9c3] rounded-lg bg-[#f8f9fa] outline-none focus:border-[#1e3a8a]"
               />
             </div>
           </div>
           {(draftFilter.priceMin || draftFilter.priceMax) && (
-            <p className="text-[11px] text-[#064e3b] font-medium">
+            <p className="text-[11px] text-[#191c1d] font-medium">
               {draftFilter.priceMin ? formatRupiah(draftFilter.priceMin) : "0"}
               {" – "}
               {draftFilter.priceMax ? formatRupiah(draftFilter.priceMax) : "∞"}
@@ -246,7 +241,7 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
   return (
     <div className="min-h-screen bg-[#f8f9fa] text-[#191c1d]" suppressHydrationWarning>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0,0&display=block');
+        @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0,0;24,300,1,0&display=block');
         .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24; vertical-align:middle; }
         .premium-shadow { box-shadow:0px 4px 20px rgba(0,0,0,0.04); transition:box-shadow .3s,transform .3s; }
         .premium-shadow:hover { box-shadow:0px 12px 40px rgba(0,0,0,0.08); transform:translateY(-4px); }
@@ -271,7 +266,7 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
             {FilterPanel}
             <button
               onClick={() => setActiveFilter({ ...draftFilter })}
-              className="mt-6 w-full rounded-xl bg-[#064e3b] py-2.5 text-sm font-semibold text-white hover:bg-[#043b2d] transition-colors"
+              className="mt-6 w-full rounded-xl bg-[#1e3a8a] py-2.5 text-sm font-semibold text-white hover:bg-[#1e40af] transition-colors"
             >
               Terapkan Filter
             </button>
@@ -282,11 +277,11 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
         <main className="flex-grow min-w-0">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div>
-              <h1 className="text-lg font-bold text-[#003527] tracking-tight">Layanan Profesional</h1>
+              <h1 className="text-lg font-bold text-[#1e3a8a] tracking-tight">Layanan Profesional</h1>
               <p className="text-xs text-[#707974] mt-0.5">
                 {filtered.length} jasa tersedia
                 {activeCount > 0 && (
-                  <span className="ml-2 text-[#064e3b] font-semibold">· {activeCount} filter aktif</span>
+                  <span className="ml-2 text-[#1e3a8a] font-semibold">· {activeCount} filter aktif</span>
                 )}
               </p>
             </div>
@@ -294,7 +289,7 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
               <select
                 value={activeFilter.sortBy}
                 onChange={(e) => setActiveFilter((p) => ({ ...p, sortBy: e.target.value }))}
-                className="h-10 text-xs font-semibold text-[#003527] bg-white border border-[#e1e3e4] rounded-lg px-3 outline-none cursor-pointer"
+                className="h-10 text-xs font-semibold text-[#1e3a8a] bg-white border border-[#e1e3e4] rounded-lg px-3 outline-none cursor-pointer"
               >
                 <option value="terbaru">Terbaru</option>
                 <option value="rating">Rating ↓</option>
@@ -308,7 +303,7 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
                 <span className="material-symbols-outlined text-base">tune</span>
                 Filter
                 {activeCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#064e3b] text-white text-[9px] flex items-center justify-center font-bold">
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#1e3a8a] text-white text-[9px] flex items-center justify-center font-bold">
                     {activeCount}
                   </span>
                 )}
@@ -321,7 +316,7 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
           {resolvedSearch && (
             <div className="mb-6 bg-white border border-[#bfc9c3]/30 rounded-xl p-4 flex items-center justify-between shadow-sm">
               <p className="text-sm text-[#404944]">
-                Hasil pencarian: <strong className="text-[#064e3b]">&quot;{resolvedSearch}&quot;</strong>
+                Hasil pencarian: <strong className="text-[#1e3a8a]">&quot;{resolvedSearch}&quot;</strong>
               </p>
               <Link href="/jasa" className="text-xs font-semibold text-[#ba1a1a] hover:underline">
                 Hapus Pencarian
@@ -336,7 +331,7 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
               <p className="mt-1 text-sm text-[#707974]">Coba ubah atau reset filter</p>
               <button
                 onClick={() => setActiveFilter(DEFAULT_FILTER)}
-                className="mt-4 rounded-xl bg-[#064e3b] px-5 py-2.5 text-sm font-semibold text-white"
+                className="mt-4 rounded-xl bg-[#1e3a8a] px-5 py-2.5 text-sm font-semibold text-white"
               >
                 Reset Filter
               </button>
@@ -389,6 +384,17 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
                   })}
                 </div>
               )}
+              <div className="mt-8 text-center">
+                <button
+                  onClick={() => setVisibleCount((prev) => prev + 30)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#bfc9c3] px-6 py-2.5 text-xs font-semibold text-[#404944] transition-colors hover:border-[#1e3a8a] hover:text-[#1e3a8a]"
+                >
+                  Lihat Lainnya
+                  <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z" />
+                  </svg>
+                </button>
+              </div>
             </>
           )}
         </main>
@@ -418,7 +424,7 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
               </button>
               <button
                 onClick={applyFilter}
-                className="flex-[2] rounded-xl bg-[#064e3b] py-3 text-sm font-semibold text-white"
+                className="flex-[2] rounded-xl bg-[#1e3a8a] py-3 text-sm font-semibold text-white"
               >
                 Simpan Filter
               </button>

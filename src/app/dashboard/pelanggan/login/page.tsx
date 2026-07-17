@@ -9,6 +9,7 @@ function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const from = searchParams.get("from") ?? "/dashboard/pelanggan";
+  const justRegistered = searchParams.get("registered") === "1";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,7 +32,7 @@ function LoginPageContent() {
 
       const slug = data.user.name.toLowerCase().replace(/\s+/g, "-");
       localStorage.setItem("mh_user", JSON.stringify({ name: data.user.name, slug }));
-      router.push(`/dashboard/pelanggan/${slug}/`);
+      router.push(`/dashboard/pelanggan/${slug}/orders`);
       router.refresh();
     } catch (err: any) {
       setError(err.message ?? "Terjadi kesalahan");
@@ -70,6 +71,13 @@ function LoginPageContent() {
             Masuk ke akun pelanggan Jernih Creatife Anda.
           </p>
         </div>
+
+        {/* Notif sukses registrasi */}
+        {justRegistered && !error && (
+          <div className="mb-4 rounded-lg bg-[#b0f0d6] border border-[#064e3b]/20 px-4 py-3 text-sm text-[#003527] font-medium">
+            Registrasi berhasil! Silakan masuk dengan akun yang baru dibuat.
+          </div>
+        )}
 
         {/* Error message */}
         {error && (

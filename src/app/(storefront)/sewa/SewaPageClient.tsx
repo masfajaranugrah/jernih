@@ -31,7 +31,7 @@ function formatRupiah(val: string | number) {
 function RentalCard({ item }: { item: ApiRentalItem }) {
   const cleanDesc = item.description?.replace(/^\[cat:[^\]]+\]\s*/, "");
   return (
-    <div className="premium-shadow group bg-white rounded-xl overflow-hidden cursor-pointer">
+    <Link href={`/sewa/${item.slug}`} className="premium-shadow group bg-white rounded-xl overflow-hidden cursor-pointer block">
       <div className="relative aspect-[4/5] overflow-hidden bg-[#edeeef]">
         {item.images[0] ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -45,23 +45,23 @@ function RentalCard({ item }: { item: ApiRentalItem }) {
             <span className="material-symbols-outlined text-5xl text-[#bfc9c3]">inventory_2</span>
           </div>
         )}
-        <div className="absolute top-3 left-3 bg-[#064e3b] text-white font-black text-[10px] px-2 py-1 uppercase tracking-tight rounded">
+        <div className="absolute top-3 left-3 bg-[#1e3a8a] text-white font-black text-[10px] px-2 py-1 uppercase tracking-tight rounded">
           Sewa
         </div>
-        {item.rating > 0 && (
+                {item.rating > 0 && (
           <div className="absolute top-3 right-3 bg-white/90 rounded-full px-2 py-0.5 flex items-center gap-1">
             <span
-              className="material-symbols-outlined text-[#003527] text-xs"
+              className="material-symbols-outlined text-yellow-400 text-[10px]"
               style={{ fontVariationSettings: "'FILL' 1" }}
             >
               star
             </span>
-            <span className="text-[#003527] text-xs font-bold">{item.rating.toFixed(1)}</span>
+            <span className="text-[#575e70] text-[10px] font-bold">{item.rating.toFixed(1)}</span>
           </div>
         )}
       </div>
       <div className="p-4 space-y-1">
-        <h2 className="text-sm font-semibold text-[#191c1d] group-hover:text-[#003527] transition-colors leading-tight line-clamp-2">
+        <h2 className="text-sm font-semibold text-[#191c1d] group-hover:text-[#1e3a8a] transition-colors leading-tight line-clamp-2">
           {item.name}
         </h2>
         {cleanDesc && (
@@ -70,9 +70,9 @@ function RentalCard({ item }: { item: ApiRentalItem }) {
           </p>
         )}
         <div className="pt-1">
-          <p className="text-base font-bold text-[#003527]">
+          <p className="text-xs font-bold text-[#191c1d]">
             {formatRupiah(item.pricePerDay)}
-            <span className="text-xs font-normal text-[#707974]">/hari</span>
+            <span className="text-[10px] font-normal text-[#707974]">/hari</span>
           </p>
           {item.deposit && parseFloat(String(item.deposit)) > 0 && (
             <p className="text-[10px] text-[#707974]">
@@ -81,7 +81,7 @@ function RentalCard({ item }: { item: ApiRentalItem }) {
           )}
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
@@ -95,6 +95,7 @@ export default function SewaPageClient({ items, categories, resolvedSearch }: Pr
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterState>(DEFAULT_FILTER);
   const [draftFilter, setDraftFilter] = useState<FilterState>(DEFAULT_FILTER);
+  const [visibleCount, setVisibleCount] = useState(12);
 
   // ── SSR Hydration Guard ──
   const [mounted, setMounted] = useState(false);
@@ -132,7 +133,8 @@ export default function SewaPageClient({ items, categories, resolvedSearch }: Pr
       if (activeFilter.sortBy === "harga_desc") return pb - pa;
       if (activeFilter.sortBy === "rating") return b.rating - a.rating;
       return 0;
-    });
+    })
+    .slice(0, visibleCount);
 
   const activeCount =
     (activeFilter.category !== "all" ? 1 : 0) +
@@ -169,7 +171,7 @@ export default function SewaPageClient({ items, categories, resolvedSearch }: Pr
               onClick={() => setDraftFilter((p) => ({ ...p, category: "all" }))}
               className={`flex items-center gap-3 w-full py-2.5 pl-3 rounded-lg text-sm font-semibold transition-all ${
                 draftFilter.category === "all"
-                  ? "text-[#003527] bg-[#f3f4f5] border-l-4 border-[#003527]"
+                  ? "text-[#1e3a8a] bg-[#f3f4f5] border-l-4 border-[#1e3a8a]"
                   : "text-[#707974] hover:bg-[#edeeef] border-l-4 border-transparent"
               }`}
             >
@@ -183,7 +185,7 @@ export default function SewaPageClient({ items, categories, resolvedSearch }: Pr
                 onClick={() => setDraftFilter((p) => ({ ...p, category: cat }))}
                 className={`flex items-center gap-3 w-full py-2.5 pl-3 rounded-lg text-sm font-semibold transition-all ${
                   draftFilter.category === cat
-                    ? "text-[#003527] bg-[#f3f4f5] border-l-4 border-[#003527]"
+                    ? "text-[#1e3a8a] bg-[#f3f4f5] border-l-4 border-[#1e3a8a]"
                     : "text-[#707974] hover:bg-[#edeeef] border-l-4 border-transparent"
                 }`}
               >
@@ -210,7 +212,7 @@ export default function SewaPageClient({ items, categories, resolvedSearch }: Pr
                 type="number" min="0" placeholder="0"
                 value={draftFilter.priceMin}
                 onChange={(e) => setDraftFilter((p) => ({ ...p, priceMin: e.target.value }))}
-                className="w-full pl-8 pr-3 py-2 text-sm border border-[#bfc9c3] rounded-lg bg-[#f8f9fa] outline-none focus:border-[#064e3b] focus:ring-1 focus:ring-[#064e3b]/20"
+                className="w-full pl-8 pr-3 py-2 text-sm border border-[#bfc9c3] rounded-lg bg-[#f8f9fa] outline-none focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a]/20"
               />
             </div>
           </div>
@@ -222,12 +224,12 @@ export default function SewaPageClient({ items, categories, resolvedSearch }: Pr
                 type="number" min="0" placeholder="Tidak terbatas"
                 value={draftFilter.priceMax}
                 onChange={(e) => setDraftFilter((p) => ({ ...p, priceMax: e.target.value }))}
-                className="w-full pl-8 pr-3 py-2 text-sm border border-[#bfc9c3] rounded-lg bg-[#f8f9fa] outline-none focus:border-[#064e3b] focus:ring-1 focus:ring-[#064e3b]/20"
+                className="w-full pl-8 pr-3 py-2 text-sm border border-[#bfc9c3] rounded-lg bg-[#f8f9fa] outline-none focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a]/20"
               />
             </div>
           </div>
           {(draftFilter.priceMin || draftFilter.priceMax) && (
-            <p className="text-[11px] text-[#064e3b] font-medium">
+            <p className="text-[11px] text-[#191c1d] font-medium">
               {draftFilter.priceMin ? formatRupiah(draftFilter.priceMin) : "0"}
               {" – "}
               {draftFilter.priceMax ? formatRupiah(draftFilter.priceMax) : "∞"}
@@ -241,7 +243,7 @@ export default function SewaPageClient({ items, categories, resolvedSearch }: Pr
   return (
     <div className="min-h-screen bg-[#f8f9fa] text-[#191c1d]" suppressHydrationWarning>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0,0&display=block');
+        @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0,0;24,300,1,0&display=block');
         .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24; vertical-align:middle; }
         .premium-shadow { box-shadow:0px 4px 20px rgba(0,0,0,0.04); transition:box-shadow .3s,transform .3s; }
         .premium-shadow:hover { box-shadow:0px 12px 40px rgba(0,0,0,0.08); transform:translateY(-4px); }
@@ -266,7 +268,7 @@ export default function SewaPageClient({ items, categories, resolvedSearch }: Pr
             {FilterPanel}
             <button
               onClick={() => setActiveFilter({ ...draftFilter })}
-              className="mt-6 w-full rounded-xl bg-[#064e3b] py-2.5 text-sm font-semibold text-white hover:bg-[#043b2d] transition-colors"
+              className="mt-6 w-full rounded-xl bg-[#1e3a8a] py-2.5 text-sm font-semibold text-white hover:bg-[#1e40af] transition-colors"
             >
               Terapkan Filter
             </button>
@@ -277,11 +279,11 @@ export default function SewaPageClient({ items, categories, resolvedSearch }: Pr
         <main className="flex-grow min-w-0">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div>
-              <h1 className="text-lg font-bold text-[#003527] tracking-tight">Katalog Sewa</h1>
+              <h1 className="text-lg font-bold text-[#1e3a8a] tracking-tight">Katalog Sewa</h1>
               <p className="text-xs text-[#707974] mt-0.5">
                 {filtered.length} item tersedia
                 {activeCount > 0 && (
-                  <span className="ml-2 text-[#064e3b] font-semibold">· {activeCount} filter aktif</span>
+                  <span className="ml-2 text-[#1e3a8a] font-semibold">· {activeCount} filter aktif</span>
                 )}
               </p>
             </div>
@@ -289,7 +291,7 @@ export default function SewaPageClient({ items, categories, resolvedSearch }: Pr
               <select
                 value={activeFilter.sortBy}
                 onChange={(e) => setActiveFilter((p) => ({ ...p, sortBy: e.target.value }))}
-                className="h-10 text-xs font-semibold text-[#003527] bg-white border border-[#e1e3e4] rounded-lg px-3 outline-none cursor-pointer"
+                className="h-10 text-xs font-semibold text-[#1e3a8a] bg-white border border-[#e1e3e4] rounded-lg px-3 outline-none cursor-pointer"
               >
                 <option value="terbaru">Terbaru</option>
                 <option value="rating">Rating ↓</option>
@@ -303,7 +305,7 @@ export default function SewaPageClient({ items, categories, resolvedSearch }: Pr
                 <span className="material-symbols-outlined text-base">tune</span>
                 Filter
                 {activeCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#064e3b] text-white text-[9px] flex items-center justify-center font-bold">
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#1e3a8a] text-white text-[9px] flex items-center justify-center font-bold">
                     {activeCount}
                   </span>
                 )}
@@ -316,7 +318,7 @@ export default function SewaPageClient({ items, categories, resolvedSearch }: Pr
           {resolvedSearch && (
             <div className="mb-6 bg-white border border-[#bfc9c3]/30 rounded-xl p-4 flex items-center justify-between shadow-sm">
               <p className="text-sm text-[#404944]">
-                Hasil pencarian: <strong className="text-[#064e3b]">&quot;{resolvedSearch}&quot;</strong>
+                Hasil pencarian: <strong className="text-[#1e3a8a]">&quot;{resolvedSearch}&quot;</strong>
               </p>
               <Link href="/sewa" className="text-xs font-semibold text-[#ba1a1a] hover:underline">
                 Hapus Pencarian
@@ -338,7 +340,7 @@ export default function SewaPageClient({ items, categories, resolvedSearch }: Pr
               {activeCount > 0 && (
                 <button
                   onClick={() => setActiveFilter(DEFAULT_FILTER)}
-                  className="mt-4 rounded-xl bg-[#064e3b] px-5 py-2.5 text-sm font-semibold text-white"
+                  className="mt-4 rounded-xl bg-[#1e3a8a] px-5 py-2.5 text-sm font-semibold text-white"
                 >
                   Reset Filter
                 </button>
@@ -392,6 +394,17 @@ export default function SewaPageClient({ items, categories, resolvedSearch }: Pr
                   })}
                 </div>
               )}
+              <div className="mt-8 text-center">
+                <button
+                  onClick={() => setVisibleCount((prev) => prev + 30)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#bfc9c3] px-6 py-2.5 text-xs font-semibold text-[#404944] transition-colors hover:border-[#1e3a8a] hover:text-[#1e3a8a]"
+                >
+                  Lihat Lainnya
+                  <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z" />
+                  </svg>
+                </button>
+              </div>
             </>
           )}
         </main>
@@ -421,7 +434,7 @@ export default function SewaPageClient({ items, categories, resolvedSearch }: Pr
               </button>
               <button
                 onClick={applyFilter}
-                className="flex-[2] rounded-xl bg-[#064e3b] py-3 text-sm font-semibold text-white"
+                className="flex-[2] rounded-xl bg-[#1e3a8a] py-3 text-sm font-semibold text-white"
               >
                 Simpan Filter
               </button>

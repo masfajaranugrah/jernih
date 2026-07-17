@@ -17,9 +17,16 @@ let ProductsService = class ProductsService {
         this.prisma = prisma;
     }
     async create(dto) {
+        const { types, ...productData } = dto;
         try {
             return await this.prisma.product.create({
-                data: dto,
+                data: {
+                    ...productData,
+                    ...(types?.length
+                        ? { types: { createMany: { data: types } } }
+                        : {}),
+                },
+                include: { types: true },
             });
         }
         catch (err) {
@@ -57,6 +64,7 @@ let ProductsService = class ProductsService {
                 where,
                 include: {
                     category: { select: { id: true, name: true, slug: true } },
+                    types: { where: { isActive: true } },
                 },
                 orderBy: { createdAt: 'desc' },
                 skip,
@@ -74,6 +82,7 @@ let ProductsService = class ProductsService {
             where: { id },
             include: {
                 category: true,
+                types: { where: { isActive: true } },
             },
         });
         if (!product)
@@ -85,6 +94,7 @@ let ProductsService = class ProductsService {
             where: { slug },
             include: {
                 category: true,
+                types: { where: { isActive: true } },
             },
         });
         if (!product)
@@ -93,8 +103,23 @@ let ProductsService = class ProductsService {
     }
     async update(id, dto) {
         await this.findOne(id);
+        const { types, ...productData } = dto;
         try {
-            return await this.prisma.product.update({ where: { id }, data: dto });
+            return await this.prisma.product.update({
+                where: { id },
+                data: {
+                    ...productData,
+                    ...(types !== undefined
+                        ? {
+                            types: {
+                                deleteMany: { productId: id },
+                                createMany: { data: types },
+                            },
+                        }
+                        : {}),
+                },
+                include: { types: true },
+            });
         }
         catch (err) {
             if (err?.message?.includes('numeric field overflow') || err?.code === '22003') {

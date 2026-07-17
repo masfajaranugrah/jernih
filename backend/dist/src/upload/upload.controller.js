@@ -27,6 +27,17 @@ let UploadController = class UploadController {
         if (!files || files.length === 0) {
             throw new common_1.BadRequestException('Tidak ada file yang dikirim');
         }
+        const oversized = files.find((f) => f.mimetype.startsWith('image/') && f.size > 10 * 1024 * 1024);
+        if (oversized) {
+            for (const f of files) {
+                try {
+                    (0, fs_1.unlinkSync)(f.path);
+                }
+                catch {
+                }
+            }
+            throw new common_1.BadRequestException('Gambar maksimal 10MB');
+        }
         const baseUrl = process.env.BACKEND_URL ?? 'http://localhost:3001';
         const urls = files.map((f) => `${baseUrl}/uploads/${f.filename}`);
         return { urls };
@@ -44,12 +55,14 @@ __decorate([
             },
         }),
         fileFilter: (_req, file, cb) => {
-            if (!file.mimetype.match(/^image\/(jpeg|png|webp|gif)$/)) {
-                return cb(new common_1.BadRequestException('Hanya file gambar yang diizinkan'), false);
+            const isImage = file.mimetype.match(/^image\/(jpeg|png|webp|gif)$/);
+            const isVideo = file.mimetype.match(/^video\/(mp4|webm|quicktime)$/);
+            if (!isImage && !isVideo) {
+                return cb(new common_1.BadRequestException('Hanya file gambar atau video yang diizinkan'), false);
             }
             cb(null, true);
         },
-        limits: { fileSize: 10 * 1024 * 1024 },
+        limits: { fileSize: 25 * 1024 * 1024 },
     })),
     __param(0, (0, common_1.UploadedFiles)()),
     __metadata("design:type", Function),

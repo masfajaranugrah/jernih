@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import "@fontsource/open-sauce-one";
+import "@fontsource/open-sauce-one/700.css";
+import "@fontsource/open-sauce-one/800.css";
+import "@fontsource/open-sauce-one/900.css";
 import "./globals.css";
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Jernih Creatif",
@@ -18,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" className={`${inter.variable} h-full antialiased`}>
+    <html lang="id" className="h-full antialiased">
       <body className="flex min-h-full flex-col bg-[#f8f9fa] text-[#191c1d]">
         {children}
       </body>

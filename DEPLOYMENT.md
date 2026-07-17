@@ -1,5 +1,5 @@
 # Panduan Deploy Eccomarket ke VPS
-
+sk-elDoDXufQ8nFExgSdIv8JbpDaE5GOcGodW6eW8kg9TZkHzcz
 Panduan ini mencakup deployment full-stack Eccomarket:
 - **Frontend**: Next.js (port 3000) → `jernihcreatif.com`
 - **Backend**: NestJS + Prisma (port 3001) → `api.jernihcreatif.com`

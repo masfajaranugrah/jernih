@@ -11,7 +11,7 @@ function Icon({ children, className = "" }: { children: string; className?: stri
 
 export default function ProductSection() {
   return (
-    <section>
+    <section className="mx-auto w-full max-w-[1260px]">
       <div className="flex items-end justify-between gap-4">
         <h2 className="text-2xl font-bold text-[#191c1d]">Produk Populer</h2>
         <Link href="/produk" className="flex items-center gap-1 text-sm font-bold text-[#1e3a8a] hover:underline">

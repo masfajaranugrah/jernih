@@ -10,9 +10,9 @@ function ProductCard({ product }: { product: ApiProduct }) {
   const sellerName = "Jernih Creative Official";
   const colors: Record<string, string> = {
     SALE: "bg-[#ba1a1a]",
-    NEW: "bg-[#064e3b]",
+    NEW: "bg-[#1e3a8a]",
     HOT: "bg-orange-500",
-    DISKON: "bg-[#064e3b]",
+    DISKON: "bg-[#1e3a8a]",
     TERBATAS: "bg-[#7c3aed]",
   };
 
@@ -41,23 +41,23 @@ function ProductCard({ product }: { product: ApiProduct }) {
         )}
       </div>
       <div className="flex flex-1 flex-col p-3 sm:p-4">
-        <h2 className="line-clamp-2 min-h-[38px] text-sm font-semibold leading-snug text-[#191c1d] sm:min-h-[44px] sm:text-base">
+        <h2 className="line-clamp-2 text-sm font-semibold leading-snug text-[#191c1d] sm:text-base">
           {product.name}
         </h2>
-        <div className="mt-3">
-          {product.oldPrice && (
-            <p className="text-xs text-[#707974] line-through sm:text-sm">{formatRupiah(product.oldPrice)}</p>
-          )}
-          <p className="text-lg font-bold leading-tight text-[#003527] sm:text-xl">{formatRupiah(product.price)}</p>
-        </div>
-        <div className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-[#575e70] sm:text-base">
-          <span className="material-symbols-outlined text-[26px] text-amber-500" style={{ fontVariationSettings: "'FILL' 1" }}>
+        <div className="mt-1 flex items-center gap-1">
+          <span className="material-symbols-outlined text-[18px] text-yellow-400" style={{ fontVariationSettings: "'FILL' 1" }}>
             star
           </span>
-          <span>{product.rating ?? 0}</span>
+          <span className="text-xs font-semibold text-[#575e70]">5.0</span>
+        </div>
+        <div className="mt-1">
+          {product.oldPrice && (
+            <p className="text-[10px] text-[#707974] line-through">{formatRupiah(product.oldPrice)}</p>
+          )}
+          <p className="text-xs font-bold leading-tight text-[#191c1d]">{formatRupiah(product.price)}</p>
         </div>
         <div className="mt-auto border-t border-[#bfc9c3]/30 pt-3">
-          <p className="line-clamp-1 text-[11px] font-semibold text-[#064e3b] sm:text-xs">
+          <p className="line-clamp-1 text-[11px] font-semibold text-[#1e3a8a] sm:text-xs">
             {sellerName}
           </p>
         </div>
@@ -92,9 +92,10 @@ export default function ProdukPageClient({
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterState>(DEFAULT_FILTER);
   const [draftFilter, setDraftFilter] = useState<FilterState>(DEFAULT_FILTER);
+  const [visibleCount, setVisibleCount] = useState(12);
 
   // ── Apply filter ────────────────────────────────────────────────────────────
-  const filtered = products
+  const filteredAll = products
     .filter((p) => {
       if (activeFilter.category !== "all" && p.category?.name !== activeFilter.category) return false;
       const price = parseFloat(p.price);
@@ -110,6 +111,8 @@ export default function ProdukPageClient({
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
+  const filtered = filteredAll.slice(0, visibleCount);
+
   const activeCount =
     (activeFilter.category !== "all" ? 1 : 0) +
     (activeFilter.priceMin || activeFilter.priceMax ? 1 : 0);
@@ -121,6 +124,7 @@ export default function ProdukPageClient({
 
   function applyFilter() {
     setActiveFilter(draftFilter);
+    setVisibleCount(12);
     setFilterOpen(false);
   }
 
@@ -142,8 +146,8 @@ export default function ProdukPageClient({
               onClick={() => setDraftFilter((p) => ({ ...p, category: "all" }))}
               className={`text-sm block transition-colors ${
                 draftFilter.category === "all"
-                  ? "text-[#003527] font-semibold"
-                  : "text-[#707974] hover:text-[#003527]"
+                  ? "text-[#1e3a8a] font-semibold"
+                  : "text-[#707974] hover:text-[#1e3a8a]"
               }`}
             >
               Semua Produk
@@ -155,8 +159,8 @@ export default function ProdukPageClient({
                 onClick={() => setDraftFilter((p) => ({ ...p, category: cat }))}
                 className={`text-sm block transition-colors ${
                   draftFilter.category === cat
-                    ? "text-[#003527] font-semibold"
-                    : "text-[#707974] hover:text-[#003527]"
+                    ? "text-[#1e3a8a] font-semibold"
+                    : "text-[#707974] hover:text-[#1e3a8a]"
                 }`}
               >
                 {cat}
@@ -184,7 +188,7 @@ export default function ProdukPageClient({
                 placeholder="0"
                 value={draftFilter.priceMin}
                 onChange={(e) => setDraftFilter((p) => ({ ...p, priceMin: e.target.value }))}
-                className="w-full pl-8 pr-3 py-2 text-sm border border-[#bfc9c3] rounded-lg bg-[#f8f9fa] outline-none focus:border-[#064e3b] focus:ring-1 focus:ring-[#064e3b]/20"
+                className="w-full pl-8 pr-3 py-2 text-sm border border-[#bfc9c3] rounded-lg bg-[#f8f9fa] outline-none focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a]/20"
               />
             </div>
           </div>
@@ -198,12 +202,12 @@ export default function ProdukPageClient({
                 placeholder="Tidak terbatas"
                 value={draftFilter.priceMax}
                 onChange={(e) => setDraftFilter((p) => ({ ...p, priceMax: e.target.value }))}
-                className="w-full pl-8 pr-3 py-2 text-sm border border-[#bfc9c3] rounded-lg bg-[#f8f9fa] outline-none focus:border-[#064e3b] focus:ring-1 focus:ring-[#064e3b]/20"
+                className="w-full pl-8 pr-3 py-2 text-sm border border-[#bfc9c3] rounded-lg bg-[#f8f9fa] outline-none focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a]/20"
               />
             </div>
           </div>
           {(draftFilter.priceMin || draftFilter.priceMax) && (
-            <p className="text-[11px] text-[#064e3b] font-medium">
+            <p className="text-[11px] text-[#191c1d] font-medium">
               {draftFilter.priceMin ? formatRupiah(Number(draftFilter.priceMin)) : "0"}
               {" – "}
               {draftFilter.priceMax ? formatRupiah(Number(draftFilter.priceMax)) : "∞"}
@@ -220,10 +224,10 @@ export default function ProdukPageClient({
           Penjual
         </h3>
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-[#064e3b] flex items-center justify-center">
+          <div className="w-6 h-6 rounded-full bg-[#1e3a8a] flex items-center justify-center">
             <span className="text-white text-[10px] font-bold">J</span>
           </div>
-          <span className="text-sm font-semibold text-[#003527]">Jernih Creative Official</span>
+          <span className="text-sm font-semibold text-[#1e3a8a]">Jernih Creative Official</span>
         </div>
       </section>
     </div>
@@ -232,7 +236,7 @@ export default function ProdukPageClient({
   return (
     <div className="min-h-screen bg-[#f8f9fa] text-[#191c1d]">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0,0&display=block');
+        @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0,0;24,300,1,0&display=block');
         .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24; vertical-align:middle; }
       `}</style>
 
@@ -255,7 +259,7 @@ export default function ProdukPageClient({
             {FilterPanel}
             <button
               onClick={() => setActiveFilter({ ...draftFilter })}
-              className="mt-6 w-full rounded-xl bg-[#064e3b] py-2.5 text-sm font-semibold text-white hover:bg-[#043b2d] transition-colors"
+              className="mt-6 w-full rounded-xl bg-[#1e3a8a] py-2.5 text-sm font-semibold text-white hover:bg-[#1e40af] transition-colors"
             >
               Terapkan Filter
             </button>
@@ -268,13 +272,13 @@ export default function ProdukPageClient({
           {/* Header */}
           <div className="flex items-center justify-between gap-3 mb-4">
             <div>
-              <h1 className="text-lg font-bold text-[#003527] tracking-tight">
+              <h1 className="text-lg font-bold text-[#1e3a8a] tracking-tight">
                 Koleksi Produk Pilihan
               </h1>
               <p className="text-xs text-[#707974] mt-0.5">
-                {filtered.length} produk tersedia
+                {filteredAll.length} produk tersedia
                 {activeCount > 0 && (
-                  <span className="ml-2 text-[#064e3b] font-semibold">
+                  <span className="ml-2 text-[#1e3a8a] font-semibold">
                     · {activeCount} filter aktif
                   </span>
                 )}
@@ -284,8 +288,8 @@ export default function ProdukPageClient({
             <div className="flex items-center gap-2">
               <select
                 value={activeFilter.sortBy}
-                onChange={(e) => setActiveFilter((p) => ({ ...p, sortBy: e.target.value }))}
-                className="appearance-none h-10 box-border text-xs font-semibold text-[#003527] bg-white border border-[#e1e3e4] rounded-lg px-3 py-0 leading-none outline-none cursor-pointer"
+                onChange={(e) => { setActiveFilter((p) => ({ ...p, sortBy: e.target.value })); setVisibleCount(12); }}
+                className="appearance-none h-10 box-border text-xs font-semibold text-[#1e3a8a] bg-white border border-[#e1e3e4] rounded-lg px-3 py-0 leading-none outline-none cursor-pointer"
               >
                 <option value="terbaru">Terbaru</option>
                 <option value="harga_asc">Harga ↑</option>
@@ -295,12 +299,12 @@ export default function ProdukPageClient({
               {/* Tombol Filter — mobile only */}
               <button
                 onClick={openFilter}
-                className="md:hidden relative flex h-10 box-border items-center gap-1.5 rounded-lg border border-[#e1e3e4] bg-white px-3 text-xs font-semibold text-[#191c1d] hover:border-[#003527] transition-colors"
+                className="md:hidden relative flex h-10 box-border items-center gap-1.5 rounded-lg border border-[#e1e3e4] bg-white px-3 text-xs font-semibold text-[#191c1d] hover:border-[#1e3a8a] transition-colors"
               >
                 <span className="material-symbols-outlined text-base">tune</span>
                 Filter
                 {activeCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#064e3b] text-white text-[9px] flex items-center justify-center font-bold">
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#1e3a8a] text-white text-[9px] flex items-center justify-center font-bold">
                     {activeCount}
                   </span>
                 )}
@@ -313,7 +317,7 @@ export default function ProdukPageClient({
           {resolvedSearch && (
             <div className="mb-6 bg-white border border-[#bfc9c3]/30 rounded-xl p-4 flex items-center justify-between shadow-sm">
               <p className="text-sm text-[#404944]">
-                Hasil pencarian untuk: <strong className="text-[#064e3b]">&quot;{resolvedSearch}&quot;</strong>
+                Hasil pencarian untuk: <strong className="text-[#1e3a8a]">&quot;{resolvedSearch}&quot;</strong>
               </p>
               <Link href="/produk" className="text-xs font-semibold text-[#ba1a1a] hover:underline">
                 Hapus Pencarian
@@ -329,17 +333,30 @@ export default function ProdukPageClient({
               <p className="mt-1 text-sm text-[#707974]">Coba ubah atau reset filter</p>
               <button
                 onClick={() => setActiveFilter(DEFAULT_FILTER)}
-                className="mt-4 rounded-xl bg-[#064e3b] px-5 py-2.5 text-sm font-semibold text-white"
+                className="mt-4 rounded-xl bg-[#1e3a8a] px-5 py-2.5 text-sm font-semibold text-white"
               >
                 Reset Filter
               </button>
             </div>
           ) : (
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4 xl:gap-5">
-              {filtered.map((product: ApiProduct) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+            <>
+              <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-5 xl:gap-4">
+                {filtered.map((product: ApiProduct) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+              <div className="mt-8 text-center">
+                <button
+                  onClick={() => setVisibleCount((prev) => prev + 30)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#bfc9c3] px-6 py-2.5 text-xs font-semibold text-[#404944] transition-colors hover:border-[#1e3a8a] hover:text-[#1e3a8a]"
+                >
+                  Lihat Lainnya
+                  <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z" />
+                  </svg>
+                </button>
+              </div>
+            </>
           )}
         </main>
       </div>
@@ -367,13 +384,13 @@ export default function ProdukPageClient({
             <div className="px-5 py-4 border-t border-[#e1e3e4] flex gap-3">
               <button
                 onClick={resetDraft}
-                className="flex-1 rounded-xl border border-[#bfc9c3] py-3 text-sm font-semibold text-[#707974] hover:border-[#003527] hover:text-[#003527] transition-colors"
+                className="flex-1 rounded-xl border border-[#bfc9c3] py-3 text-sm font-semibold text-[#707974] hover:border-[#1e3a8a] hover:text-[#1e3a8a] transition-colors"
               >
                 Reset
               </button>
               <button
                 onClick={applyFilter}
-                className="flex-[2] rounded-xl bg-[#064e3b] py-3 text-sm font-semibold text-white hover:bg-[#043b2d] transition-colors"
+                className="flex-[2] rounded-xl bg-[#1e3a8a] py-3 text-sm font-semibold text-white hover:bg-[#1e40af] transition-colors"
               >
                 Simpan Filter
               </button>

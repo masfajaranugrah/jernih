@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import DashboardSidebar from "@/app/dashboard-admin/DashboardSidebar";
 import { fetchHomepageSections, saveHomepageSections, type HomepageSections } from "@/lib/homepage-settings";
 import { getToken } from "@/lib/auth";
@@ -46,6 +47,7 @@ const SECTIONS: SectionConfig[] = [
 ];
 
 export default function HomepageSettingsPage() {
+  const router = useRouter();
   const [sections, setSections] = useState<HomepageSections>({
     showHero: true,
     showPromo: true,
@@ -59,6 +61,13 @@ export default function HomepageSettingsPage() {
   // savedKey = key yang baru saja berhasil disimpan (untuk animasi centang)
   const [savedKey, setSavedKey] = useState<keyof HomepageSections | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Guard: redirect ke login jika token tidak ada
+  useEffect(() => {
+    if (!getToken()) {
+      router.replace("/dashboard-admin/admin/login");
+    }
+  }, [router]);
 
   // Load data saat mount
   useEffect(() => {
@@ -80,7 +89,11 @@ export default function HomepageSettingsPage() {
       setError(null);
       try {
         const token = getToken();
-        if (!token) throw new Error("Token tidak ditemukan. Silakan login ulang.");
+        if (!token) {
+          // Token hilang/expired — arahkan ke halaman login admin
+          router.replace("/dashboard-admin/admin/login");
+          return;
+        }
         await saveHomepageSections(newSections, token);
         setSavedKey(key);
         // Hilangkan centang setelah 2 detik
@@ -93,7 +106,7 @@ export default function HomepageSettingsPage() {
         setSavingKey(null);
       }
     },
-    []
+    [router]
   );
 
   async function handleToggle(key: keyof HomepageSections) {

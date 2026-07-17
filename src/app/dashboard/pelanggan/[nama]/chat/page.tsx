@@ -13,9 +13,6 @@ export default function ChatPage() {
           style={{ fontSize: "30px", lineHeight: "1.2" }}>
           Chat
         </h1>
-        <span className="bg-[#003527]/10 text-[#003527] px-3 py-1 rounded-full text-xs font-semibold">
-          3 Pesan Baru
-        </span>
       </div>
       <div className="flex-1 px-6 md:px-10 pb-6 md:pb-10">
         <ChatContent />

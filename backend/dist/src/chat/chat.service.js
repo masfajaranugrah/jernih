@@ -11,38 +11,87 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChatService = void 0;
 const common_1 = require("@nestjs/common");
+const path_1 = require("path");
+const fs_1 = require("fs");
 const prisma_service_1 = require("../prisma/prisma.service");
+const chat_gateway_1 = require("./chat.gateway");
+const messageInclude = {
+    sender: { select: { id: true, name: true, avatar: true } },
+    receiver: { select: { id: true, name: true, avatar: true } },
+    product: {
+        select: { id: true, name: true, slug: true, price: true, images: true },
+    },
+};
 let ChatService = class ChatService {
-    constructor(prisma) {
+    constructor(prisma, gateway) {
         this.prisma = prisma;
+        this.gateway = gateway;
+    }
+    sanitize(msg) {
+        if (!msg || !msg.isDeleted)
+            return msg;
+        return {
+            ...msg,
+            message: '',
+            imageUrl: null,
+            videoUrl: null,
+            productId: null,
+            product: null,
+        };
     }
     async sendMessage(senderId, dto) {
-        return this.prisma.chat.create({
+        const sender = await this.prisma.user.findUnique({
+            where: { id: senderId },
+            select: { role: true },
+        });
+        if (!sender)
+            throw new common_1.NotFoundException('Pengirim tidak ditemukan');
+        let receiverId = dto.receiverId;
+        if (sender.role !== 'ADMIN') {
+            const admin = await this.getAdminId();
+            receiverId = admin.id;
+        }
+        if (senderId === receiverId) {
+            throw new common_1.BadRequestException('Tidak bisa mengirim pesan ke diri sendiri');
+        }
+        const hasContent = dto.message.trim() !== '' || dto.imageUrl || dto.videoUrl || dto.productId;
+        if (!hasContent) {
+            throw new common_1.BadRequestException('Pesan tidak boleh kosong');
+        }
+        if (dto.productId) {
+            const product = await this.prisma.product.findUnique({
+                where: { id: dto.productId },
+                select: { id: true },
+            });
+            if (!product)
+                throw new common_1.NotFoundException('Produk tidak ditemukan');
+        }
+        const msg = await this.prisma.chat.create({
             data: {
                 senderId,
-                receiverId: dto.receiverId,
+                receiverId,
                 message: dto.message,
                 imageUrl: dto.imageUrl,
+                videoUrl: dto.videoUrl,
+                productId: dto.productId,
             },
-            include: {
-                sender: { select: { id: true, name: true, avatar: true } },
-                receiver: { select: { id: true, name: true, avatar: true } },
-            },
+            include: messageInclude,
         });
+        this.gateway.emitNewMessage(msg);
+        return msg;
     }
     async getConversation(userId, otherId) {
-        return this.prisma.chat.findMany({
+        const messages = await this.prisma.chat.findMany({
             where: {
                 OR: [
                     { senderId: userId, receiverId: otherId },
                     { senderId: otherId, receiverId: userId },
                 ],
             },
-            include: {
-                sender: { select: { id: true, name: true, avatar: true } },
-            },
+            include: messageInclude,
             orderBy: { createdAt: 'asc' },
         });
+        return messages.map((m) => this.sanitize(m));
     }
     async getInbox(userId) {
         const sent = await this.prisma.chat.findMany({
@@ -69,16 +118,13 @@ let ChatService = class ChatService {
                         { senderId: partnerId, receiverId: userId },
                     ],
                 },
-                include: {
-                    sender: { select: { id: true, name: true, avatar: true } },
-                    receiver: { select: { id: true, name: true, avatar: true } },
-                },
+                include: messageInclude,
                 orderBy: { createdAt: 'desc' },
             });
             const unreadCount = await this.prisma.chat.count({
                 where: { senderId: partnerId, receiverId: userId, isRead: false },
             });
-            return { lastMessage, unreadCount };
+            return { lastMessage: this.sanitize(lastMessage), unreadCount };
         }));
         return conversations.sort((a, b) => new Date(b.lastMessage.createdAt).getTime() -
             new Date(a.lastMessage.createdAt).getTime());
@@ -88,12 +134,61 @@ let ChatService = class ChatService {
             where: { senderId, receiverId: userId, isRead: false },
             data: { isRead: true },
         });
+        this.gateway.emitRead(userId, senderId);
         return { message: 'Pesan ditandai sudah dibaca' };
+    }
+    async getAdminId() {
+        const admin = await this.prisma.user.findFirst({
+            where: { role: 'ADMIN', isActive: true },
+            select: { id: true, name: true, avatar: true },
+        });
+        if (!admin)
+            throw new common_1.NotFoundException('Admin tidak ditemukan');
+        return admin;
+    }
+    async deleteMessage(userId, messageId) {
+        const msg = await this.prisma.chat.findUnique({ where: { id: messageId } });
+        if (!msg)
+            throw new common_1.NotFoundException('Pesan tidak ditemukan');
+        if (msg.senderId !== userId) {
+            throw new common_1.ForbiddenException('Hanya pengirim yang bisa menghapus pesan');
+        }
+        if (msg.isDeleted)
+            return { message: 'Pesan sudah dihapus' };
+        await Promise.all([msg.imageUrl, msg.videoUrl].map((url) => this.deleteUploadedFile(url)));
+        await this.prisma.chat.update({
+            where: { id: messageId },
+            data: {
+                isDeleted: true,
+                message: '',
+                imageUrl: null,
+                videoUrl: null,
+                productId: null,
+            },
+        });
+        this.gateway.emitDeleted(msg.senderId, msg.receiverId, messageId);
+        return { message: 'Pesan dihapus' };
+    }
+    async deleteUploadedFile(url) {
+        if (!url)
+            return;
+        try {
+            const pathname = new URL(url).pathname;
+            if (!pathname.startsWith('/uploads/'))
+                return;
+            const name = (0, path_1.basename)(pathname);
+            if (!name || name.includes('..') || name.includes('/'))
+                return;
+            await fs_1.promises.unlink((0, path_1.join)(process.cwd(), 'public', 'uploads', name));
+        }
+        catch {
+        }
     }
 };
 exports.ChatService = ChatService;
 exports.ChatService = ChatService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        chat_gateway_1.ChatGateway])
 ], ChatService);
 //# sourceMappingURL=chat.service.js.map

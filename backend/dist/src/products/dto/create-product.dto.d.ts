@@ -1,3 +1,9 @@
+export declare class ProductTypeDto {
+    name: string;
+    price: number;
+    oldPrice?: number;
+    stock: number;
+}
 export declare class CreateProductDto {
     categoryId?: string;
     name: string;
@@ -8,4 +14,5 @@ export declare class CreateProductDto {
     stock: number;
     images?: string[];
     isActive?: boolean;
+    types?: ProductTypeDto[];
 }

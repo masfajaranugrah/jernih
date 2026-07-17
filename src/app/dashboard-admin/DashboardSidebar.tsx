@@ -5,13 +5,15 @@ import { usePathname, useRouter } from "next/navigation";
 import { removeToken } from "@/lib/auth";
 
 const navItems = [
-  { href: "/dashboard-admin", icon: "dashboard", label: "Overview" },
   { href: "/dashboard-admin/orders", icon: "package", label: "Orders" },
-    { href: "/dashboard-admin/admin/hero", icon: "image", label: "Hero Banner" },
+  { href: "/dashboard-admin/chat", icon: "chat", label: "Chat" },
+  { href: "/dashboard-admin/tickets", icon: "support_agent", label: "Bantuan Tiket" },
   { href: "/dashboard-admin/admin/homepage", icon: "tune", label: "Homepage" },
+  { href: "/dashboard-admin/admin/hero", icon: "image", label: "Hero Banner" },
   { href: "/dashboard-admin/admin/products", icon: "inventory_2", label: "Produk" },
   { href: "/dashboard-admin/admin/categories", icon: "category", label: "Kategori" },
   { href: "/dashboard-admin/admin/services", icon: "design_services", label: "Jasa" },
+  { href: "/dashboard-admin/admin/rentals", icon: "handyman", label: "Sewa" },
   { href: "/dashboard-admin/admin/promo", icon: "local_offer", label: "Promo" },
   { href: "/dashboard-admin/admin/pesanan", icon: "shopping_bag", label: "Pesanan" },
   { href: "/dashboard-admin/admin/toko", icon: "storefront", label: "Info Toko" },
@@ -21,7 +23,6 @@ const navItems = [
   { href: "/dashboard-admin/payments", icon: "receipt_long", label: "Payments" },
   { href: "/dashboard-admin/reviews", icon: "rate_review", label: "Reviews" },
   { href: "/dashboard-admin/complaints", icon: "report_problem", label: "Complaints" },
-  { href: "/dashboard-admin/chat", icon: "chat", label: "Chat" },
   { href: "/dashboard-admin/addresses", icon: "location_on", label: "Addresses" },
   // { href: "/dashboard-admin/profile", icon: "person", label: "Profile" },
   { href: "/dashboard-admin/settings", icon: "settings", label: "Settings" },

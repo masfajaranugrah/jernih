@@ -27,6 +27,12 @@ let ChatController = class ChatController {
     inbox(req) {
         return this.chatService.getInbox(req.user.id);
     }
+    adminId() {
+        return this.chatService.getAdminId();
+    }
+    remove(req, id) {
+        return this.chatService.deleteMessage(req.user.id, id);
+    }
     conversation(req, partnerId) {
         return this.chatService.getConversation(req.user.id, partnerId);
     }
@@ -50,6 +56,20 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], ChatController.prototype, "inbox", null);
+__decorate([
+    (0, common_1.Get)('admin-id'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], ChatController.prototype, "adminId", null);
+__decorate([
+    (0, common_1.Delete)('message/:id'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], ChatController.prototype, "remove", null);
 __decorate([
     (0, common_1.Get)(':partnerId'),
     __param(0, (0, common_1.Request)()),

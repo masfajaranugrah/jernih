@@ -11,11 +11,13 @@ import { OrdersModule } from './orders/orders.module';
 import { AddressesModule } from './addresses/addresses.module';
 import { VouchersModule } from './vouchers/vouchers.module';
 import { ChatModule } from './chat/chat.module';
+import { TicketsModule } from './tickets/tickets.module';
 import { HeroModule } from './hero/hero.module';
 import { ComplaintsModule } from './complaints/complaints.module';
 import { UploadModule } from './upload/upload.module';
 import { SettingsModule } from './settings/settings.module';
 import { CategoriesModule } from './categories/categories.module';
+import { WishlistModule } from './wishlist/wishlist.module';
 
 @Module({
   imports: [
@@ -31,11 +33,13 @@ import { CategoriesModule } from './categories/categories.module';
     AddressesModule,
     VouchersModule,
     ChatModule,
+    TicketsModule,
     HeroModule,
     ComplaintsModule,
     UploadModule,
     SettingsModule,
     CategoriesModule,
+    WishlistModule,
   ],
 })
 export class AppModule {}

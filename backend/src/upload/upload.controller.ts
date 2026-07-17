@@ -8,7 +8,7 @@ import {
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, unlinkSync } from 'fs';
 
 // Gunakan process.cwd() = root project, bukan __dirname (yang berubah di dist/)
 // Ini memastikan direktori uploads selalu di /project-root/public/uploads
@@ -22,8 +22,8 @@ if (!existsSync(uploadDir)) {
 export class UploadController {
   /**
    * POST /api/upload
-   * Terima hingga 10 file sekaligus, simpan ke public/uploads,
-   * kembalikan array URL permanen.
+   * Terima hingga 10 file sekaligus (gambar max 10MB, video max 25MB),
+   * simpan ke public/uploads, kembalikan array URL permanen.
    */
   @Post()
   @UseInterceptors(
@@ -36,17 +36,37 @@ export class UploadController {
         },
       }),
       fileFilter: (_req, file, cb) => {
-        if (!file.mimetype.match(/^image\/(jpeg|png|webp|gif)$/)) {
-          return cb(new BadRequestException('Hanya file gambar yang diizinkan'), false);
+        const isImage = file.mimetype.match(/^image\/(jpeg|png|webp|gif)$/);
+        const isVideo = file.mimetype.match(/^video\/(mp4|webm|quicktime)$/);
+        if (!isImage && !isVideo) {
+          return cb(
+            new BadRequestException('Hanya file gambar atau video yang diizinkan'),
+            false,
+          );
         }
         cb(null, true);
       },
-      limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+      limits: { fileSize: 25 * 1024 * 1024 }, // 25 MB (video); gambar dicek 10MB di handler
     }),
   )
   uploadFiles(@UploadedFiles() files: Express.Multer.File[]) {
     if (!files || files.length === 0) {
       throw new BadRequestException('Tidak ada file yang dikirim');
+    }
+
+    // multer hanya punya satu limit global — cek gambar 10MB manual
+    const oversized = files.find(
+      (f) => f.mimetype.startsWith('image/') && f.size > 10 * 1024 * 1024,
+    );
+    if (oversized) {
+      for (const f of files) {
+        try {
+          unlinkSync(f.path);
+        } catch {
+          // sudah tidak ada — abaikan
+        }
+      }
+      throw new BadRequestException('Gambar maksimal 10MB');
     }
 
     const baseUrl = process.env.BACKEND_URL ?? 'http://localhost:3001';

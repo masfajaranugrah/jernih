@@ -1,8 +1,11 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { SendMessageDto } from './dto/send-message.dto';
+import { ChatGateway } from './chat.gateway';
 export declare class ChatService {
     private prisma;
-    constructor(prisma: PrismaService);
+    private gateway;
+    constructor(prisma: PrismaService, gateway: ChatGateway);
+    private sanitize;
     sendMessage(senderId: string, dto: SendMessageDto): Promise<{
         sender: {
             id: string;
@@ -14,14 +17,24 @@ export declare class ChatService {
             name: string;
             avatar: string;
         };
+        product: {
+            id: string;
+            name: string;
+            slug: string;
+            price: import("@prisma/client/runtime/library").Decimal;
+            images: string[];
+        };
     } & {
         id: string;
-        createdAt: Date;
         senderId: string;
         receiverId: string;
         message: string;
         imageUrl: string | null;
+        videoUrl: string | null;
+        productId: string | null;
+        isDeleted: boolean;
         isRead: boolean;
+        createdAt: Date;
     }>;
     getConversation(userId: string, otherId: string): Promise<({
         sender: {
@@ -29,14 +42,29 @@ export declare class ChatService {
             name: string;
             avatar: string;
         };
+        receiver: {
+            id: string;
+            name: string;
+            avatar: string;
+        };
+        product: {
+            id: string;
+            name: string;
+            slug: string;
+            price: import("@prisma/client/runtime/library").Decimal;
+            images: string[];
+        };
     } & {
         id: string;
-        createdAt: Date;
         senderId: string;
         receiverId: string;
         message: string;
         imageUrl: string | null;
+        videoUrl: string | null;
+        productId: string | null;
+        isDeleted: boolean;
         isRead: boolean;
+        createdAt: Date;
     })[]>;
     getInbox(userId: string): Promise<{
         lastMessage: {
@@ -50,18 +78,37 @@ export declare class ChatService {
                 name: string;
                 avatar: string;
             };
+            product: {
+                id: string;
+                name: string;
+                slug: string;
+                price: import("@prisma/client/runtime/library").Decimal;
+                images: string[];
+            };
         } & {
             id: string;
-            createdAt: Date;
             senderId: string;
             receiverId: string;
             message: string;
             imageUrl: string | null;
+            videoUrl: string | null;
+            productId: string | null;
+            isDeleted: boolean;
             isRead: boolean;
+            createdAt: Date;
         };
         unreadCount: number;
     }[]>;
     markAsRead(userId: string, senderId: string): Promise<{
         message: string;
     }>;
+    getAdminId(): Promise<{
+        id: string;
+        name: string;
+        avatar: string;
+    }>;
+    deleteMessage(userId: string, messageId: string): Promise<{
+        message: string;
+    }>;
+    private deleteUploadedFile;
 }

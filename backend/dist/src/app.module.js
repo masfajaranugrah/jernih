@@ -20,11 +20,13 @@ const orders_module_1 = require("./orders/orders.module");
 const addresses_module_1 = require("./addresses/addresses.module");
 const vouchers_module_1 = require("./vouchers/vouchers.module");
 const chat_module_1 = require("./chat/chat.module");
+const tickets_module_1 = require("./tickets/tickets.module");
 const hero_module_1 = require("./hero/hero.module");
 const complaints_module_1 = require("./complaints/complaints.module");
 const upload_module_1 = require("./upload/upload.module");
 const settings_module_1 = require("./settings/settings.module");
 const categories_module_1 = require("./categories/categories.module");
+const wishlist_module_1 = require("./wishlist/wishlist.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -43,11 +45,13 @@ exports.AppModule = AppModule = __decorate([
             addresses_module_1.AddressesModule,
             vouchers_module_1.VouchersModule,
             chat_module_1.ChatModule,
+            tickets_module_1.TicketsModule,
             hero_module_1.HeroModule,
             complaints_module_1.ComplaintsModule,
             upload_module_1.UploadModule,
             settings_module_1.SettingsModule,
             categories_module_1.CategoriesModule,
+            wishlist_module_1.WishlistModule,
         ],
     })
 ], AppModule);

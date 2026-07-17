@@ -15,10 +15,19 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   // Nama seller default — override ke brand sendiri
   const sellerName = "Jernih Creative Official";
 
+  // Deskripsi bisa diawali marker [badge:XXX] dari dashboard — pisahkan jadi badge & teks bersih
+  const rawDescription = apiProduct.description ?? "";
+  const badgeMatch = rawDescription.match(/^\[badge:([A-Z0-9]+)\]\s*/);
+  const badge = badgeMatch ? badgeMatch[1] : null;
+  const cleanDescription = rawDescription.replace(/^\[badge:[A-Z0-9]+\]\s*/, "");
+
   // Konversi ApiProduct ke format yang diharapkan ProductDetailClient
   const product = {
+    id: apiProduct.id,
+    slug: apiProduct.slug,
     title: apiProduct.name,
     category: apiProduct.category?.name ?? "Produk",
+    badge,
     price: formatRupiah(apiProduct.price),
     installment: apiProduct.oldPrice
       ? `Harga normal: ${formatRupiah(apiProduct.oldPrice)}`
@@ -26,7 +35,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     stock: apiProduct.stock === 0 ? "Stok Habis" : `Stok Tersedia (${apiProduct.stock})`,
     image: apiProduct.images[0] ?? "/placeholder.png",
     gallery: apiProduct.images.length > 0 ? apiProduct.images : ["/placeholder.png"],
-    description: apiProduct.description ?? "Tidak ada deskripsi tersedia.",
+    description: cleanDescription || "Tidak ada deskripsi tersedia.",
     details: [
       `Dijual oleh: ${sellerName}`,
       "Lokasi: Indonesia",
@@ -41,6 +50,13 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       ["Total Terjual", String(apiProduct.totalSold)],
       ["Dijual oleh", sellerName],
     ],
+    types: (apiProduct.types ?? []).map((t) => ({
+      id: t.id,
+      name: t.name,
+      price: formatRupiah(t.price),
+      oldPrice: t.oldPrice ? formatRupiah(t.oldPrice) : null,
+      stock: t.stock,
+    })),
   };
 
   return <ProductDetailClient product={product} />;

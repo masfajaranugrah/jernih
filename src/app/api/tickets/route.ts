@@ -1,0 +1,55 @@
+import { NextRequest, NextResponse } from "next/server";
+
+const BACKEND_URL = process.env.API_URL ?? "http://localhost:3001/api";
+
+function getAuth(req: NextRequest): string | null {
+  return req.cookies.get("mh_token")?.value ?? null;
+}
+
+/** GET /api/tickets — daftar tiket milik pelanggan */
+export async function GET(req: NextRequest) {
+  const token = getAuth(req);
+  if (!token) {
+    return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(`${BACKEND_URL}/tickets/mine`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+  } catch {
+    return NextResponse.json({ message: "Cannot connect to backend" }, { status: 502 });
+  }
+
+  const data = await res.json();
+  return NextResponse.json(data, { status: res.status });
+}
+
+/** POST /api/tickets — buat tiket bantuan baru */
+export async function POST(req: NextRequest) {
+  const token = getAuth(req);
+  if (!token) {
+    return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
+  }
+
+  const body = await req.json();
+
+  let res: Response;
+  try {
+    res = await fetch(`${BACKEND_URL}/tickets`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    return NextResponse.json({ message: "Cannot connect to backend" }, { status: 502 });
+  }
+
+  const data = await res.json();
+  return NextResponse.json(data, { status: res.status });
+}

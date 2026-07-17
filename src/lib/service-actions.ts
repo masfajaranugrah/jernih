@@ -26,7 +26,7 @@ async function authHeaders(): Promise<Record<string, string>> {
 
 export interface ApiService {
   id: string;
-  mitraId: string;
+  mitraId?: string | null;
   categoryId?: string | null;
   name: string;
   slug: string;
@@ -101,7 +101,7 @@ export async function createService(data: CreateServiceInput): Promise<ApiServic
     );
   }
 
-  const res = await fetch(`${API_URL}/services`, {
+  const res = await fetch(`${API_URL}/services/admin`, {
     method: "POST",
     headers,
     body: JSON.stringify({

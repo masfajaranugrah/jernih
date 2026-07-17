@@ -17,12 +17,19 @@ export class VouchersController {
     return this.vouchersService.create(dto);
   }
 
-  /** GET /api/vouchers */
+  /** GET /api/vouchers — Admin only */
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @Get()
   findAll() {
     return this.vouchersService.findAll();
+  }
+
+  /** GET /api/vouchers/available — voucher aktif untuk semua pelanggan login */
+  @UseGuards(JwtAuthGuard)
+  @Get('available')
+  findAvailable(@Request() req: any) {
+    return this.vouchersService.findAvailable(req.user.id);
   }
 
   /** POST /api/vouchers/validate — validasi kode voucher */

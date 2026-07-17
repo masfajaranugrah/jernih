@@ -13,7 +13,7 @@ export default function VouchersPage() {
           style={{ fontSize: "36px", lineHeight: "1.2", letterSpacing: "-0.02em" }}>
           Vouchers
         </h1>
-        <p className="text-[#707974] text-base">Gunakan voucher untuk hemat lebih banyak.</p>
+        <p className="text-[#707974] text-base">Salin kode voucher dan gunakan saat checkout untuk mendapat potongan harga.</p>
       </div>
       <VouchersContent />
     </>

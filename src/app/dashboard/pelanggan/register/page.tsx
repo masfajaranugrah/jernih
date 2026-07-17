@@ -36,9 +36,8 @@ function RegisterPageContent() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || data.message || "Registrasi gagal");
 
-      const slug = data.user.name.toLowerCase().replace(/\s+/g, "-");
-      router.push(`/dashboard/pelanggan/${slug}/`);
-      router.refresh();
+      // Registrasi sukses — arahkan ke halaman login untuk masuk
+      router.push("/dashboard/pelanggan/login?registered=1");
     } catch (err: any) {
       setError(err.message ?? "Terjadi kesalahan");
     } finally {

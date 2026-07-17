@@ -3,13 +3,23 @@
 
 const API_URL = process.env.API_URL ?? "http://localhost:3001/api";
 
+export type ApiProductType = {
+  id: string;
+  productId: string;
+  name: string;
+  price: string;
+  oldPrice: string | null;
+  stock: number;
+  isActive: boolean;
+};
+
 export type ApiProduct = {
   id: string;
   name: string;
   slug: string;
   categoryId: string | null;
   description: string | null;
-  price: string;       // Prisma Decimal → string di JSON
+  price: string;
   oldPrice: string | null;
   stock: number;
   images: string[];
@@ -18,6 +28,7 @@ export type ApiProduct = {
   totalSold: number;
   createdAt: string;
   category?: { id: string; name: string; slug: string } | null;
+  types?: ApiProductType[];
 };
 
 export type ProductsResponse = {
@@ -61,7 +72,7 @@ export async function fetchProducts(params?: {
 export async function fetchProductBySlug(slug: string): Promise<ApiProduct | null> {
   try {
     const res = await fetch(`${API_URL}/products/slug/${slug}`, {
-      next: { revalidate: 60 },
+      next: { revalidate: 60, tags: ["products"] },
     });
     if (!res.ok) return null;
     return await res.json();

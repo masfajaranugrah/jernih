@@ -14,6 +14,30 @@ export class VouchersService {
     return this.prisma.voucher.findMany({ orderBy: { createdAt: 'desc' } });
   }
 
+  /** Voucher yang bisa dipakai pelanggan: aktif, kuota tersisa, dalam periode berlaku.
+   *  Sertakan flag `used` apakah user ini sudah pernah memakainya. */
+  async findAvailable(userId: string) {
+    const now = new Date();
+    const vouchers = await this.prisma.voucher.findMany({
+      where: {
+        isActive: true,
+        OR: [{ startDate: null }, { startDate: { lte: now } }],
+        AND: [{ OR: [{ endDate: null }, { endDate: { gte: now } }] }],
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const uses = await this.prisma.voucherUse.findMany({
+      where: { userId, voucherId: { in: vouchers.map((v) => v.id) } },
+      select: { voucherId: true },
+    });
+    const usedIds = new Set(uses.map((u) => u.voucherId));
+
+    return vouchers
+      .filter((v) => v.usedCount < v.quota)
+      .map((v) => ({ ...v, used: usedIds.has(v.id) }));
+  }
+
   async findOne(id: string) {
     const voucher = await this.prisma.voucher.findUnique({ where: { id } });
     if (!voucher) throw new NotFoundException('Voucher tidak ditemukan');

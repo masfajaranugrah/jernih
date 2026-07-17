@@ -8,9 +8,16 @@ export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
   async create(dto: CreateProductDto) {
+    const { types, ...productData } = dto;
     try {
       return await this.prisma.product.create({
-        data: dto,
+        data: {
+          ...productData,
+          ...(types?.length
+            ? { types: { createMany: { data: types } } }
+            : {}),
+        },
+        include: { types: true },
       });
     } catch (err: any) {
       if (err?.message?.includes('numeric field overflow') || err?.code === '22003') {
@@ -59,6 +66,7 @@ export class ProductsService {
         where,
         include: {
           category: { select: { id: true, name: true, slug: true } },
+          types: { where: { isActive: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -78,6 +86,7 @@ export class ProductsService {
       where: { id },
       include: {
         category: true,
+        types: { where: { isActive: true } },
       },
     });
     if (!product) throw new NotFoundException('Produk tidak ditemukan');
@@ -89,6 +98,7 @@ export class ProductsService {
       where: { slug },
       include: {
         category: true,
+        types: { where: { isActive: true } },
       },
     });
     if (!product) throw new NotFoundException('Produk tidak ditemukan');
@@ -97,8 +107,23 @@ export class ProductsService {
 
   async update(id: string, dto: UpdateProductDto) {
     await this.findOne(id);
+    const { types, ...productData } = dto;
     try {
-      return await this.prisma.product.update({ where: { id }, data: dto });
+      return await this.prisma.product.update({
+        where: { id },
+        data: {
+          ...productData,
+          ...(types !== undefined
+            ? {
+                types: {
+                  deleteMany: { productId: id },
+                  createMany: { data: types },
+                },
+              }
+            : {}),
+        },
+        include: { types: true },
+      });
     } catch (err: any) {
       if (err?.message?.includes('numeric field overflow') || err?.code === '22003') {
         throw new BadRequestException(

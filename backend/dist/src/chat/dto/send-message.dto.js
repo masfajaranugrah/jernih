@@ -21,12 +21,21 @@ __decorate([
 ], SendMessageDto.prototype, "receiverId", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], SendMessageDto.prototype, "message", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsUrl)(),
+    (0, class_validator_1.IsUrl)({ require_tld: false }),
     __metadata("design:type", String)
 ], SendMessageDto.prototype, "imageUrl", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUrl)({ require_tld: false }),
+    __metadata("design:type", String)
+], SendMessageDto.prototype, "videoUrl", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], SendMessageDto.prototype, "productId", void 0);
 //# sourceMappingURL=send-message.dto.js.map

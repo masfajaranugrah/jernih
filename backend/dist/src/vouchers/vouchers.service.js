@@ -22,6 +22,25 @@ let VouchersService = class VouchersService {
     async findAll() {
         return this.prisma.voucher.findMany({ orderBy: { createdAt: 'desc' } });
     }
+    async findAvailable(userId) {
+        const now = new Date();
+        const vouchers = await this.prisma.voucher.findMany({
+            where: {
+                isActive: true,
+                OR: [{ startDate: null }, { startDate: { lte: now } }],
+                AND: [{ OR: [{ endDate: null }, { endDate: { gte: now } }] }],
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+        const uses = await this.prisma.voucherUse.findMany({
+            where: { userId, voucherId: { in: vouchers.map((v) => v.id) } },
+            select: { voucherId: true },
+        });
+        const usedIds = new Set(uses.map((u) => u.voucherId));
+        return vouchers
+            .filter((v) => v.usedCount < v.quota)
+            .map((v) => ({ ...v, used: usedIds.has(v.id) }));
+    }
     async findOne(id) {
         const voucher = await this.prisma.voucher.findUnique({ where: { id } });
         if (!voucher)

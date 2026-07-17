@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Patch, Param, Body, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { SendMessageDto } from './dto/send-message.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -18,6 +28,18 @@ export class ChatController {
   @Get('inbox')
   inbox(@Request() req: any) {
     return this.chatService.getInbox(req.user.id);
+  }
+
+  /** GET /api/chat/admin-id — admin tujuan chat pelanggan */
+  @Get('admin-id')
+  adminId() {
+    return this.chatService.getAdminId();
+  }
+
+  /** DELETE /api/chat/message/:id — hapus pesan untuk semua */
+  @Delete('message/:id')
+  remove(@Request() req: any, @Param('id') id: string) {
+    return this.chatService.deleteMessage(req.user.id, id);
   }
 
   /** GET /api/chat/:partnerId — riwayat percakapan */

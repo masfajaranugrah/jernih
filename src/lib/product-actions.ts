@@ -5,6 +5,13 @@ import { revalidatePath, updateTag } from "next/cache";
 
 const API_URL = process.env.API_URL ?? "http://localhost:3001/api";
 
+export type CreateProductTypeInput = {
+  name: string;
+  price: number;
+  oldPrice?: number;
+  stock: number;
+};
+
 export type CreateProductInput = {
   name: string;
   slug: string;
@@ -15,6 +22,7 @@ export type CreateProductInput = {
   stock: number;
   images?: string[];
   isActive?: boolean;
+  types?: CreateProductTypeInput[];
   // field ekstra (tidak dikirim ke backend, hanya untuk UI)
   material?: string;
   dimensions?: string;
@@ -47,6 +55,7 @@ function revalidateProductCaches() {
   updateTag("products");
   revalidatePath("/dashboard-admin/admin/products", "page");
   revalidatePath("/produk", "page");
+  revalidatePath("/produk/[slug]", "page");
   revalidatePath("/", "page");
 }
 
@@ -64,7 +73,7 @@ export async function createProduct(
     };
   }
 
-  const payload = {
+  const payload: any = {
     name: data.name,
     slug: data.slug,
     categoryId: data.categoryId,
@@ -75,6 +84,7 @@ export async function createProduct(
     images: data.images ?? [],
     isActive: data.isActive ?? true,
   };
+  if (data.types?.length) payload.types = data.types;
 
   let res: Response;
   try {

@@ -5,6 +5,18 @@ export declare class ProductsService {
     private prisma;
     constructor(prisma: PrismaService);
     create(dto: CreateProductDto): Promise<{
+        types: {
+            id: string;
+            name: string;
+            createdAt: Date;
+            isActive: boolean;
+            updatedAt: Date;
+            oldPrice: import("@prisma/client/runtime/library").Decimal | null;
+            price: import("@prisma/client/runtime/library").Decimal;
+            stock: number;
+            productId: string;
+        }[];
+    } & {
         id: string;
         name: string;
         slug: string;
@@ -34,6 +46,17 @@ export declare class ProductsService {
                 name: string;
                 slug: string;
             };
+            types: {
+                id: string;
+                name: string;
+                createdAt: Date;
+                isActive: boolean;
+                updatedAt: Date;
+                oldPrice: import("@prisma/client/runtime/library").Decimal | null;
+                price: import("@prisma/client/runtime/library").Decimal;
+                stock: number;
+                productId: string;
+            }[];
         } & {
             id: string;
             name: string;
@@ -65,6 +88,17 @@ export declare class ProductsService {
             icon: string | null;
             createdAt: Date;
         };
+        types: {
+            id: string;
+            name: string;
+            createdAt: Date;
+            isActive: boolean;
+            updatedAt: Date;
+            oldPrice: import("@prisma/client/runtime/library").Decimal | null;
+            price: import("@prisma/client/runtime/library").Decimal;
+            stock: number;
+            productId: string;
+        }[];
     } & {
         id: string;
         name: string;
@@ -89,6 +123,17 @@ export declare class ProductsService {
             icon: string | null;
             createdAt: Date;
         };
+        types: {
+            id: string;
+            name: string;
+            createdAt: Date;
+            isActive: boolean;
+            updatedAt: Date;
+            oldPrice: import("@prisma/client/runtime/library").Decimal | null;
+            price: import("@prisma/client/runtime/library").Decimal;
+            stock: number;
+            productId: string;
+        }[];
     } & {
         id: string;
         name: string;
@@ -106,6 +151,18 @@ export declare class ProductsService {
         totalSold: number;
     }>;
     update(id: string, dto: UpdateProductDto): Promise<{
+        types: {
+            id: string;
+            name: string;
+            createdAt: Date;
+            isActive: boolean;
+            updatedAt: Date;
+            oldPrice: import("@prisma/client/runtime/library").Decimal | null;
+            price: import("@prisma/client/runtime/library").Decimal;
+            stock: number;
+            productId: string;
+        }[];
+    } & {
         id: string;
         name: string;
         slug: string;

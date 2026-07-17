@@ -29,6 +29,9 @@ let VouchersController = class VouchersController {
     findAll() {
         return this.vouchersService.findAll();
     }
+    findAvailable(req) {
+        return this.vouchersService.findAvailable(req.user.id);
+    }
     validate(req, body) {
         return this.vouchersService.validate(body.code, req.user.id, body.subtotal);
     }
@@ -54,6 +57,14 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], VouchersController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('available'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], VouchersController.prototype, "findAvailable", null);
 __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Post)('validate'),

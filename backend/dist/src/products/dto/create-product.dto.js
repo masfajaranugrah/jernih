@@ -9,10 +9,39 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CreateProductDto = void 0;
+exports.CreateProductDto = exports.ProductTypeDto = void 0;
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
 const MAX_PRICE = 9_999_999_999;
+class ProductTypeDto {
+}
+exports.ProductTypeDto = ProductTypeDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], ProductTypeDto.prototype, "name", void 0);
+__decorate([
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsPositive)(),
+    (0, class_validator_1.Max)(MAX_PRICE),
+    __metadata("design:type", Number)
+], ProductTypeDto.prototype, "price", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsPositive)(),
+    (0, class_validator_1.Max)(MAX_PRICE),
+    __metadata("design:type", Number)
+], ProductTypeDto.prototype, "oldPrice", void 0);
+__decorate([
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    __metadata("design:type", Number)
+], ProductTypeDto.prototype, "stock", void 0);
 class CreateProductDto {
 }
 exports.CreateProductDto = CreateProductDto;
@@ -68,4 +97,11 @@ __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], CreateProductDto.prototype, "isActive", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => ProductTypeDto),
+    __metadata("design:type", Array)
+], CreateProductDto.prototype, "types", void 0);
 //# sourceMappingURL=create-product.dto.js.map

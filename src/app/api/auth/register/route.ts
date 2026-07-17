@@ -47,13 +47,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(data, { status: res.status });
   }
 
-  const response = NextResponse.json(data);
-  response.cookies.set("mh_token", data.access_token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 365,
-  });
-  return response;
+  // Tidak set cookie di sini — user diarahkan ke halaman login setelah registrasi,
+  // token JWT baru disimpan ke cookie saat login berhasil.
+  return NextResponse.json(data);
 }

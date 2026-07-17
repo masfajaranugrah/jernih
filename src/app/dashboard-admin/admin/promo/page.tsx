@@ -47,7 +47,7 @@ export default function AdminPromoPage() {
       <div className="lg:ml-64 min-h-screen flex flex-col pb-24 lg:pb-0">
         <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-[#e1e3e4] bg-white/90 px-6 shadow-sm backdrop-blur">
           <div className="flex items-center gap-3">
-            <Link href="/dashboard-admin/admin" className="text-[#707974] hover:text-[#003527] transition-colors">
+            <Link href="/dashboard-admin/orders" className="text-[#707974] hover:text-[#003527] transition-colors">
               <span className="material-symbols-outlined">arrow_back</span>
             </Link>
             <span className="material-symbols-outlined text-[#003527]">local_offer</span>
