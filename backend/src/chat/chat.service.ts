@@ -89,6 +89,57 @@ export class ChatService {
     return msg;
   }
 
+  /** Kirim pesan sistem (dari order, notifikasi, dll) */
+  async sendSystemMessage(adminId: string, body: { message: string; type?: string; orderNumber?: string; receiverId?: string }) {
+    if (!body.message) throw new BadRequestException('Pesan tidak boleh kosong');
+
+    // Cari receiver: jika tidak ditentukan, cari user yang bukan admin
+    let receiverId = body.receiverId;
+    if (!receiverId) {
+      const admin = await this.prisma.user.findUnique({
+        where: { id: adminId },
+        select: { role: true },
+      });
+      // Kirim ke admin sendiri jika tidak ada receiver spesifik
+      receiverId = adminId;
+    }
+
+    const msg = await this.prisma.chat.create({
+      data: {
+        senderId: adminId,
+        receiverId,
+        message: body.message,
+        isSystem: true,
+      },
+      include: { sender: { select: { id: true, name: true, avatar: true } } },
+    });
+
+    // Broadcast via gateway
+    try {
+      const gateway = this.getGateway();
+      if (gateway) {
+        gateway.emitNewMessage({
+          senderId: adminId,
+          receiverId,
+          message: body.message,
+          id: msg.id,
+          isSystem: true,
+          createdAt: msg.createdAt,
+        } as any);
+      }
+    } catch { /* gateway mungkin tidak tersedia */ }
+
+    return msg;
+  }
+
+  private getGateway() {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { ChatGateway } = require('./chat.gateway');
+      return ChatGateway?.instance;
+    } catch { return null; }
+  }
+
   /** Ambil riwayat percakapan antara dua user */
   async getConversation(userId: string, otherId: string) {
     const messages = await this.prisma.chat.findMany({

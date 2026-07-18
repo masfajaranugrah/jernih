@@ -259,6 +259,7 @@ model Rental {
 
 model Order {
   id              String      @id @default(cuid())
+  orderNumber     String?     @unique
   userId          String
   addressId       String?
   voucherUseId    String?     @unique
@@ -375,6 +376,7 @@ model Chat {
   productId  String?  // pesan berisi card produk (tanya produk)
   isDeleted  Boolean  @default(false)
   isRead     Boolean  @default(false)
+  isSystem   Boolean  @default(false)
   createdAt  DateTime @default(now())
 
   // Relations

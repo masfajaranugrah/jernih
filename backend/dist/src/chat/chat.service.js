@@ -80,6 +80,51 @@ let ChatService = class ChatService {
         this.gateway.emitNewMessage(msg);
         return msg;
     }
+    async sendSystemMessage(adminId, body) {
+        if (!body.message)
+            throw new common_1.BadRequestException('Pesan tidak boleh kosong');
+        let receiverId = body.receiverId;
+        if (!receiverId) {
+            const admin = await this.prisma.user.findUnique({
+                where: { id: adminId },
+                select: { role: true },
+            });
+            receiverId = adminId;
+        }
+        const msg = await this.prisma.chat.create({
+            data: {
+                senderId: adminId,
+                receiverId,
+                message: body.message,
+                isSystem: true,
+            },
+            include: { sender: { select: { id: true, name: true, avatar: true } } },
+        });
+        try {
+            const gateway = this.getGateway();
+            if (gateway) {
+                gateway.emitNewMessage({
+                    senderId: adminId,
+                    receiverId,
+                    message: body.message,
+                    id: msg.id,
+                    isSystem: true,
+                    createdAt: msg.createdAt,
+                });
+            }
+        }
+        catch { }
+        return msg;
+    }
+    getGateway() {
+        try {
+            const { ChatGateway } = require('./chat.gateway');
+            return ChatGateway?.instance;
+        }
+        catch {
+            return null;
+        }
+    }
     async getConversation(userId, otherId) {
         const messages = await this.prisma.chat.findMany({
             where: {

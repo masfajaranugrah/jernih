@@ -24,6 +24,12 @@ export class ChatController {
     return this.chatService.sendMessage(req.user.id, dto);
   }
 
+  /** POST /api/chat/system-message — kirim pesan sistem (dari order) */
+  @Post('system-message')
+  systemMessage(@Request() req: any, @Body() body: { message: string; type?: string; orderNumber?: string; receiverId?: string }) {
+    return this.chatService.sendSystemMessage(req.user.id, body);
+  }
+
   /** GET /api/chat/inbox — daftar percakapan */
   @Get('inbox')
   inbox(@Request() req: any) {

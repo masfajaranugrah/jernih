@@ -36,6 +36,10 @@ let OrdersService = class OrdersService {
                 price = Number(service.priceFrom);
                 name = service.name;
             }
+            else if (item.name && item.price) {
+                name = item.name;
+                price = item.price;
+            }
             const qty = item.quantity ?? 1;
             const itemSubtotal = price * qty;
             subtotal += itemSubtotal;
@@ -80,9 +84,11 @@ let OrdersService = class OrdersService {
         }
         const shippingCost = dto.shippingCost ?? 0;
         const total = subtotal - discountAmount + shippingCost;
+        const orderNumber = dto.orderNumber || Array.from({ length: 12 }, () => Math.floor(Math.random() * 10)).join('');
         return this.prisma.order.create({
             data: {
                 userId,
+                orderNumber,
                 addressId: dto.addressId,
                 voucherUseId,
                 subtotal,

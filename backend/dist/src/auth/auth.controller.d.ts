@@ -28,6 +28,7 @@ export declare class AuthController {
             avatar: string | null;
             role: import(".prisma/client").$Enums.Role;
             isActive: boolean;
+            lastSeenAt: Date | null;
             updatedAt: Date;
         };
         access_token: string;

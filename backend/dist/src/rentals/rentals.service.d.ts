@@ -27,13 +27,13 @@ export declare class RentalsService {
         updatedAt: Date;
         userId: string;
         mitraId: string;
-        status: import(".prisma/client").$Enums.RentalStatus;
         rentalItemId: string;
         startDate: Date;
         endDate: Date;
+        notes: string | null;
+        status: import(".prisma/client").$Enums.RentalStatus;
         totalDays: number;
         totalPrice: import("@prisma/client/runtime/library").Decimal;
-        notes: string | null;
     }>;
     findAll(userId?: string, mitraId?: string): Promise<({
         user: {
@@ -61,13 +61,13 @@ export declare class RentalsService {
         updatedAt: Date;
         userId: string;
         mitraId: string;
-        status: import(".prisma/client").$Enums.RentalStatus;
         rentalItemId: string;
         startDate: Date;
         endDate: Date;
+        notes: string | null;
+        status: import(".prisma/client").$Enums.RentalStatus;
         totalDays: number;
         totalPrice: import("@prisma/client/runtime/library").Decimal;
-        notes: string | null;
     })[]>;
     findOne(id: string): Promise<{
         user: {
@@ -100,13 +100,13 @@ export declare class RentalsService {
         updatedAt: Date;
         userId: string;
         mitraId: string;
-        status: import(".prisma/client").$Enums.RentalStatus;
         rentalItemId: string;
         startDate: Date;
         endDate: Date;
+        notes: string | null;
+        status: import(".prisma/client").$Enums.RentalStatus;
         totalDays: number;
         totalPrice: import("@prisma/client/runtime/library").Decimal;
-        notes: string | null;
     }>;
     update(id: string, dto: UpdateRentalDto): Promise<{
         id: string;
@@ -114,13 +114,13 @@ export declare class RentalsService {
         updatedAt: Date;
         userId: string;
         mitraId: string;
-        status: import(".prisma/client").$Enums.RentalStatus;
         rentalItemId: string;
         startDate: Date;
         endDate: Date;
+        notes: string | null;
+        status: import(".prisma/client").$Enums.RentalStatus;
         totalDays: number;
         totalPrice: import("@prisma/client/runtime/library").Decimal;
-        notes: string | null;
     }>;
     findAllItems(query?: {
         search?: string;

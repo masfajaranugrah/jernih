@@ -26,6 +26,10 @@ export class OrdersService {
         if (!service) throw new NotFoundException(`Jasa ${item.serviceId} tidak ditemukan`);
         price = Number(service.priceFrom);
         name = service.name;
+      } else if (item.name && item.price) {
+        // Item dengan nama & harga custom (dari chat order)
+        name = item.name;
+        price = item.price;
       }
 
       const qty = item.quantity ?? 1;
@@ -86,9 +90,12 @@ export class OrdersService {
     const shippingCost = dto.shippingCost ?? 0;
     const total = subtotal - discountAmount + shippingCost;
 
+    const orderNumber = dto.orderNumber || Array.from({ length: 12 }, () => Math.floor(Math.random() * 10)).join('');
+
     return this.prisma.order.create({
       data: {
         userId,
+        orderNumber,
         addressId: dto.addressId,
         voucherUseId,
         subtotal,

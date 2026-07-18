@@ -32,6 +32,7 @@ export declare class AuthService {
             avatar: string | null;
             role: import(".prisma/client").$Enums.Role;
             isActive: boolean;
+            lastSeenAt: Date | null;
             updatedAt: Date;
         };
         access_token: string;

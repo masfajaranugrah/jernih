@@ -24,6 +24,9 @@ let ChatController = class ChatController {
     send(req, dto) {
         return this.chatService.sendMessage(req.user.id, dto);
     }
+    systemMessage(req, body) {
+        return this.chatService.sendSystemMessage(req.user.id, body);
+    }
     inbox(req) {
         return this.chatService.getInbox(req.user.id);
     }
@@ -49,6 +52,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, send_message_dto_1.SendMessageDto]),
     __metadata("design:returntype", void 0)
 ], ChatController.prototype, "send", null);
+__decorate([
+    (0, common_1.Post)('system-message'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], ChatController.prototype, "systemMessage", null);
 __decorate([
     (0, common_1.Get)('inbox'),
     __param(0, (0, common_1.Request)()),

@@ -61,14 +61,15 @@ export declare class ComplaintsService {
             updatedAt: Date;
             userId: string;
             total: import("@prisma/client/runtime/library").Decimal;
-            status: import(".prisma/client").$Enums.OrderStatus;
             notes: string | null;
+            status: import(".prisma/client").$Enums.OrderStatus;
+            orderNumber: string | null;
             addressId: string | null;
+            paymentMethod: string | null;
+            shippingCost: import("@prisma/client/runtime/library").Decimal;
             voucherUseId: string | null;
             subtotal: import("@prisma/client/runtime/library").Decimal;
             discountAmount: import("@prisma/client/runtime/library").Decimal;
-            shippingCost: import("@prisma/client/runtime/library").Decimal;
-            paymentMethod: string | null;
             paymentProof: string | null;
             paidAt: Date | null;
         };
