@@ -38,6 +38,8 @@ type OrderDetail = {
   paymentProof: string | null;
   paidAt: string | null;
   createdAt: string;
+  shippingCourier: string | null;
+  trackingNumber: string | null;
   items: OrderItem[];
   address: Address | null;
 };
