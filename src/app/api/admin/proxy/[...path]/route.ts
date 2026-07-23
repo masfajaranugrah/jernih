@@ -88,15 +88,16 @@ async function proxy(
     const data = await res.json().catch(() => null);
 
     // Revalidate cache Next.js untuk data yang diubah admin
+    // Next.js 16: revalidateTag() butuh 2 argumen (tag, profile)
     if (res.ok) {
       if (apiPath === "settings/homepage_sections") {
-        revalidateTag("homepage_sections");
+        revalidateTag("homepage_sections", { expire: 0 });
       }
       if (apiPath.startsWith("hero")) {
-        revalidateTag("hero");
+        revalidateTag("hero", { expire: 0 });
       }
       if (apiPath.startsWith("promo")) {
-        revalidateTag("promo");
+        revalidateTag("promo", { expire: 0 });
       }
     }
 
