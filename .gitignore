@@ -20,6 +20,9 @@
 # production
 /build
 
+# backend — hasil build NestJS (compiled JS dari TypeScript)
+/backend/dist/
+
 # misc
 .DS_Store
 *.pem
