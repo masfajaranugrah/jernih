@@ -20,6 +20,14 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     (p) => pathname === p || pathname.startsWith(p + "/"),
   );
 
+  // Debug: cek token di cookie saat dashboard admin termuat
+  if (typeof window !== "undefined" && !hideSidebar) {
+    const match = document.cookie.match(/(?:^|;\s*)mh_token=([^;]+)/);
+    const token = match ? decodeURIComponent(match[1]).slice(0, 50) + "..." : "❌ TIDAK ADA";
+    console.log("🔑 [AdminShell] mh_token cookie:", token);
+    console.log("🍪 Semua cookie:", document.cookie || "(kosong)");
+  }
+
   if (hideSidebar) return <>{children}</>;
 
   return (
