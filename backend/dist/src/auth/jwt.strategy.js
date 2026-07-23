@@ -15,6 +15,8 @@ const passport_1 = require("@nestjs/passport");
 const passport_jwt_1 = require("passport-jwt");
 const config_1 = require("@nestjs/config");
 const prisma_service_1 = require("../prisma/prisma.service");
+const userCache = new Map();
+const CACHE_TTL = 5_000;
 let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(passport_jwt_1.Strategy) {
     constructor(config, prisma) {
         super({
@@ -25,15 +27,22 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
         this.prisma = prisma;
     }
     async validate(payload) {
+        const cached = userCache.get(payload.sub);
+        if (cached && cached.expiry > Date.now()) {
+            if (payload.tokenVersion !== cached.user.tokenVersion) {
+                throw new common_1.UnauthorizedException('Sesi telah berakhir, silakan login ulang');
+            }
+            if (!cached.user.isActive) {
+                throw new common_1.UnauthorizedException('Akun tidak aktif');
+            }
+            const { isActive, tokenVersion: _, ...rest } = cached.user;
+            return { ...rest, mitraId: cached.user.mitraId };
+        }
         const user = await this.prisma.user.findUnique({
             where: { id: payload.sub },
             select: {
-                id: true,
-                email: true,
-                name: true,
-                role: true,
-                isActive: true,
-                tokenVersion: true,
+                id: true, email: true, name: true, role: true,
+                isActive: true, tokenVersion: true,
                 mitra: { select: { id: true } },
             },
         });
@@ -43,6 +52,14 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
         if (payload.tokenVersion !== user.tokenVersion) {
             throw new common_1.UnauthorizedException('Sesi telah berakhir, silakan login ulang');
         }
+        userCache.set(payload.sub, {
+            user: {
+                id: user.id, email: user.email, name: user.name, role: user.role,
+                isActive: user.isActive, tokenVersion: user.tokenVersion,
+                mitraId: user.mitra?.id ?? null,
+            },
+            expiry: Date.now() + CACHE_TTL,
+        });
         const { mitra, tokenVersion: _, ...rest } = user;
         return { ...rest, mitraId: mitra?.id ?? null };
     }
@@ -53,4 +70,11 @@ exports.JwtStrategy = JwtStrategy = __decorate([
     __metadata("design:paramtypes", [config_1.ConfigService,
         prisma_service_1.PrismaService])
 ], JwtStrategy);
+setInterval(() => {
+    const now = Date.now();
+    for (const [key, val] of userCache) {
+        if (val.expiry <= now)
+            userCache.delete(key);
+    }
+}, 30_000);
 //# sourceMappingURL=jwt.strategy.js.map

@@ -14,48 +14,48 @@ export declare class WishlistController {
             };
         } & {
             id: string;
-            name: string;
-            isActive: boolean;
             createdAt: Date;
-            updatedAt: Date;
+            name: string;
             slug: string;
-            description: string | null;
-            rating: number;
-            oldPrice: import("@prisma/client/runtime/library").Decimal | null;
             categoryId: string | null;
+            description: string | null;
             price: import("@prisma/client/runtime/library").Decimal;
+            oldPrice: import("@prisma/client/runtime/library").Decimal | null;
             stock: number;
             images: string[];
+            isActive: boolean;
+            rating: number;
             totalSold: number;
+            updatedAt: Date;
         };
     } & {
         id: string;
-        createdAt: Date;
         userId: string;
         productId: string;
+        createdAt: Date;
     })[]>;
     add(req: any, dto: AddWishlistDto): Promise<{
         product: {
             id: string;
-            name: string;
-            isActive: boolean;
             createdAt: Date;
-            updatedAt: Date;
+            name: string;
             slug: string;
-            description: string | null;
-            rating: number;
-            oldPrice: import("@prisma/client/runtime/library").Decimal | null;
             categoryId: string | null;
+            description: string | null;
             price: import("@prisma/client/runtime/library").Decimal;
+            oldPrice: import("@prisma/client/runtime/library").Decimal | null;
             stock: number;
             images: string[];
+            isActive: boolean;
+            rating: number;
             totalSold: number;
+            updatedAt: Date;
         };
     } & {
         id: string;
-        createdAt: Date;
         userId: string;
         productId: string;
+        createdAt: Date;
     }>;
     remove(req: any, productId: string): Promise<{
         message: string;

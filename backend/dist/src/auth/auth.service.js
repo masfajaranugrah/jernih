@@ -28,7 +28,7 @@ let AuthService = class AuthService {
         if (existing) {
             throw new common_1.ConflictException('Email sudah terdaftar');
         }
-        const hashedPassword = await bcrypt.hash(dto.password, 12);
+        const hashedPassword = await bcrypt.hash(dto.password, 10);
         const user = await this.prisma.user.create({
             data: {
                 email: dto.email,
@@ -44,16 +44,19 @@ let AuthService = class AuthService {
                 phone: true,
                 role: true,
                 createdAt: true,
+                tokenVersion: true,
             },
         });
-        const token = await this.signToken(user.id, user.email, user.role);
+        const token = await this.signToken(user.id, user.email, user.role, user.tokenVersion);
         return { user, access_token: token };
     }
     async login(dto) {
         const user = await this.prisma.user.findUnique({
             where: { email: dto.email },
-            include: {
-                mitra: { select: { id: true, storeName: true } },
+            select: {
+                id: true, email: true, name: true, role: true, password: true,
+                isActive: true, tokenVersion: true, createdAt: true,
+                mitra: { select: { id: true, storeName: true, isVerified: true, logo: true } },
             },
         });
         if (!user || !user.isActive) {
@@ -63,7 +66,7 @@ let AuthService = class AuthService {
         if (!passwordMatch) {
             throw new common_1.UnauthorizedException('Email atau password salah');
         }
-        const token = await this.signToken(user.id, user.email, user.role);
+        const token = await this.signToken(user.id, user.email, user.role, user.tokenVersion);
         const { password: _, ...userWithoutPassword } = user;
         return { user: userWithoutPassword, access_token: token };
     }
@@ -89,16 +92,12 @@ let AuthService = class AuthService {
             },
         });
     }
-    async signToken(userId, email, role) {
-        const user = await this.prisma.user.findUnique({
-            where: { id: userId },
-            select: { tokenVersion: true },
-        });
+    async signToken(userId, email, role, tokenVersion) {
         const payload = {
             sub: userId,
             email,
             role,
-            tokenVersion: user?.tokenVersion ?? 0,
+            tokenVersion,
         };
         return this.jwt.sign(payload, {
             secret: this.config.get('JWT_SECRET'),
@@ -113,16 +112,20 @@ let AuthService = class AuthService {
         return { message: 'Berhasil logout' };
     }
     async refreshToken(userId, email, role) {
-        const token = await this.signToken(userId, email, role);
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: {
+                tokenVersion: true,
                 id: true, email: true, name: true, phone: true,
                 role: true, createdAt: true,
                 mitra: { select: { id: true, storeName: true, isVerified: true, logo: true } },
             },
         });
-        return { user, access_token: token };
+        if (!user)
+            throw new common_1.UnauthorizedException('User tidak ditemukan');
+        const token = await this.signToken(user.id, user.email, user.role, user.tokenVersion);
+        const { tokenVersion: _, ...userWithoutVersion } = user;
+        return { user: userWithoutVersion, access_token: token };
     }
 };
 exports.AuthService = AuthService;

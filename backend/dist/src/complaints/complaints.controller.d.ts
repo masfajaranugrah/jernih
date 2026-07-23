@@ -7,20 +7,20 @@ export declare class ComplaintsController {
     create(req: any, dto: CreateComplaintDto): Promise<{
         user: {
             id: string;
-            email: string;
             name: string;
+            email: string;
         };
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         userId: string;
+        createdAt: Date;
         description: string;
         images: string[];
+        updatedAt: Date;
         mitraId: string | null;
-        status: import(".prisma/client").$Enums.ComplaintStatus;
         orderId: string | null;
         title: string;
+        status: import(".prisma/client").$Enums.ComplaintStatus;
         resolution: string | null;
     }>;
     findAll(req: any): Promise<({
@@ -34,22 +34,22 @@ export declare class ComplaintsController {
         };
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         userId: string;
+        createdAt: Date;
         description: string;
         images: string[];
+        updatedAt: Date;
         mitraId: string | null;
-        status: import(".prisma/client").$Enums.ComplaintStatus;
         orderId: string | null;
         title: string;
+        status: import(".prisma/client").$Enums.ComplaintStatus;
         resolution: string | null;
     })[]>;
     findOne(req: any, id: string): Promise<{
         user: {
             id: string;
-            email: string;
             name: string;
+            email: string;
         };
         mitra: {
             id: string;
@@ -57,48 +57,48 @@ export declare class ComplaintsController {
         };
         order: {
             id: string;
+            userId: string;
             createdAt: Date;
             updatedAt: Date;
-            userId: string;
-            total: import("@prisma/client/runtime/library").Decimal;
-            notes: string | null;
             status: import(".prisma/client").$Enums.OrderStatus;
             orderNumber: string | null;
             addressId: string | null;
-            paymentMethod: string | null;
-            shippingCost: import("@prisma/client/runtime/library").Decimal;
-            shippingCourier: string | null;
-            trackingNumber: string | null;
             voucherUseId: string | null;
             subtotal: import("@prisma/client/runtime/library").Decimal;
             discountAmount: import("@prisma/client/runtime/library").Decimal;
+            shippingCost: import("@prisma/client/runtime/library").Decimal;
+            total: import("@prisma/client/runtime/library").Decimal;
+            notes: string | null;
+            paymentMethod: string | null;
             paymentProof: string | null;
             paidAt: Date | null;
+            shippingCourier: string | null;
+            trackingNumber: string | null;
         };
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         userId: string;
+        createdAt: Date;
         description: string;
         images: string[];
+        updatedAt: Date;
         mitraId: string | null;
-        status: import(".prisma/client").$Enums.ComplaintStatus;
         orderId: string | null;
         title: string;
+        status: import(".prisma/client").$Enums.ComplaintStatus;
         resolution: string | null;
     }>;
     update(id: string, dto: UpdateComplaintDto): Promise<{
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         userId: string;
+        createdAt: Date;
         description: string;
         images: string[];
+        updatedAt: Date;
         mitraId: string | null;
-        status: import(".prisma/client").$Enums.ComplaintStatus;
         orderId: string | null;
         title: string;
+        status: import(".prisma/client").$Enums.ComplaintStatus;
         resolution: string | null;
     }>;
 }

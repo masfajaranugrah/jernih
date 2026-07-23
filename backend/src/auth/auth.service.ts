@@ -29,8 +29,8 @@ export class AuthService {
       throw new ConflictException('Email sudah terdaftar');
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(dto.password, 12);
+    // Hash password (10 rounds — optimal: aman & cepat)
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
 
     const user = await this.prisma.user.create({
       data: {
@@ -47,10 +47,11 @@ export class AuthService {
         phone: true,
         role: true,
         createdAt: true,
+        tokenVersion: true,
       },
     });
 
-    const token = await this.signToken(user.id, user.email, user.role);
+    const token = await this.signToken(user.id, user.email, user.role, user.tokenVersion);
 
     return { user, access_token: token };
   }
@@ -59,10 +60,10 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
-      include: {
-        // Sertakan mitra supaya frontend bisa simpan mitraId ke cookie —
-        // tidak perlu query DB lagi saat create produk
-        mitra: { select: { id: true, storeName: true } },
+      select: {
+        id: true, email: true, name: true, role: true, password: true,
+        isActive: true, tokenVersion: true, createdAt: true,
+        mitra: { select: { id: true, storeName: true, isVerified: true, logo: true } },
       },
     });
 
@@ -75,7 +76,7 @@ export class AuthService {
       throw new UnauthorizedException('Email atau password salah');
     }
 
-    const token = await this.signToken(user.id, user.email, user.role);
+    const token = await this.signToken(user.id, user.email, user.role, user.tokenVersion);
 
     const { password: _, ...userWithoutPassword } = user;
 
@@ -107,17 +108,12 @@ export class AuthService {
   }
 
   // ── Helper: sign JWT ────────────────────────────────────────────────────────
-  private async signToken(userId: string, email: string, role: string): Promise<string> {
-    // Baca tokenVersion dari DB — untuk deteksi logout / sesi expired
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { tokenVersion: true },
-    });
+  private async signToken(userId: string, email: string, role: string, tokenVersion: number): Promise<string> {
     const payload: JwtPayload = {
       sub: userId,
       email,
       role,
-      tokenVersion: user?.tokenVersion ?? 0,
+      tokenVersion,
     };
     return this.jwt.sign(payload, {
       secret: this.config.get<string>('JWT_SECRET'),
@@ -136,15 +132,20 @@ export class AuthService {
 
   // ── Refresh token: buat JWT baru dengan tokenVersion terbaru ─────────────
   async refreshToken(userId: string, email: string, role: string) {
-    const token = await this.signToken(userId, email, role);
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
+        tokenVersion: true,
         id: true, email: true, name: true, phone: true,
         role: true, createdAt: true,
         mitra: { select: { id: true, storeName: true, isVerified: true, logo: true } },
       },
     });
-    return { user, access_token: token };
+
+    if (!user) throw new UnauthorizedException('User tidak ditemukan');
+
+    const token = await this.signToken(user.id, user.email, user.role, user.tokenVersion);
+    const { tokenVersion: _, ...userWithoutVersion } = user;
+    return { user: userWithoutVersion, access_token: token };
   }
 }

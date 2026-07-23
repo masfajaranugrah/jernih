@@ -7,30 +7,30 @@ export declare class ProductsService {
     create(dto: CreateProductDto): Promise<{
         types: {
             id: string;
-            name: string;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
-            oldPrice: import("@prisma/client/runtime/library").Decimal | null;
-            price: import("@prisma/client/runtime/library").Decimal;
-            stock: number;
             productId: string;
+            createdAt: Date;
+            name: string;
+            price: import("@prisma/client/runtime/library").Decimal;
+            oldPrice: import("@prisma/client/runtime/library").Decimal | null;
+            stock: number;
+            isActive: boolean;
+            updatedAt: Date;
         }[];
     } & {
         id: string;
-        name: string;
-        isActive: boolean;
         createdAt: Date;
-        updatedAt: Date;
+        name: string;
         slug: string;
-        description: string | null;
-        rating: number;
-        oldPrice: import("@prisma/client/runtime/library").Decimal | null;
         categoryId: string | null;
+        description: string | null;
         price: import("@prisma/client/runtime/library").Decimal;
+        oldPrice: import("@prisma/client/runtime/library").Decimal | null;
         stock: number;
         images: string[];
+        isActive: boolean;
+        rating: number;
         totalSold: number;
+        updatedAt: Date;
     }>;
     findAll(query?: {
         search?: string;
@@ -52,100 +52,100 @@ export declare class ProductsService {
     findOne(id: string): Promise<{
         category: {
             id: string;
-            name: string;
             createdAt: Date;
+            name: string;
             slug: string;
             icon: string | null;
         };
         types: {
             id: string;
-            name: string;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
-            oldPrice: import("@prisma/client/runtime/library").Decimal | null;
-            price: import("@prisma/client/runtime/library").Decimal;
-            stock: number;
             productId: string;
+            createdAt: Date;
+            name: string;
+            price: import("@prisma/client/runtime/library").Decimal;
+            oldPrice: import("@prisma/client/runtime/library").Decimal | null;
+            stock: number;
+            isActive: boolean;
+            updatedAt: Date;
         }[];
     } & {
         id: string;
-        name: string;
-        isActive: boolean;
         createdAt: Date;
-        updatedAt: Date;
+        name: string;
         slug: string;
-        description: string | null;
-        rating: number;
-        oldPrice: import("@prisma/client/runtime/library").Decimal | null;
         categoryId: string | null;
+        description: string | null;
         price: import("@prisma/client/runtime/library").Decimal;
+        oldPrice: import("@prisma/client/runtime/library").Decimal | null;
         stock: number;
         images: string[];
+        isActive: boolean;
+        rating: number;
         totalSold: number;
+        updatedAt: Date;
     }>;
     findBySlug(slug: string): Promise<{
         category: {
             id: string;
-            name: string;
             createdAt: Date;
+            name: string;
             slug: string;
             icon: string | null;
         };
         types: {
             id: string;
-            name: string;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
-            oldPrice: import("@prisma/client/runtime/library").Decimal | null;
-            price: import("@prisma/client/runtime/library").Decimal;
-            stock: number;
             productId: string;
+            createdAt: Date;
+            name: string;
+            price: import("@prisma/client/runtime/library").Decimal;
+            oldPrice: import("@prisma/client/runtime/library").Decimal | null;
+            stock: number;
+            isActive: boolean;
+            updatedAt: Date;
         }[];
     } & {
         id: string;
-        name: string;
-        isActive: boolean;
         createdAt: Date;
-        updatedAt: Date;
+        name: string;
         slug: string;
-        description: string | null;
-        rating: number;
-        oldPrice: import("@prisma/client/runtime/library").Decimal | null;
         categoryId: string | null;
+        description: string | null;
         price: import("@prisma/client/runtime/library").Decimal;
+        oldPrice: import("@prisma/client/runtime/library").Decimal | null;
         stock: number;
         images: string[];
+        isActive: boolean;
+        rating: number;
         totalSold: number;
+        updatedAt: Date;
     }>;
     update(id: string, dto: UpdateProductDto): Promise<{
         types: {
             id: string;
-            name: string;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
-            oldPrice: import("@prisma/client/runtime/library").Decimal | null;
-            price: import("@prisma/client/runtime/library").Decimal;
-            stock: number;
             productId: string;
+            createdAt: Date;
+            name: string;
+            price: import("@prisma/client/runtime/library").Decimal;
+            oldPrice: import("@prisma/client/runtime/library").Decimal | null;
+            stock: number;
+            isActive: boolean;
+            updatedAt: Date;
         }[];
     } & {
         id: string;
-        name: string;
-        isActive: boolean;
         createdAt: Date;
-        updatedAt: Date;
+        name: string;
         slug: string;
-        description: string | null;
-        rating: number;
-        oldPrice: import("@prisma/client/runtime/library").Decimal | null;
         categoryId: string | null;
+        description: string | null;
         price: import("@prisma/client/runtime/library").Decimal;
+        oldPrice: import("@prisma/client/runtime/library").Decimal | null;
         stock: number;
         images: string[];
+        isActive: boolean;
+        rating: number;
         totalSold: number;
+        updatedAt: Date;
     }>;
     remove(id: string): Promise<{
         message: string;

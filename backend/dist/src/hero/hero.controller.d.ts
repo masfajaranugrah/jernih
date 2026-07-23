@@ -5,12 +5,12 @@ export declare class HeroController {
     constructor(heroService: HeroService);
     findAll(): Promise<{
         id: string;
+        description: string | null;
         isActive: boolean;
         updatedAt: Date;
-        description: string | null;
-        imageUrl: string | null;
-        badge: string | null;
         title: string;
+        position: number;
+        badge: string | null;
         titleSuffix: string | null;
         subtitle: string | null;
         tagline: string | null;
@@ -18,19 +18,19 @@ export declare class HeroController {
         ctaColor: string | null;
         ctaTextColor: string | null;
         bgColor: string;
+        imageUrl: string | null;
         imageAlt: string | null;
         linkHref: string | null;
         align: string;
-        position: number;
     }[]>;
     upsert(position: number, dto: UpdateHeroBannerDto): Promise<{
         id: string;
+        description: string | null;
         isActive: boolean;
         updatedAt: Date;
-        description: string | null;
-        imageUrl: string | null;
-        badge: string | null;
         title: string;
+        position: number;
+        badge: string | null;
         titleSuffix: string | null;
         subtitle: string | null;
         tagline: string | null;
@@ -38,10 +38,10 @@ export declare class HeroController {
         ctaColor: string | null;
         ctaTextColor: string | null;
         bgColor: string;
+        imageUrl: string | null;
         imageAlt: string | null;
         linkHref: string | null;
         align: string;
-        position: number;
     }>;
     reset(): Promise<{
         message: string;

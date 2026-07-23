@@ -4,8 +4,15 @@
 
 import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
+import { Agent as HttpAgent } from "http";
+import { Agent as HttpsAgent } from "https";
 
 const BACKEND_URL = process.env.API_URL ?? "http://localhost:3001/api";
+
+// Keep-alive agent — reuse TCP connection antar request
+const BACKEND_AGENT = BACKEND_URL.startsWith("https")
+  ? new HttpsAgent({ keepAlive: true, maxSockets: 64, timeout: 5000 })
+  : new HttpAgent({ keepAlive: true, maxSockets: 64, timeout: 5000 });
 
 export async function GET(
   req: NextRequest,
@@ -83,9 +90,12 @@ async function proxy(
       method,
       headers,
       body: body || undefined,
-    });
+      agent: BACKEND_AGENT,
+    } as RequestInit & { agent: HttpAgent });
 
     const data = await res.json().catch(() => null);
+    // Pastikan body ter-consumed agar keep-alive connection kembali ke pool
+    if (res.body) await res.arrayBuffer().catch(() => {});
 
     // Revalidate cache Next.js untuk data yang diubah admin
     // Next.js 16: revalidateTag() butuh 2 argumen (tag, profile)

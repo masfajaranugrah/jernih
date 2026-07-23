@@ -6,10 +6,10 @@ export declare class AddressesController {
     constructor(addressesService: AddressesService);
     create(req: any, dto: CreateAddressDto): Promise<{
         id: string;
-        phone: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
+        phone: string;
         city: string;
         province: string;
         label: string;
@@ -20,10 +20,10 @@ export declare class AddressesController {
     }>;
     findAll(req: any): Promise<{
         id: string;
-        phone: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
+        phone: string;
         city: string;
         province: string;
         label: string;
@@ -34,10 +34,10 @@ export declare class AddressesController {
     }[]>;
     findOne(req: any, id: string): Promise<{
         id: string;
-        phone: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
+        phone: string;
         city: string;
         province: string;
         label: string;
@@ -48,10 +48,10 @@ export declare class AddressesController {
     }>;
     update(id: string, req: any, dto: UpdateAddressDto): Promise<{
         id: string;
-        phone: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
+        phone: string;
         city: string;
         province: string;
         label: string;

@@ -4,6 +4,13 @@ export declare class ChatController {
     private chatService;
     constructor(chatService: ChatService);
     send(req: any, dto: SendMessageDto): Promise<{
+        product: {
+            id: string;
+            name: string;
+            slug: string;
+            price: import("@prisma/client/runtime/library").Decimal;
+            images: string[];
+        };
         sender: {
             id: string;
             name: string;
@@ -14,23 +21,16 @@ export declare class ChatController {
             name: string;
             avatar: string;
         };
-        product: {
-            id: string;
-            name: string;
-            slug: string;
-            price: import("@prisma/client/runtime/library").Decimal;
-            images: string[];
-        };
     } & {
         id: string;
+        productId: string | null;
         createdAt: Date;
-        message: string;
         imageUrl: string | null;
+        message: string;
         isRead: boolean;
         senderId: string;
         receiverId: string;
         videoUrl: string | null;
-        productId: string | null;
         isDeleted: boolean;
         isSystem: boolean;
     }>;
@@ -47,19 +47,26 @@ export declare class ChatController {
         };
     } & {
         id: string;
+        productId: string | null;
         createdAt: Date;
-        message: string;
         imageUrl: string | null;
+        message: string;
         isRead: boolean;
         senderId: string;
         receiverId: string;
         videoUrl: string | null;
-        productId: string | null;
         isDeleted: boolean;
         isSystem: boolean;
     }>;
     inbox(req: any): Promise<{
         lastMessage: {
+            product: {
+                id: string;
+                name: string;
+                slug: string;
+                price: import("@prisma/client/runtime/library").Decimal;
+                images: string[];
+            };
             sender: {
                 id: string;
                 name: string;
@@ -70,23 +77,16 @@ export declare class ChatController {
                 name: string;
                 avatar: string;
             };
-            product: {
-                id: string;
-                name: string;
-                slug: string;
-                price: import("@prisma/client/runtime/library").Decimal;
-                images: string[];
-            };
         } & {
             id: string;
+            productId: string | null;
             createdAt: Date;
-            message: string;
             imageUrl: string | null;
+            message: string;
             isRead: boolean;
             senderId: string;
             receiverId: string;
             videoUrl: string | null;
-            productId: string | null;
             isDeleted: boolean;
             isSystem: boolean;
         };
@@ -101,6 +101,13 @@ export declare class ChatController {
         message: string;
     }>;
     conversation(req: any, partnerId: string): Promise<({
+        product: {
+            id: string;
+            name: string;
+            slug: string;
+            price: import("@prisma/client/runtime/library").Decimal;
+            images: string[];
+        };
         sender: {
             id: string;
             name: string;
@@ -111,23 +118,16 @@ export declare class ChatController {
             name: string;
             avatar: string;
         };
-        product: {
-            id: string;
-            name: string;
-            slug: string;
-            price: import("@prisma/client/runtime/library").Decimal;
-            images: string[];
-        };
     } & {
         id: string;
+        productId: string | null;
         createdAt: Date;
-        message: string;
         imageUrl: string | null;
+        message: string;
         isRead: boolean;
         senderId: string;
         receiverId: string;
         videoUrl: string | null;
-        productId: string | null;
         isDeleted: boolean;
         isSystem: boolean;
     })[]>;

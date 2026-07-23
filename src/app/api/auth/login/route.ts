@@ -1,7 +1,14 @@
+import { Agent as HttpAgent } from "http";
+import { Agent as HttpsAgent } from "https";
 import { bffResponse } from "@/lib/bff-response";
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL = process.env.API_URL ?? "http://localhost:3001/api";
+
+// Keep-alive agent — reuse TCP connection, kurangi latency handshake
+const BACKEND_AGENT = BACKEND_URL.startsWith("https")
+  ? new HttpsAgent({ keepAlive: true, maxSockets: 64, timeout: 5000 })
+  : new HttpAgent({ keepAlive: true, maxSockets: 64, timeout: 5000 });
 
 export async function POST(req: NextRequest) {
   let body: { email?: string; password?: string };
@@ -29,7 +36,8 @@ export async function POST(req: NextRequest) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
-    });
+      agent: BACKEND_AGENT,
+    } as RequestInit & { agent: HttpAgent });
   } catch {
     return NextResponse.json(
       { message: "Cannot connect to backend" },
@@ -38,6 +46,8 @@ export async function POST(req: NextRequest) {
   }
 
   const data = await res.json();
+  // Consume body agar keep-alive connection kembali ke pool
+  if (res.body) await res.arrayBuffer().catch(() => {});
 
   if (!res.ok) {
     return bffResponse(data, res.status);

@@ -6,15 +6,15 @@ export declare class ServicesService {
     constructor(prisma: PrismaService);
     create(dto: CreateServiceDto): Promise<{
         id: string;
-        name: string;
-        isActive: boolean;
         createdAt: Date;
-        updatedAt: Date;
+        name: string;
         slug: string;
-        description: string | null;
-        rating: number;
         categoryId: string | null;
+        description: string | null;
         images: string[];
+        isActive: boolean;
+        rating: number;
+        updatedAt: Date;
         mitraId: string | null;
         priceFrom: import("@prisma/client/runtime/library").Decimal;
         unit: string;
@@ -24,101 +24,101 @@ export declare class ServicesService {
         categoryId?: string;
         mitraId?: string;
     }): Promise<({
+        category: {
+            id: string;
+            name: string;
+        };
         mitra: {
             id: string;
             storeName: string;
             city: string;
         };
-        category: {
-            id: string;
-            name: string;
-        };
     } & {
         id: string;
-        name: string;
-        isActive: boolean;
         createdAt: Date;
-        updatedAt: Date;
+        name: string;
         slug: string;
-        description: string | null;
-        rating: number;
         categoryId: string | null;
+        description: string | null;
         images: string[];
+        isActive: boolean;
+        rating: number;
+        updatedAt: Date;
         mitraId: string | null;
         priceFrom: import("@prisma/client/runtime/library").Decimal;
         unit: string;
     })[]>;
     findOne(id: string): Promise<{
-        mitra: {
-            id: string;
-            storeName: string;
-            logo: string;
-            city: string;
-            rating: number;
-        };
         category: {
             id: string;
-            name: string;
             createdAt: Date;
+            name: string;
             slug: string;
             icon: string | null;
         };
+        mitra: {
+            id: string;
+            rating: number;
+            storeName: string;
+            logo: string;
+            city: string;
+        };
     } & {
         id: string;
-        name: string;
-        isActive: boolean;
         createdAt: Date;
-        updatedAt: Date;
+        name: string;
         slug: string;
-        description: string | null;
-        rating: number;
         categoryId: string | null;
+        description: string | null;
         images: string[];
+        isActive: boolean;
+        rating: number;
+        updatedAt: Date;
         mitraId: string | null;
         priceFrom: import("@prisma/client/runtime/library").Decimal;
         unit: string;
     }>;
     findBySlug(slug: string): Promise<{
-        mitra: {
-            id: string;
-            storeName: string;
-            logo: string;
-            city: string;
-            rating: number;
-        };
         category: {
             id: string;
-            name: string;
             createdAt: Date;
+            name: string;
             slug: string;
             icon: string | null;
         };
+        mitra: {
+            id: string;
+            rating: number;
+            storeName: string;
+            logo: string;
+            city: string;
+        };
     } & {
         id: string;
-        name: string;
-        isActive: boolean;
         createdAt: Date;
-        updatedAt: Date;
+        name: string;
         slug: string;
-        description: string | null;
-        rating: number;
         categoryId: string | null;
+        description: string | null;
         images: string[];
+        isActive: boolean;
+        rating: number;
+        updatedAt: Date;
         mitraId: string | null;
         priceFrom: import("@prisma/client/runtime/library").Decimal;
         unit: string;
     }>;
     update(id: string, dto: UpdateServiceDto): Promise<{
         id: string;
-        name: string;
-        isActive: boolean;
         createdAt: Date;
-        updatedAt: Date;
+        name: string;
         slug: string;
-        description: string | null;
-        rating: number;
         categoryId: string | null;
+        description: string | null;
         images: string[];
+        isActive: boolean;
+        rating: number;
+        updatedAt: Date;
         mitraId: string | null;
         priceFrom: import("@prisma/client/runtime/library").Decimal;
         unit: string;

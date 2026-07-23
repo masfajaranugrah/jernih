@@ -6,10 +6,10 @@ export declare class AddressesService {
     constructor(prisma: PrismaService);
     create(userId: string, dto: CreateAddressDto): Promise<{
         id: string;
-        phone: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
+        phone: string;
         city: string;
         province: string;
         label: string;
@@ -20,10 +20,10 @@ export declare class AddressesService {
     }>;
     findAll(userId: string): Promise<{
         id: string;
-        phone: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
+        phone: string;
         city: string;
         province: string;
         label: string;
@@ -34,10 +34,10 @@ export declare class AddressesService {
     }[]>;
     findOne(id: string): Promise<{
         id: string;
-        phone: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
+        phone: string;
         city: string;
         province: string;
         label: string;
@@ -48,10 +48,10 @@ export declare class AddressesService {
     }>;
     findOneSafe(id: string, requesterId: string, requesterRole: string): Promise<{
         id: string;
-        phone: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
+        phone: string;
         city: string;
         province: string;
         label: string;
@@ -62,10 +62,10 @@ export declare class AddressesService {
     }>;
     update(id: string, userId: string, dto: UpdateAddressDto): Promise<{
         id: string;
-        phone: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
+        phone: string;
         city: string;
         province: string;
         label: string;
@@ -76,10 +76,10 @@ export declare class AddressesService {
     }>;
     updateSafe(id: string, userId: string, dto: UpdateAddressDto): Promise<{
         id: string;
-        phone: string;
+        userId: string;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
+        phone: string;
         city: string;
         province: string;
         label: string;

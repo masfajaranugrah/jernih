@@ -6,25 +6,25 @@ export declare class MitraController {
     constructor(mitraService: MitraService);
     create(req: any, dto: CreateMitraDto): Promise<{
         id: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         userId: string;
-        storeName: string;
+        createdAt: Date;
         description: string | null;
+        isActive: boolean;
+        rating: number;
+        updatedAt: Date;
+        address: string | null;
+        storeName: string;
         logo: string | null;
         banner: string | null;
-        address: string | null;
         city: string | null;
         province: string | null;
         isVerified: boolean;
-        rating: number;
         totalReviews: number;
     }>;
     findAll(city?: string): Promise<({
         user: {
-            email: string;
             name: string;
+            email: string;
             avatar: string;
         };
         _count: {
@@ -32,117 +32,117 @@ export declare class MitraController {
         };
     } & {
         id: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         userId: string;
-        storeName: string;
+        createdAt: Date;
         description: string | null;
+        isActive: boolean;
+        rating: number;
+        updatedAt: Date;
+        address: string | null;
+        storeName: string;
         logo: string | null;
         banner: string | null;
-        address: string | null;
         city: string | null;
         province: string | null;
         isVerified: boolean;
-        rating: number;
         totalReviews: number;
     })[]>;
     findMe(req: any): Promise<{
         _count: {
-            rentals: number;
             services: number;
+            rentals: number;
         };
     } & {
         id: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         userId: string;
-        storeName: string;
+        createdAt: Date;
         description: string | null;
+        isActive: boolean;
+        rating: number;
+        updatedAt: Date;
+        address: string | null;
+        storeName: string;
         logo: string | null;
         banner: string | null;
-        address: string | null;
         city: string | null;
         province: string | null;
         isVerified: boolean;
-        rating: number;
         totalReviews: number;
     }>;
     findOne(id: string): Promise<{
         user: {
-            email: string;
             name: string;
+            email: string;
             avatar: string;
-        };
-        _count: {
-            rentals: number;
-            services: number;
         };
         services: {
             id: string;
-            name: string;
-            isActive: boolean;
             createdAt: Date;
-            updatedAt: Date;
+            name: string;
             slug: string;
-            description: string | null;
-            rating: number;
             categoryId: string | null;
+            description: string | null;
             images: string[];
+            isActive: boolean;
+            rating: number;
+            updatedAt: Date;
             mitraId: string | null;
             priceFrom: import("@prisma/client/runtime/library").Decimal;
             unit: string;
         }[];
+        _count: {
+            services: number;
+            rentals: number;
+        };
     } & {
         id: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         userId: string;
-        storeName: string;
+        createdAt: Date;
         description: string | null;
+        isActive: boolean;
+        rating: number;
+        updatedAt: Date;
+        address: string | null;
+        storeName: string;
         logo: string | null;
         banner: string | null;
-        address: string | null;
         city: string | null;
         province: string | null;
         isVerified: boolean;
-        rating: number;
         totalReviews: number;
     }>;
     update(req: any, id: string, dto: UpdateMitraDto): Promise<{
         id: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         userId: string;
-        storeName: string;
+        createdAt: Date;
         description: string | null;
+        isActive: boolean;
+        rating: number;
+        updatedAt: Date;
+        address: string | null;
+        storeName: string;
         logo: string | null;
         banner: string | null;
-        address: string | null;
         city: string | null;
         province: string | null;
         isVerified: boolean;
-        rating: number;
         totalReviews: number;
     }>;
     verify(id: string): Promise<{
         id: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         userId: string;
-        storeName: string;
+        createdAt: Date;
         description: string | null;
+        isActive: boolean;
+        rating: number;
+        updatedAt: Date;
+        address: string | null;
+        storeName: string;
         logo: string | null;
         banner: string | null;
-        address: string | null;
         city: string | null;
         province: string | null;
         isVerified: boolean;
-        rating: number;
         totalReviews: number;
     }>;
 }

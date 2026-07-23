@@ -11,6 +11,14 @@ export type JwtPayload = {
   tokenVersion: number;
 };
 
+// ── Ringan: cache 5 detik untuk user yang sudah divalidasi ─────────────────
+type CachedUser = {
+  id: string; email: string; name: string; role: string;
+  isActive: boolean; tokenVersion: number; mitraId: string | null;
+};
+const userCache = new Map<string, { user: CachedUser; expiry: number }>();
+const CACHE_TTL = 5_000; // 5 detik — tidak perlu realtime untuk data user
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
@@ -25,15 +33,25 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload) {
+    // Cek cache — hindari DB query jika user masih valid
+    const cached = userCache.get(payload.sub);
+    if (cached && cached.expiry > Date.now()) {
+      if (payload.tokenVersion !== cached.user.tokenVersion) {
+        throw new UnauthorizedException('Sesi telah berakhir, silakan login ulang');
+      }
+      if (!cached.user.isActive) {
+        throw new UnauthorizedException('Akun tidak aktif');
+      }
+      const { isActive, tokenVersion: _, ...rest } = cached.user;
+      return { ...rest, mitraId: cached.user.mitraId };
+    }
+
+    // Cache miss — query DB
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
       select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        isActive: true,
-        tokenVersion: true,
+        id: true, email: true, name: true, role: true,
+        isActive: true, tokenVersion: true,
         mitra: { select: { id: true } },
       },
     });
@@ -47,8 +65,25 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Sesi telah berakhir, silakan login ulang');
     }
 
-    // Inject mitraId langsung ke req.user — 0 query tambahan di controller
+    // Simpan ke cache untuk request berikutnya
+    userCache.set(payload.sub, {
+      user: {
+        id: user.id, email: user.email, name: user.name, role: user.role,
+        isActive: user.isActive, tokenVersion: user.tokenVersion,
+        mitraId: user.mitra?.id ?? null,
+      },
+      expiry: Date.now() + CACHE_TTL,
+    });
+
     const { mitra, tokenVersion: _, ...rest } = user;
-    return { ...rest, mitraId: mitra?.id ?? null }; // injected ke req.user
+    return { ...rest, mitraId: mitra?.id ?? null };
   }
 }
+
+// Bersihkan cache periodik — jaga memory leak
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, val] of userCache) {
+    if (val.expiry <= now) userCache.delete(key);
+  }
+}, 30_000);

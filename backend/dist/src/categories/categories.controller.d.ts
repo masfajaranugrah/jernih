@@ -6,36 +6,36 @@ export declare class CategoriesController {
     constructor(categoriesService: CategoriesService);
     findAll(): Promise<{
         id: string;
-        name: string;
         createdAt: Date;
+        name: string;
         slug: string;
         icon: string | null;
     }[]>;
     findOne(id: string): Promise<{
         id: string;
-        name: string;
         createdAt: Date;
+        name: string;
         slug: string;
         icon: string | null;
     }>;
     create(dto: CreateCategoryDto): Promise<{
         id: string;
-        name: string;
         createdAt: Date;
+        name: string;
         slug: string;
         icon: string | null;
     }>;
     update(id: string, dto: UpdateCategoryDto): Promise<{
         id: string;
-        name: string;
         createdAt: Date;
+        name: string;
         slug: string;
         icon: string | null;
     }>;
     remove(id: string): Promise<{
         id: string;
-        name: string;
         createdAt: Date;
+        name: string;
         slug: string;
         icon: string | null;
     }>;

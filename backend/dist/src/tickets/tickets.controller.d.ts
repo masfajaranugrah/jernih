@@ -8,8 +8,8 @@ export declare class TicketsController {
     create(req: any, dto: CreateTicketDto): Promise<{
         user: {
             id: string;
-            email: string;
             name: string;
+            email: string;
             avatar: string;
         };
         messages: ({
@@ -22,8 +22,8 @@ export declare class TicketsController {
         } & {
             id: string;
             createdAt: Date;
-            message: string;
             imageUrl: string | null;
+            message: string;
             isRead: boolean;
             senderId: string;
             ticketId: string;
@@ -32,58 +32,58 @@ export declare class TicketsController {
         number: number;
         id: string;
         userId: string;
-        category: import(".prisma/client").$Enums.TicketCategory;
-        priority: import(".prisma/client").$Enums.TicketPriority;
-        status: import(".prisma/client").$Enums.TicketStatus;
-        subject: string;
         createdAt: Date;
+        category: import(".prisma/client").$Enums.TicketCategory;
         updatedAt: Date;
+        status: import(".prisma/client").$Enums.TicketStatus;
+        priority: import(".prisma/client").$Enums.TicketPriority;
+        subject: string;
     }>;
     mine(req: any): Promise<({
         user: {
             id: string;
-            email: string;
             name: string;
+            email: string;
             avatar: string;
         };
     } & {
         number: number;
         id: string;
         userId: string;
-        category: import(".prisma/client").$Enums.TicketCategory;
-        priority: import(".prisma/client").$Enums.TicketPriority;
-        status: import(".prisma/client").$Enums.TicketStatus;
-        subject: string;
         createdAt: Date;
+        category: import(".prisma/client").$Enums.TicketCategory;
         updatedAt: Date;
+        status: import(".prisma/client").$Enums.TicketStatus;
+        priority: import(".prisma/client").$Enums.TicketPriority;
+        subject: string;
     } & {
         unreadCount: number;
     })[]>;
     all(req: any): Promise<({
         user: {
             id: string;
-            email: string;
             name: string;
+            email: string;
             avatar: string;
         };
     } & {
         number: number;
         id: string;
         userId: string;
-        category: import(".prisma/client").$Enums.TicketCategory;
-        priority: import(".prisma/client").$Enums.TicketPriority;
-        status: import(".prisma/client").$Enums.TicketStatus;
-        subject: string;
         createdAt: Date;
+        category: import(".prisma/client").$Enums.TicketCategory;
         updatedAt: Date;
+        status: import(".prisma/client").$Enums.TicketStatus;
+        priority: import(".prisma/client").$Enums.TicketPriority;
+        subject: string;
     } & {
         unreadCount: number;
     })[]>;
     findOne(req: any, id: string): Promise<{
         user: {
             id: string;
-            email: string;
             name: string;
+            email: string;
             avatar: string;
         };
         messages: ({
@@ -96,8 +96,8 @@ export declare class TicketsController {
         } & {
             id: string;
             createdAt: Date;
-            message: string;
             imageUrl: string | null;
+            message: string;
             isRead: boolean;
             senderId: string;
             ticketId: string;
@@ -106,12 +106,12 @@ export declare class TicketsController {
         number: number;
         id: string;
         userId: string;
-        category: import(".prisma/client").$Enums.TicketCategory;
-        priority: import(".prisma/client").$Enums.TicketPriority;
-        status: import(".prisma/client").$Enums.TicketStatus;
-        subject: string;
         createdAt: Date;
+        category: import(".prisma/client").$Enums.TicketCategory;
         updatedAt: Date;
+        status: import(".prisma/client").$Enums.TicketStatus;
+        priority: import(".prisma/client").$Enums.TicketPriority;
+        subject: string;
     }>;
     addMessage(req: any, id: string, dto: SendTicketMessageDto): Promise<{
         sender: {
@@ -123,8 +123,8 @@ export declare class TicketsController {
     } & {
         id: string;
         createdAt: Date;
-        message: string;
         imageUrl: string | null;
+        message: string;
         isRead: boolean;
         senderId: string;
         ticketId: string;
@@ -135,19 +135,19 @@ export declare class TicketsController {
     update(id: string, dto: UpdateTicketDto): Promise<{
         user: {
             id: string;
-            email: string;
             name: string;
+            email: string;
             avatar: string;
         };
     } & {
         number: number;
         id: string;
         userId: string;
-        category: import(".prisma/client").$Enums.TicketCategory;
-        priority: import(".prisma/client").$Enums.TicketPriority;
-        status: import(".prisma/client").$Enums.TicketStatus;
-        subject: string;
         createdAt: Date;
+        category: import(".prisma/client").$Enums.TicketCategory;
         updatedAt: Date;
+        status: import(".prisma/client").$Enums.TicketStatus;
+        priority: import(".prisma/client").$Enums.TicketPriority;
+        subject: string;
     }>;
 }

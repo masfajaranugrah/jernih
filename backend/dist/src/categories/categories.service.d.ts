@@ -8,22 +8,22 @@ export declare class CategoriesService {
         icon?: string;
     }): Promise<{
         id: string;
-        name: string;
         createdAt: Date;
+        name: string;
         slug: string;
         icon: string | null;
     }>;
     findAll(): Promise<{
         id: string;
-        name: string;
         createdAt: Date;
+        name: string;
         slug: string;
         icon: string | null;
     }[]>;
     findOne(id: string): Promise<{
         id: string;
-        name: string;
         createdAt: Date;
+        name: string;
         slug: string;
         icon: string | null;
     }>;
@@ -33,15 +33,15 @@ export declare class CategoriesService {
         icon?: string;
     }): Promise<{
         id: string;
-        name: string;
         createdAt: Date;
+        name: string;
         slug: string;
         icon: string | null;
     }>;
     remove(id: string): Promise<{
         id: string;
-        name: string;
         createdAt: Date;
+        name: string;
         slug: string;
         icon: string | null;
     }>;
