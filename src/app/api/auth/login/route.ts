@@ -44,10 +44,11 @@ export async function POST(req: NextRequest) {
   }
 
   const response = NextResponse.json(data);
+  // Set sebagai non-HttpOnly agar bisa dibaca JavaScript untuk Socket.IO auth
   response.cookies.set("mh_token", data.access_token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    httpOnly: false,
+    secure: true,
+    sameSite: "none",
     path: "/",
     maxAge: 60 * 60 * 24 * 7, // 7 hari — sinkron dengan JWT_EXPIRES_IN
   });
