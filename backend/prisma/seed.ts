@@ -38,8 +38,8 @@ async function main() {
   console.log(`✓ ${categories.length} kategori selesai`);
 
   // ── Admin user ───────────────────────────────────────────────────────────────
-  const bcrypt = await import('bcryptjs');
-  const adminPassword = await bcrypt.hash('admin123', 12);
+  const bcrypt = await import('bcrypt');
+  const adminPassword = await bcrypt.hash('admin123', 10);
 
   const admin = await prisma.user.upsert({
     where: { email: 'admin@jernihcreative.id' },

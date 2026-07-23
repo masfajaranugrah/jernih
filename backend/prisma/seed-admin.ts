@@ -1,6 +1,6 @@
 // Script bikin akun ADMIN — jalanin: npx ts-node prisma/seed-admin.ts
 import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
