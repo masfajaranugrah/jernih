@@ -29,7 +29,10 @@ let UsersController = class UsersController {
     getMe(req) {
         return this.usersService.findOne(req.user.id);
     }
-    findOne(id) {
+    findOne(req, id) {
+        if (req.user.id !== id && req.user.role !== 'ADMIN') {
+            throw new common_1.ForbiddenException('Anda tidak memiliki akses ke user ini');
+        }
         return this.usersService.findOne(id);
     }
     updateMe(req, dto) {
@@ -57,9 +60,10 @@ __decorate([
 ], UsersController.prototype, "getMe", null);
 __decorate([
     (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "findOne", null);
 __decorate([

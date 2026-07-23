@@ -2,9 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getToken } from "@/lib/auth";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
+import { adminApi } from "@/lib/admin-api";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -59,10 +57,11 @@ type RawRental = {
 // ── Client-side helpers ──────────────────────────────────────────────────────
 
 async function fetchAllItemsForPromo(): Promise<PromoPickerItem[]> {
+  const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
   const [produkRes, jasaRes, sewaRes] = await Promise.allSettled([
-    fetch(`${API_URL}/products?limit=100`),
-    fetch(`${API_URL}/services`),
-    fetch(`${API_URL}/rentals/items`),
+    fetch(`${api}/products?limit=100`),
+    fetch(`${api}/services`),
+    fetch(`${api}/rentals/items`),
   ]);
 
   const items: PromoPickerItem[] = [];
@@ -308,11 +307,7 @@ export default function PromoEditor({ promos }: { promos: PromoCard[] }) {
 
   const createMutation = useMutation({
     mutationFn: async (item: PromoPickerItem) => {
-      const token = getToken();
-      if (!token) throw new Error("Token tidak ditemukan, login ulang");
-
-      const existingRes = await fetch(`${API_URL}/settings/promo_cards`);
-      const existing: PromoCard[] = existingRes.ok ? (await existingRes.json()) : [];
+      const existing: PromoCard[] = await adminApi("settings/promo_cards");
 
       if (existing.some((p) => p.linkHref === item.linkHref)) {
         throw new Error("duplikat");
@@ -327,17 +322,10 @@ export default function PromoEditor({ promos }: { promos: PromoCard[] }) {
         linkHref: item.linkHref,
       };
 
-      const res = await fetch(`${API_URL}/settings/promo_cards`, {
+      return await adminApi<PromoCard[]>("settings/promo_cards", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify([...existing, newCard]),
       });
-
-      if (!res.ok) throw new Error("Gagal menyimpan promo ke backend");
-      return res.json() as Promise<PromoCard[]>;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "promos"] });
@@ -354,24 +342,13 @@ export default function PromoEditor({ promos }: { promos: PromoCard[] }) {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const token = getToken();
-      if (!token) throw new Error("Token tidak ditemukan, login ulang");
-
-      const existingRes = await fetch(`${API_URL}/settings/promo_cards`);
-      const existing: PromoCard[] = existingRes.ok ? (await existingRes.json()) : [];
+      const existing: PromoCard[] = await adminApi("settings/promo_cards");
       const updated = existing.filter((p) => p.id !== id);
 
-      const res = await fetch(`${API_URL}/settings/promo_cards`, {
+      return await adminApi<PromoCard[]>("settings/promo_cards", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify(updated),
       });
-
-      if (!res.ok) throw new Error("Gagal menyimpan promo ke backend");
-      return res.json() as Promise<PromoCard[]>;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "promos"] });
@@ -461,7 +438,7 @@ export default function PromoEditor({ promos }: { promos: PromoCard[] }) {
                   <img
                     src={promo.image}
                     alt={promo.title}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="h-full w-full object-cover"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">

@@ -21,6 +21,25 @@ export default function MessageBubble({
     ? "bg-[#003527] text-white rounded-2xl rounded-br-md"
     : "bg-white text-gray-800 border border-gray-200 rounded-2xl rounded-bl-md";
 
+  // System message (notifikasi order, dll) — tampil di tengah
+  if (msg.isSystem) {
+    return (
+      <div className="flex justify-center">
+        <div className="max-w-[85%] w-full bg-gradient-to-r from-[#064e3b]/5 via-[#003527]/10 to-[#064e3b]/5 rounded-xl border border-[#003527]/20 px-5 py-3.5 my-2">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-[#003527] flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span className="material-symbols-outlined text-white text-sm">verified</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-[#003527] uppercase tracking-wider mb-1">Sistem</p>
+              <p className="text-sm text-[#191c1d] whitespace-pre-line leading-relaxed">{msg.message}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (msg.isDeleted) {
     return (
       <div className={`flex ${own ? "justify-end" : "justify-start"}`}>

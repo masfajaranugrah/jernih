@@ -12,10 +12,10 @@ export declare class WishlistService {
         } & {
             id: string;
             name: string;
-            slug: string;
-            createdAt: Date;
             isActive: boolean;
+            createdAt: Date;
             updatedAt: Date;
+            slug: string;
             description: string | null;
             rating: number;
             oldPrice: import("@prisma/client/runtime/library").Decimal | null;
@@ -35,10 +35,10 @@ export declare class WishlistService {
         product: {
             id: string;
             name: string;
-            slug: string;
-            createdAt: Date;
             isActive: boolean;
+            createdAt: Date;
             updatedAt: Date;
+            slug: string;
             description: string | null;
             rating: number;
             oldPrice: import("@prisma/client/runtime/library").Decimal | null;

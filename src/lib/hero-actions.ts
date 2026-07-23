@@ -1,9 +1,18 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import type { HeroMain, HeroBanner } from "@/lib/hero-store";
 
 const API_URL = process.env.API_URL ?? "http://localhost:3001/api";
+
+/** Baca token HttpOnly cookie dari server — aman dari XSS */
+async function getServerToken(): Promise<string> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("mh_token")?.value;
+  if (!token) throw new Error("Session tidak valid. Silakan login ulang.");
+  return token;
+}
 
 // Field yang diterima backend (sesuai UpdateHeroBannerDto)
 const ALLOWED_HERO_FIELDS = new Set([
@@ -38,7 +47,8 @@ function transformBannerPayload(data: Record<string, unknown>): Record<string, u
 }
 
 // ── Helper: kirim PUT ke backend ─────────────────────────────────────────────
-async function putHero(position: number, data: object, token: string) {
+async function putHero(position: number, data: object) {
+  const token = await getServerToken();
   const payload = transformBannerPayload(data as Record<string, unknown>);
   const res = await fetch(`${API_URL}/hero/${position}`, {
     method: "PUT",
@@ -58,8 +68,8 @@ async function putHero(position: number, data: object, token: string) {
 // ── Server actions ───────────────────────────────────────────────────────────
 
 /** Simpan hero main (position 0) */
-export async function saveHeroMain(data: Partial<HeroMain>, token: string) {
-  await putHero(0, data, token);
+export async function saveHeroMain(data: Partial<HeroMain>) {
+  await putHero(0, data);
   revalidatePath("/");
 }
 
@@ -67,17 +77,17 @@ export async function saveHeroMain(data: Partial<HeroMain>, token: string) {
 export async function saveHeroBanner(
   index: 0 | 1 | 2,
   data: Partial<HeroBanner>,
-  token: string
 ) {
   // index 0 = banner kanan atas → position 1
   // index 1 = banner kiri bawah → position 2
   // index 2 = banner kanan bawah → position 3
-  await putHero(index + 1, data, token);
+  await putHero(index + 1, data);
   revalidatePath("/");
 }
 
 /** Reset semua hero ke default */
-export async function resetHero(token: string) {
+export async function resetHero() {
+  const token = await getServerToken();
   const res = await fetch(`${API_URL}/hero/reset`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },

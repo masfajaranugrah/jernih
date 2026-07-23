@@ -20,6 +20,8 @@ const update_rental_dto_1 = require("./dto/update-rental.dto");
 const create_rental_item_dto_1 = require("./dto/create-rental-item.dto");
 const update_rental_item_dto_1 = require("./dto/update-rental-item.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
+const roles_guard_1 = require("../auth/guards/roles.guard");
+const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 let RentalsController = class RentalsController {
     constructor(rentalsService) {
         this.rentalsService = rentalsService;
@@ -33,7 +35,7 @@ let RentalsController = class RentalsController {
     findItemBySlug(slug) {
         return this.rentalsService.findItemBySlug(slug);
     }
-    createItem(req, dto) {
+    createItem(dto) {
         return this.rentalsService.createItem(dto);
     }
     updateItem(id, dto) {
@@ -49,8 +51,8 @@ let RentalsController = class RentalsController {
         const isAdmin = req.user.role === 'ADMIN';
         return this.rentalsService.findAll(isAdmin ? undefined : req.user.id, mitraId);
     }
-    findOne(id) {
-        return this.rentalsService.findOne(id);
+    findOne(req, id) {
+        return this.rentalsService.findOneSafe(id, req.user.id, req.user.role);
     }
     update(id, dto) {
         return this.rentalsService.update(id, dto);
@@ -80,16 +82,17 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], RentalsController.prototype, "findItemBySlug", null);
 __decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('ADMIN'),
     (0, common_1.Post)('items'),
-    __param(0, (0, common_1.Request)()),
-    __param(1, (0, common_1.Body)()),
+    __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, create_rental_item_dto_1.CreateRentalItemDto]),
+    __metadata("design:paramtypes", [create_rental_item_dto_1.CreateRentalItemDto]),
     __metadata("design:returntype", void 0)
 ], RentalsController.prototype, "createItem", null);
 __decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('ADMIN'),
     (0, common_1.Patch)('items/:id'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
@@ -98,7 +101,8 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], RentalsController.prototype, "updateItem", null);
 __decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('ADMIN'),
     (0, common_1.Delete)('items/:id'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
@@ -126,13 +130,15 @@ __decorate([
 __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], RentalsController.prototype, "findOne", null);
 __decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('ADMIN'),
     (0, common_1.Patch)(':id'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),

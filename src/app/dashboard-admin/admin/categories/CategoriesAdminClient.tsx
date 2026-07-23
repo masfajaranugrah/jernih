@@ -3,10 +3,8 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/app/dashboard-admin/components/Toast";
-import { getToken } from "@/lib/auth";
+import { adminApi } from "@/lib/admin-api";
 import type { ApiCategory } from "@/lib/category-actions";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
 
 export default function CategoriesAdminClient({
   categories,
@@ -28,18 +26,10 @@ export default function CategoriesAdminClient({
 
   const createMutation = useMutation({
     mutationFn: async (data: { name: string; icon: string }) => {
-      const token = getToken();
-      if (!token) throw new Error("Token tidak ditemukan, login ulang");
-      const res = await fetch(`${API_URL}/categories`, {
+      return adminApi<ApiCategory>("categories", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(data),
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message ?? "Gagal menambahkan kategori");
-      }
-      return res.json() as Promise<ApiCategory>;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "categories"] });
@@ -53,18 +43,10 @@ export default function CategoriesAdminClient({
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: { name?: string; icon?: string } }) => {
-      const token = getToken();
-      if (!token) throw new Error("Token tidak ditemukan, login ulang");
-      const res = await fetch(`${API_URL}/categories/${id}`, {
+      return adminApi<ApiCategory>(`categories/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(data),
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message ?? "Gagal mengubah kategori");
-      }
-      return res.json() as Promise<ApiCategory>;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "categories"] });
@@ -78,13 +60,7 @@ export default function CategoriesAdminClient({
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const token = getToken();
-      if (!token) throw new Error("Token tidak ditemukan, login ulang");
-      const res = await fetch(`${API_URL}/categories/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Gagal menghapus kategori");
+      await adminApi(`categories/${id}`, { method: "DELETE" });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "categories"] });

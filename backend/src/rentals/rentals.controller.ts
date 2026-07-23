@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards, Request, ForbiddenException } from '@nestjs/common';
 import { RentalsService } from './rentals.service';
 import { CreateRentalDto } from './dto/create-rental.dto';
 import { UpdateRentalDto } from './dto/update-rental.dto';
 import { CreateRentalItemDto } from './dto/create-rental-item.dto';
 import { UpdateRentalItemDto } from './dto/update-rental-item.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @Controller('rentals')
 export class RentalsController {
@@ -28,22 +30,25 @@ export class RentalsController {
     return this.rentalsService.findItemBySlug(slug);
   }
 
-  /** POST /api/rentals/items — tambah item sewa (admin) */
-  @UseGuards(JwtAuthGuard)
+  /** POST /api/rentals/items — ADMIN only */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @Post('items')
-  createItem(@Request() req: any, @Body() dto: CreateRentalItemDto) {
+  createItem(@Body() dto: CreateRentalItemDto) {
     return this.rentalsService.createItem(dto);
   }
 
-  /** PATCH /api/rentals/items/:id — admin only */
-  @UseGuards(JwtAuthGuard)
+  /** PATCH /api/rentals/items/:id — ADMIN only */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @Patch('items/:id')
   updateItem(@Param('id') id: string, @Body() dto: UpdateRentalItemDto) {
     return this.rentalsService.updateItem(id, dto);
   }
 
-  /** DELETE /api/rentals/items/:id — admin only */
-  @UseGuards(JwtAuthGuard)
+  /** DELETE /api/rentals/items/:id — ADMIN only */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @Delete('items/:id')
   removeItem(@Param('id') id: string) {
     return this.rentalsService.removeItem(id);
@@ -67,15 +72,16 @@ export class RentalsController {
     );
   }
 
-  /** GET /api/rentals/:id */
+  /** GET /api/rentals/:id — hanya pemilik rental atau ADMIN */
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.rentalsService.findOne(id);
+  findOne(@Request() req: any, @Param('id') id: string) {
+    return this.rentalsService.findOneSafe(id, req.user.id, req.user.role);
   }
 
-  /** PATCH /api/rentals/:id — update status */
-  @UseGuards(JwtAuthGuard)
+  /** PATCH /api/rentals/:id — ADMIN only (update status) */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateRentalDto) {
     return this.rentalsService.update(id, dto);

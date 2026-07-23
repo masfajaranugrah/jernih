@@ -28,14 +28,14 @@ let AddressesController = class AddressesController {
     findAll(req) {
         return this.addressesService.findAll(req.user.id);
     }
-    findOne(id) {
-        return this.addressesService.findOne(id);
+    findOne(req, id) {
+        return this.addressesService.findOneSafe(id, req.user.id, req.user.role);
     }
     update(id, req, dto) {
-        return this.addressesService.update(id, req.user.id, dto);
+        return this.addressesService.updateSafe(id, req.user.id, dto);
     }
-    remove(id) {
-        return this.addressesService.remove(id);
+    remove(req, id) {
+        return this.addressesService.removeSafe(id, req.user.id, req.user.role);
     }
 };
 exports.AddressesController = AddressesController;
@@ -56,9 +56,10 @@ __decorate([
 ], AddressesController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], AddressesController.prototype, "findOne", null);
 __decorate([
@@ -72,9 +73,10 @@ __decorate([
 ], AddressesController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], AddressesController.prototype, "remove", null);
 exports.AddressesController = AddressesController = __decorate([

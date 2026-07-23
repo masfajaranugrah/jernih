@@ -33,6 +33,12 @@ const DEFAULTS = {
 let SettingsService = class SettingsService {
     constructor(prisma) {
         this.prisma = prisma;
+        this.publicKeys = new Set([
+            'homepage_sections',
+            'promo_cards',
+            'maintenance_mode',
+            'toko',
+        ]);
     }
     async getSetting(key) {
         const setting = await this.prisma.systemSetting.findUnique({
@@ -40,6 +46,9 @@ let SettingsService = class SettingsService {
         });
         if (!setting) {
             return DEFAULTS[key] ?? null;
+        }
+        if (!this.publicKeys.has(key)) {
+            return null;
         }
         try {
             return JSON.parse(setting.value);

@@ -24,12 +24,24 @@ const DEFAULTS: Record<string, any> = {
 export class SettingsService {
   constructor(private prisma: PrismaService) {}
 
+  // Whitelist key yang bisa dibaca publik — selain ini butuh auth
+  private readonly publicKeys = new Set([
+    'homepage_sections',
+    'promo_cards',
+    'maintenance_mode',
+    'toko',
+  ]);
+
   async getSetting(key: string) {
     const setting = await this.prisma.systemSetting.findUnique({
       where: { key },
     });
     if (!setting) {
       return DEFAULTS[key] ?? null;
+    }
+    // Hanya kembalikan nilai untuk key yang ada di whitelist
+    if (!this.publicKeys.has(key)) {
+      return null;
     }
     try {
       return JSON.parse(setting.value);

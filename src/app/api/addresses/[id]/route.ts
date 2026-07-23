@@ -1,3 +1,4 @@
+import { bffResponse } from "@/lib/bff-response";
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL = process.env.API_URL ?? "http://localhost:3001/api";
@@ -36,7 +37,7 @@ export async function PATCH(
   }
 
   const data = await res.json();
-  return NextResponse.json(data, { status: res.status });
+  return bffResponse(data, res.status);
 }
 
 /** DELETE /api/addresses/:id — hapus alamat */
@@ -62,5 +63,5 @@ export async function DELETE(
   }
 
   const data = await res.json();
-  return NextResponse.json(data, { status: res.status });
+  return bffResponse(data, res.status);
 }

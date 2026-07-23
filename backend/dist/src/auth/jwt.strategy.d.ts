@@ -5,6 +5,7 @@ export type JwtPayload = {
     sub: string;
     email: string;
     role: string;
+    tokenVersion: number;
 };
 declare const JwtStrategy_base: new (...args: any[]) => Strategy;
 export declare class JwtStrategy extends JwtStrategy_base {
@@ -13,8 +14,8 @@ export declare class JwtStrategy extends JwtStrategy_base {
     validate(payload: JwtPayload): Promise<{
         mitraId: string;
         id: string;
-        name: string;
         email: string;
+        name: string;
         role: import(".prisma/client").$Enums.Role;
         isActive: boolean;
     }>;

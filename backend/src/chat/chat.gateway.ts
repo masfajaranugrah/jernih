@@ -124,11 +124,31 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() body: { userIds?: string[] },
   ) {
     if (!client.data.userId || !Array.isArray(body?.userIds)) return;
-    const state: Record<string, { online: boolean; lastSeen: string | null }> =
-      {};
+    // Batasi jumlah user yang bisa dicek (max 10) — cegah enumeration
+    const ids = body.userIds.filter((id) => typeof id === 'string').slice(0, 10);
+    if (ids.length === 0) return;
 
-    const unknownIds = body.userIds.filter(
-      (id) => typeof id === 'string' && !this.connections.has(id),
+    // Hanya izinkan cek presence user yang pernah chat dengan requester
+    const chatPartners = await this.prisma.chat.findMany({
+      where: {
+        OR: [
+          { senderId: client.data.userId, receiverId: { in: ids } },
+          { receiverId: client.data.userId, senderId: { in: ids } },
+        ],
+      },
+      select: { senderId: true, receiverId: true },
+      take: 50,
+    });
+    const allowedIds = new Set<string>();
+    for (const c of chatPartners) {
+      if (c.senderId === client.data.userId) allowedIds.add(c.receiverId);
+      if (c.receiverId === client.data.userId) allowedIds.add(c.senderId);
+    }
+
+    const state: Record<string, { online: boolean; lastSeen: string | null }> = {};
+
+    const unknownIds = ids.filter(
+      (id) => allowedIds.has(id) && !this.connections.has(id),
     );
 
     const dbRecords =

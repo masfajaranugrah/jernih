@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import DashboardSidebar from "@/app/dashboard-admin/DashboardSidebar";
 import EditServiceForm from "../EditServiceForm";
 import { fetchServiceById } from "@/lib/service-actions";
 
@@ -21,7 +20,6 @@ export default async function EditServicePage({
         .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; vertical-align:middle; }
       `}</style>
 
-      <DashboardSidebar />
 
       <div className="lg:ml-64 min-h-screen flex flex-col pb-24 lg:pb-0">
         <header className="sticky top-0 z-40 flex h-16 w-full items-center gap-3 border-b border-[#e1e3e4] bg-white/90 px-6 shadow-sm backdrop-blur">

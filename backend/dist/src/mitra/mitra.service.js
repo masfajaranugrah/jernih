@@ -62,6 +62,13 @@ let MitraService = class MitraService {
     async update(id, dto) {
         return this.prisma.mitra.update({ where: { id }, data: dto });
     }
+    async updateSafe(id, dto, userId) {
+        const mitra = await this.findOne(id);
+        if (mitra.userId !== userId) {
+            throw new common_1.ForbiddenException('Anda tidak memiliki akses ke mitra ini');
+        }
+        return this.prisma.mitra.update({ where: { id }, data: dto });
+    }
     async verify(id) {
         return this.prisma.mitra.update({
             where: { id },

@@ -7,8 +7,8 @@ export declare class ComplaintsController {
     create(req: any, dto: CreateComplaintDto): Promise<{
         user: {
             id: string;
-            name: string;
             email: string;
+            name: string;
         };
     } & {
         id: string;
@@ -45,11 +45,11 @@ export declare class ComplaintsController {
         title: string;
         resolution: string | null;
     })[]>;
-    findOne(id: string): Promise<{
+    findOne(req: any, id: string): Promise<{
         user: {
             id: string;
-            name: string;
             email: string;
+            name: string;
         };
         mitra: {
             id: string;
@@ -67,6 +67,8 @@ export declare class ComplaintsController {
             addressId: string | null;
             paymentMethod: string | null;
             shippingCost: import("@prisma/client/runtime/library").Decimal;
+            shippingCourier: string | null;
+            trackingNumber: string | null;
             voucherUseId: string | null;
             subtotal: import("@prisma/client/runtime/library").Decimal;
             discountAmount: import("@prisma/client/runtime/library").Decimal;

@@ -29,7 +29,7 @@ export default async function PromoSection() {
               alt={promo.title}
               fill
               sizes="(min-width: 768px) 33vw, 70vw"
-              className="object-cover transition-transform duration-700 group-hover:scale-105"
+              className="object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
             <div className="absolute left-3 top-3 rounded-full bg-[#575e70] px-2.5 py-0.5 text-xs font-bold text-white">

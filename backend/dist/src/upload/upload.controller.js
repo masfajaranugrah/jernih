@@ -18,9 +18,23 @@ const platform_express_1 = require("@nestjs/platform-express");
 const multer_1 = require("multer");
 const path_1 = require("path");
 const fs_1 = require("fs");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const uploadDir = (0, path_1.join)(process.cwd(), 'public', 'uploads');
 if (!(0, fs_1.existsSync)(uploadDir)) {
     (0, fs_1.mkdirSync)(uploadDir, { recursive: true });
+}
+function validateMagicBytes(buf, mimeType) {
+    const header = buf.slice(0, 8).toString('hex');
+    const signatures = {
+        'image/jpeg': ['ffd8ff'],
+        'image/png': ['89504e47'],
+        'image/webp': ['52494646'],
+        'image/gif': ['47494638'],
+        'video/mp4': ['00000018', '0000001c', '00000020', '66747970'],
+        'video/webm': ['1a45dfa3'],
+        'video/quicktime': ['00000018', '66747970'],
+    };
+    return signatures[mimeType]?.some((sig) => header.startsWith(sig)) ?? false;
 }
 let UploadController = class UploadController {
     uploadFiles(files) {
@@ -38,6 +52,31 @@ let UploadController = class UploadController {
             }
             throw new common_1.BadRequestException('Gambar maksimal 10MB');
         }
+        for (const f of files) {
+            try {
+                const buf = (0, fs_1.readFileSync)(f.path);
+                if (!validateMagicBytes(buf, f.mimetype)) {
+                    for (const g of files) {
+                        try {
+                            (0, fs_1.unlinkSync)(g.path);
+                        }
+                        catch { }
+                    }
+                    throw new common_1.BadRequestException(`File "${f.originalname}" tidak valid — format tidak sesuai dengan ekstensi`);
+                }
+            }
+            catch (err) {
+                for (const g of files) {
+                    try {
+                        (0, fs_1.unlinkSync)(g.path);
+                    }
+                    catch { }
+                }
+                if (err instanceof common_1.BadRequestException)
+                    throw err;
+                throw new common_1.BadRequestException('Gagal memvalidasi file');
+            }
+        }
         const baseUrl = process.env.BACKEND_URL ?? 'http://localhost:3001';
         const urls = files.map((f) => `${baseUrl}/uploads/${f.filename}`);
         return { urls };
@@ -50,7 +89,7 @@ __decorate([
         storage: (0, multer_1.diskStorage)({
             destination: uploadDir,
             filename: (_req, file, cb) => {
-                const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
+                const unique = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
                 cb(null, `${unique}${(0, path_1.extname)(file.originalname)}`);
             },
         }),
@@ -70,6 +109,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], UploadController.prototype, "uploadFiles", null);
 exports.UploadController = UploadController = __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Controller)('upload')
 ], UploadController);
 //# sourceMappingURL=upload.controller.js.map

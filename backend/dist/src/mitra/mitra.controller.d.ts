@@ -6,8 +6,8 @@ export declare class MitraController {
     constructor(mitraService: MitraService);
     create(req: any, dto: CreateMitraDto): Promise<{
         id: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
         userId: string;
         storeName: string;
@@ -22,18 +22,18 @@ export declare class MitraController {
         totalReviews: number;
     }>;
     findAll(city?: string): Promise<({
+        user: {
+            email: string;
+            name: string;
+            avatar: string;
+        };
         _count: {
             services: number;
         };
-        user: {
-            name: string;
-            email: string;
-            avatar: string;
-        };
     } & {
         id: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
         userId: string;
         storeName: string;
@@ -49,13 +49,13 @@ export declare class MitraController {
     })[]>;
     findMe(req: any): Promise<{
         _count: {
-            services: number;
             rentals: number;
+            services: number;
         };
     } & {
         id: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
         userId: string;
         storeName: string;
@@ -70,13 +70,22 @@ export declare class MitraController {
         totalReviews: number;
     }>;
     findOne(id: string): Promise<{
+        user: {
+            email: string;
+            name: string;
+            avatar: string;
+        };
+        _count: {
+            rentals: number;
+            services: number;
+        };
         services: {
             id: string;
             name: string;
-            slug: string;
-            createdAt: Date;
             isActive: boolean;
+            createdAt: Date;
             updatedAt: Date;
+            slug: string;
             description: string | null;
             rating: number;
             categoryId: string | null;
@@ -85,19 +94,10 @@ export declare class MitraController {
             priceFrom: import("@prisma/client/runtime/library").Decimal;
             unit: string;
         }[];
-        _count: {
-            services: number;
-            rentals: number;
-        };
-        user: {
-            name: string;
-            email: string;
-            avatar: string;
-        };
     } & {
         id: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
         userId: string;
         storeName: string;
@@ -111,10 +111,10 @@ export declare class MitraController {
         rating: number;
         totalReviews: number;
     }>;
-    update(id: string, dto: UpdateMitraDto): Promise<{
+    update(req: any, id: string, dto: UpdateMitraDto): Promise<{
         id: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
         userId: string;
         storeName: string;
@@ -130,8 +130,8 @@ export declare class MitraController {
     }>;
     verify(id: string): Promise<{
         id: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
         userId: string;
         storeName: string;

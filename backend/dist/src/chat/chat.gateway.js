@@ -92,8 +92,28 @@ let ChatGateway = class ChatGateway {
     async handlePresenceQuery(client, body) {
         if (!client.data.userId || !Array.isArray(body?.userIds))
             return;
+        const ids = body.userIds.filter((id) => typeof id === 'string').slice(0, 10);
+        if (ids.length === 0)
+            return;
+        const chatPartners = await this.prisma.chat.findMany({
+            where: {
+                OR: [
+                    { senderId: client.data.userId, receiverId: { in: ids } },
+                    { receiverId: client.data.userId, senderId: { in: ids } },
+                ],
+            },
+            select: { senderId: true, receiverId: true },
+            take: 50,
+        });
+        const allowedIds = new Set();
+        for (const c of chatPartners) {
+            if (c.senderId === client.data.userId)
+                allowedIds.add(c.receiverId);
+            if (c.receiverId === client.data.userId)
+                allowedIds.add(c.senderId);
+        }
         const state = {};
-        const unknownIds = body.userIds.filter((id) => typeof id === 'string' && !this.connections.has(id));
+        const unknownIds = ids.filter((id) => allowedIds.has(id) && !this.connections.has(id));
         const dbRecords = unknownIds.length > 0
             ? await this.prisma.user
                 .findMany({

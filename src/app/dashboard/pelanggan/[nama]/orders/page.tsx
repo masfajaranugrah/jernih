@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
+import { useRouter } from "next/navigation";
 
 const tabs = ["Semua", "Belum Bayar", "Dikemas", "Dikirim", "Selesai"] as const;
 
@@ -10,12 +11,16 @@ type ApiOrderItem = {
   price: string;
   quantity: number;
   subtotal: string;
+  product?: { id: string; name: string; images: string[] } | null;
+  service?: { id: string; name: string; images: string[] } | null;
 };
 
 type ApiOrder = {
   id: string;
+  orderNumber: string | null;
   status: "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "REFUNDED";
   total: string;
+  subtotal: string;
   createdAt: string;
   items: ApiOrderItem[];
 };
@@ -52,40 +57,60 @@ function formatDate(iso: string) {
   });
 }
 
-function OrderCard({ order }: { order: ApiOrder }) {
+function OrderCard({ order, nama }: { order: ApiOrder; nama: string }) {
+  const router = useRouter();
   const label = statusLabel[order.status];
+  const displayNumber = order.orderNumber ?? order.id.slice(0, 8).toUpperCase();
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] border border-transparent hover:border-[#bfc9c3] transition-all flex flex-col justify-between">
+    <div
+      onClick={() => router.push(`/dashboard/pelanggan/${nama}/orders/${order.id}`)}
+      className="bg-white p-6 rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] border border-transparent hover:border-[#bfc9c3] hover:shadow-md transition-all cursor-pointer group"
+    >
       <div>
         <div className="flex justify-between items-center mb-5 border-b border-[#e1e3e4] pb-3">
           <div className="min-w-0">
-            <span className="text-xs text-[#707974] font-medium block truncate">ID: {order.id}</span>
-            <span className="text-[11px] text-[#9ca3af]">{formatDate(order.createdAt)}</span>
+            <span className="text-sm font-bold text-[#191c1d]">#{displayNumber}</span>
+            <span className="text-xs text-[#475569] block mt-0.5">{formatDate(order.createdAt)}</span>
           </div>
-          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${statusBadge[label] ?? "bg-[#e7e8e9] text-[#404944]"}`}>
-            {label}
-          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusBadge[label] ?? "bg-[#e7e8e9] text-[#404944]"}`}>
+              {label}
+            </span>
+            <svg className="h-4 w-4 text-[#94a3b8] group-hover:text-[#003527] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
         </div>
         <div className="space-y-3 mb-5">
-          {order.items.map((item) => (
-            <div key={item.id} className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-lg bg-[#edeeef] flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-[#bfc9c3]">inventory_2</span>
+          {order.items.slice(0, 2).map((item) => {
+            const imgUrl = item.product?.images?.[0] ?? item.service?.images?.[0] ?? null;
+            return (
+              <div key={item.id} className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-lg bg-[#f1f5f9] overflow-hidden shrink-0">
+                  {imgUrl ? (
+                    <img src={imgUrl} alt={item.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-[#94a3b8] text-lg">📦</div>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-[#191c1d] font-medium text-sm truncate">{item.name}</h4>
+                  <p className="text-[#475569] text-xs mt-0.5">
+                    {item.quantity} x {formatRupiah(item.price)}
+                  </p>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <h4 className="text-[#191c1d] font-medium text-sm truncate">{item.name}</h4>
-                <p className="text-[#707974] text-xs mt-0.5">
-                  {item.quantity} x {formatRupiah(item.price)}
-                </p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
+          {order.items.length > 2 && (
+            <p className="text-xs text-[#064e3b] font-semibold">+{order.items.length - 2} item lainnya</p>
+          )}
         </div>
       </div>
       <div className="flex justify-between items-end pt-3 border-t border-[#e1e3e4]">
         <div>
-          <p className="text-xs text-[#707974]">Total Belanja</p>
+          <p className="text-[11px] text-[#475569]">Total Belanja</p>
           <p className="text-[#003527] font-semibold text-xl">{formatRupiah(order.total)}</p>
         </div>
       </div>
@@ -93,7 +118,12 @@ function OrderCard({ order }: { order: ApiOrder }) {
   );
 }
 
-export default function OrdersPelangganPage() {
+export default function OrdersPelangganPage({
+  params,
+}: {
+  params: Promise<{ nama: string }>;
+}) {
+  const nama = use(params).nama;
   const [activeTab, setActiveTab] = useState<string>("Semua");
   const [orders, setOrders] = useState<ApiOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -185,7 +215,7 @@ export default function OrdersPelangganPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {filtered.map((order) => (
-            <OrderCard key={order.id} order={order} />
+            <OrderCard key={order.id} order={order} nama={nama} />
           ))}
         </div>
       )}

@@ -33,13 +33,17 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
                 name: true,
                 role: true,
                 isActive: true,
+                tokenVersion: true,
                 mitra: { select: { id: true } },
             },
         });
         if (!user || !user.isActive) {
             throw new common_1.UnauthorizedException('Token tidak valid atau akun tidak aktif');
         }
-        const { mitra, ...rest } = user;
+        if (payload.tokenVersion !== user.tokenVersion) {
+            throw new common_1.UnauthorizedException('Sesi telah berakhir, silakan login ulang');
+        }
+        const { mitra, tokenVersion: _, ...rest } = user;
         return { ...rest, mitraId: mitra?.id ?? null };
     }
 };

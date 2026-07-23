@@ -1,4 +1,9 @@
 import { Controller, Get, Post, Delete, Param, Body, UseGuards, Request } from '@nestjs/common';
+import { IsString, IsNotEmpty } from 'class-validator';
+
+class AddWishlistDto {
+  @IsString() @IsNotEmpty() productId!: string;
+}
 import { WishlistService } from './wishlist.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -15,8 +20,8 @@ export class WishlistController {
 
   /** POST /api/wishlist — tambah produk ke wishlist */
   @Post()
-  add(@Request() req: any, @Body('productId') productId: string) {
-    return this.wishlistService.add(req.user.id, productId);
+  add(@Request() req: any, @Body() dto: AddWishlistDto) {
+    return this.wishlistService.add(req.user.id, dto.productId);
   }
 
   /** DELETE /api/wishlist/:productId — hapus produk dari wishlist */

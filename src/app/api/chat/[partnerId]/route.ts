@@ -1,3 +1,4 @@
+import { bffResponse } from "@/lib/bff-response";
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL = process.env.API_URL ?? "http://localhost:3001/api";
@@ -29,7 +30,7 @@ export async function GET(
   }
 
   const data = await res.json();
-  return NextResponse.json(data, { status: res.status });
+  return bffResponse(data, res.status);
 }
 
 /** PATCH /api/chat/[partnerId] — tandai pesan dari partner sudah dibaca */
@@ -55,5 +56,5 @@ export async function PATCH(
   }
 
   const data = await res.json();
-  return NextResponse.json(data, { status: res.status });
+  return bffResponse(data, res.status);
 }

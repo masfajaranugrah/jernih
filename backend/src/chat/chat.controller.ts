@@ -12,6 +12,8 @@ import {
 import { ChatService } from './chat.service';
 import { SendMessageDto } from './dto/send-message.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @UseGuards(JwtAuthGuard)
 @Controller('chat')
@@ -24,7 +26,9 @@ export class ChatController {
     return this.chatService.sendMessage(req.user.id, dto);
   }
 
-  /** POST /api/chat/system-message — kirim pesan sistem (dari order) */
+  /** POST /api/chat/system-message — kirim pesan sistem (dari order) — ADMIN only */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @Post('system-message')
   systemMessage(@Request() req: any, @Body() body: { message: string; type?: string; orderNumber?: string; receiverId?: string }) {
     return this.chatService.sendSystemMessage(req.user.id, body);

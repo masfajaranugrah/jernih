@@ -294,7 +294,7 @@ function ChatInner() {
   // ── Render ──────────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="flex h-[calc(100vh-64px)] items-center justify-center rounded-xl border border-[#e1e3e4] bg-white">
+      <div className="flex flex-1 items-center justify-center rounded-xl border border-[#e1e3e4] bg-white">
         <div className="flex flex-col items-center gap-3 text-[#707974]">
           <span className="h-8 w-8 animate-spin rounded-full border-2 border-[#003527]/20 border-t-[#003527]" />
           <p className="text-sm">Memuat chat...</p>
@@ -305,7 +305,7 @@ function ChatInner() {
 
   if (loadError || !admin) {
     return (
-      <div className="flex h-[calc(100vh-64px)] items-center justify-center rounded-xl border border-[#e1e3e4] bg-white">
+      <div className="flex flex-1 items-center justify-center rounded-xl border border-[#e1e3e4] bg-white">
         <div className="text-center text-[#707974]">
           <span className="material-symbols-outlined mb-2 text-4xl">error</span>
           <p className="text-sm">{loadError ?? "Admin tidak ditemukan"}</p>
@@ -317,7 +317,7 @@ function ChatInner() {
   const lastMsg = messages[messages.length - 1];
 
   return (
-    <div className="flex h-[calc(100vh-64px)] overflow-hidden rounded-xl border border-[#e1e3e4] shadow-sm bg-white">
+    <div className="flex flex-1 min-h-0 overflow-hidden rounded-xl border border-[#e1e3e4] shadow-sm bg-white">
       {/* Conversation list — satu percakapan dengan admin */}
       <div className="hidden md:flex w-72 border-r border-[#e1e3e4] flex-col flex-shrink-0 bg-white">
         <div className="p-4 border-b border-[#e1e3e4]">
@@ -325,7 +325,7 @@ function ChatInner() {
             Percakapan
           </h3>
         </div>
-        <div className="flex-1 overflow-y-auto py-2">
+        <div className="flex-1 min-h-0 overflow-y-auto py-2">
           <div className="w-full text-left px-3 py-2 mx-1 rounded-xl flex gap-3 items-center bg-[#f3f4f5] border-l-4 border-[#003527]">
             <div className="w-11 h-11 rounded-full bg-[#064e3b] flex-shrink-0 relative overflow-hidden flex items-center justify-center">
               {admin.avatar ? (
@@ -354,7 +354,7 @@ function ChatInner() {
       </div>
 
       {/* Chat window */}
-      <div className="flex-1 flex flex-col bg-[#f8f9fa]">
+      <div className="flex-1 flex flex-col min-h-0 bg-[#f8f9fa]">
         {/* Header */}
         <div className="h-16 px-6 border-b border-[#e1e3e4] flex items-center justify-between bg-white flex-shrink-0">
           <div className="flex items-center gap-4">
@@ -386,36 +386,38 @@ function ChatInner() {
         </div>
 
         {/* Messages */}
-        <div ref={scrollRef} className="relative flex-1 overflow-y-auto p-6 space-y-1">
-          {messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center pt-16 text-[#707974] gap-3">
-              <span className="material-symbols-outlined text-5xl opacity-30">forum</span>
-              <p className="text-sm">Belum ada pesan. Mulai percakapan dengan admin!</p>
-            </div>
-          )}
-          {messages.map((msg, idx) => (
-            <div key={msg.id}>
-              {idx === 0 || isNewDay(messages[idx - 1].createdAt, msg.createdAt) ? (
-                <DateSeparator date={msg.createdAt} />
-              ) : null}
-              <MessageBubble
-                msg={msg}
-                own={msg.senderId === myId}
-                onDelete={handleDelete}
-              />
-            </div>
-          ))}
-          {isTyping && (
-            <div className="flex items-end gap-2 max-w-[78%] pt-2">
-              <div className="w-8 h-8 rounded-full bg-[#064e3b] flex-shrink-0 flex items-center justify-center">
-                <span className="material-symbols-outlined text-[#80bea6] text-base">headset_mic</span>
+        <div className="relative flex-1 min-h-0">
+          <div ref={scrollRef} className="absolute inset-0 overflow-y-auto p-6 space-y-1">
+            {messages.length === 0 && (
+              <div className="flex flex-col items-center justify-center pt-16 text-[#707974] gap-3">
+                <span className="material-symbols-outlined text-5xl opacity-30">forum</span>
+                <p className="text-sm">Belum ada pesan. Mulai percakapan dengan admin!</p>
               </div>
-              <div className="bg-white border border-[#e1e3e4] rounded-[16px_16px_16px_4px] p-4 text-sm text-[#707974] italic shadow-sm">
-                {admin.name} sedang mengetik...
+            )}
+            {messages.map((msg, idx) => (
+              <div key={msg.id}>
+                {idx === 0 || isNewDay(messages[idx - 1].createdAt, msg.createdAt) ? (
+                  <DateSeparator date={msg.createdAt} />
+                ) : null}
+                <MessageBubble
+                  msg={msg}
+                  own={msg.senderId === myId}
+                  onDelete={handleDelete}
+                />
               </div>
-            </div>
-          )}
-          <div ref={bottomRef} />
+            ))}
+            {isTyping && (
+              <div className="flex items-end gap-2 max-w-[78%] pt-2">
+                <div className="w-8 h-8 rounded-full bg-[#064e3b] flex-shrink-0 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-[#80bea6] text-base">headset_mic</span>
+                </div>
+                <div className="bg-white border border-[#e1e3e4] rounded-[16px_16px_16px_4px] p-4 text-sm text-[#707974] italic shadow-sm">
+                  {admin.name} sedang mengetik...
+                </div>
+              </div>
+            )}
+            <div ref={bottomRef} />
+          </div>
           <ScrollToBottom containerRef={scrollRef} />
         </div>
 
@@ -437,7 +439,7 @@ export default function ChatContent() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-[calc(100vh-64px)] items-center justify-center rounded-xl border border-[#e1e3e4] bg-white">
+        <div className="flex flex-1 items-center justify-center rounded-xl border border-[#e1e3e4] bg-white">
           <span className="h-8 w-8 animate-spin rounded-full border-2 border-[#003527]/20 border-t-[#003527]" />
         </div>
       }

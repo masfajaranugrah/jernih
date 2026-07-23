@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, Request, ForbiddenException } from '@nestjs/common';
 import { AddressesService } from './addresses.service';
 import { CreateAddressDto } from './dto/create-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
@@ -20,17 +20,17 @@ export class AddressesController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.addressesService.findOne(id);
+  findOne(@Request() req: any, @Param('id') id: string) {
+    return this.addressesService.findOneSafe(id, req.user.id, req.user.role);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Request() req: any, @Body() dto: UpdateAddressDto) {
-    return this.addressesService.update(id, req.user.id, dto);
+    return this.addressesService.updateSafe(id, req.user.id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.addressesService.remove(id);
+  remove(@Request() req: any, @Param('id') id: string) {
+    return this.addressesService.removeSafe(id, req.user.id, req.user.role);
   }
 }

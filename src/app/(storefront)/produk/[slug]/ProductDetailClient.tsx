@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { addToCart, emitWishlistChange } from "@/lib/cart";
+import { useAuth } from "@/lib/auth-context";
 
 type ProductType = {
   id: string;
@@ -116,6 +117,7 @@ function SharePopover({ title, onClose }: { title: string; onClose: () => void }
 
 export default function ProductDetailClient({ product }: { product: Product }) {
   const router = useRouter();
+  const { user } = useAuth();
   const [activeImage, setActiveImage] = useState(0);
   const [activeTab, setActiveTab] = useState<"description" | "specs">("description");
   const [quantity, setQuantity] = useState(1);
@@ -134,11 +136,6 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     return m ? Number(m[0]) : 0;
   })();
 
-  const whatsappNumber = "6281318638100";
-  const typeInfo = activeType ? `\nTipe: ${activeType.name}` : "";
-  const whatsappUrlBuy = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-    `Halo, saya ingin memesan:\n\n*${product.title}*${typeInfo}\nJumlah: ${quantity}\nHarga: ${displayPrice}\n\nMohon informasi lebih lanjut. Terima kasih 🙏`,
-  )}`;
   const stockNum = displayStock;
   const priceNum = Number(displayPrice.replace(/[^0-9]/g, ""));
   const oldPriceNum = displayOldPrice ? Number(String(displayOldPrice).replace(/[^0-9]/g, "")) : 0;
@@ -147,6 +144,12 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   function formatPrice(n: number) {
     return `Rp${n.toLocaleString("id-ID")}`;
   }
+
+  const whatsappNumber = "6281318638100";
+  const typeInfo = activeType ? `\nTipe: ${activeType.name}` : "";
+  const whatsappUrlBuy = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+    `Halo, saya ingin memesan:\n\n*${product.title}*${typeInfo}\nJumlah: ${quantity}\nHarga satuan: ${displayPrice}\nTotal: ${formatPrice(subtotal)}\n\nMohon informasi lebih lanjut. Terima kasih 🙏`,
+  )}`;
 
   // Cek status wishlist saat mount (hanya jika sudah login)
   useEffect(() => {
@@ -167,23 +170,18 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
   /** Tanya produk via chat in-app — bawa context produk ke halaman chat */
   function handleTanyaProduk() {
-    const raw = localStorage.getItem("mh_user");
-    if (!raw) {
+    if (!user) {
       router.push(`/dashboard/pelanggan/login?from=/produk/${product.slug}`);
       return;
     }
-    try {
-      const { slug } = JSON.parse(raw);
-      router.push(`/dashboard/pelanggan/${slug}/chat?productSlug=${product.slug}`);
-    } catch {
-      router.push(`/dashboard/pelanggan/login?from=/produk/${product.slug}`);
-    }
+    const slug = user.slug ?? user.name.toLowerCase().replace(/\s+/g, '-');
+    router.push(`/dashboard/pelanggan/${slug}/chat?productSlug=${product.slug}`);
   }
 
   async function handleToggleWishlist() {
     if (wishlistBusy) return;
     // Belum login → arahkan ke halaman login pelanggan
-    if (!localStorage.getItem("mh_user")) {
+    if (!user) {
       router.push(`/dashboard/pelanggan/login?from=/produk/${product.slug}`);
       return;
     }

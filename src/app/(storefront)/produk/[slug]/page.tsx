@@ -40,14 +40,10 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       `Dijual oleh: ${sellerName}`,
       "Lokasi: Indonesia",
       apiProduct.category ? `Kategori: ${apiProduct.category.name}` : null,
-      `Terjual: ${apiProduct.totalSold} item`,
-      `Rating: ${apiProduct.rating}/5`,
     ].filter(Boolean) as string[],
     specs: [
       ["Kategori", apiProduct.category?.name ?? "-"],
       ["Stok", String(apiProduct.stock)],
-      ["Rating", String(apiProduct.rating)],
-      ["Total Terjual", String(apiProduct.totalSold)],
       ["Dijual oleh", sellerName],
     ],
     types: (apiProduct.types ?? []).map((t) => ({

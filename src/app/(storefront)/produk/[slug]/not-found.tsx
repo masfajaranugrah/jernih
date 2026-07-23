@@ -158,7 +158,7 @@ export default async function NotFound() {
                     src={item.img}
                     alt={item.title}
                     fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="object-cover"
                   />
                   <div className="absolute top-2 left-2 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#1e3a8a] shadow-sm">
                     {item.type}

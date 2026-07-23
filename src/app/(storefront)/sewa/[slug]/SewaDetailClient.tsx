@@ -56,7 +56,7 @@ function ShareModal({ open, onClose, title }: { open: boolean; onClose: () => vo
               rel="noopener noreferrer"
               className="flex flex-col items-center gap-2"
             >
-              <div className={`w-12 h-12 ${s.color} rounded-full flex items-center justify-center text-white shadow-md hover:scale-110 transition-transform`}>
+              <div className={`w-12 h-12 ${s.color} rounded-full flex items-center justify-center text-white shadow-md`}>
                 <span className="material-symbols-outlined text-xl">
                   {s.name === "Facebook" ? "facebook" : s.name === "Twitter" ? "X" : s.name === "WhatsApp" ? "chat" : s.name === "LinkedIn" ? "work" : "send"}
                 </span>
@@ -133,7 +133,7 @@ export default function SewaDetailClient({ item }: { item: ApiRentalItem }) {
                 ))}
                 <button
                   onClick={() => images.length >= 4 && setActiveImg(3)}
-                  className={`aspect-square rounded-lg overflow-hidden relative border border-[#c3c6d5] bg-[#eff4ff] shadow-[0_2px_4px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_8px_rgba(0,0,0,0.08)] hover:scale-105 transition-all cursor-pointer flex items-center justify-center text-[#737784] group`}
+                  className={`aspect-square rounded-lg overflow-hidden relative border border-[#c3c6d5] bg-[#eff4ff] shadow-[0_2px_4px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_8px_rgba(0,0,0,0.08)] transition-all cursor-pointer flex items-center justify-center text-[#737784] group`}
                 >
                   {images.length >= 4 ? (
                     <>

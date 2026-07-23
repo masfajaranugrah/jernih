@@ -8,7 +8,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const from = searchParams.get("from") ?? "/dashboard/pelanggan";
+  // Cegah open redirect — hanya izinkan path internal
+  const rawFrom = searchParams.get("from");
+  const from = rawFrom?.startsWith("/") ? rawFrom : "/dashboard/pelanggan";
   const justRegistered = searchParams.get("registered") === "1";
 
   const [email, setEmail] = useState("");
@@ -30,9 +32,14 @@ function LoginPageContent() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || data.message || "Email atau password salah");
 
-      const slug = data.user.name.toLowerCase().replace(/\s+/g, "-");
-      localStorage.setItem("mh_user", JSON.stringify({ name: data.user.name, slug }));
-      router.push(`/dashboard/pelanggan/${slug}/orders`);
+      // Session disimpan via HttpOnly cookie oleh /api/auth/login
+      const slug = data.user?.name?.toLowerCase().replace(/\s+/g, "-") ?? "";
+      // Redirect: ke halaman asal (from) atau default ke orders
+      if (from && from !== "/dashboard/pelanggan") {
+        router.push(from);
+      } else {
+        router.push(`/dashboard/pelanggan/${slug}/orders`);
+      }
       router.refresh();
     } catch (err: any) {
       setError(err.message ?? "Terjadi kesalahan");

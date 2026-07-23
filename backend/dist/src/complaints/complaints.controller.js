@@ -18,6 +18,8 @@ const complaints_service_1 = require("./complaints.service");
 const create_complaint_dto_1 = require("./dto/create-complaint.dto");
 const update_complaint_dto_1 = require("./dto/update-complaint.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
+const roles_guard_1 = require("../auth/guards/roles.guard");
+const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 let ComplaintsController = class ComplaintsController {
     constructor(complaintsService) {
         this.complaintsService = complaintsService;
@@ -29,8 +31,8 @@ let ComplaintsController = class ComplaintsController {
         const isAdmin = req.user.role === 'ADMIN';
         return this.complaintsService.findAll(isAdmin ? undefined : req.user.id);
     }
-    findOne(id) {
-        return this.complaintsService.findOne(id);
+    findOne(req, id) {
+        return this.complaintsService.findOneSafe(id, req.user.id, req.user.role);
     }
     update(id, dto) {
         return this.complaintsService.update(id, dto);
@@ -54,12 +56,15 @@ __decorate([
 ], ComplaintsController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], ComplaintsController.prototype, "findOne", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('ADMIN'),
     (0, common_1.Patch)(':id'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),

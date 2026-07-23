@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRentalDto } from './dto/create-rental.dto';
 import { UpdateRentalDto } from './dto/update-rental.dto';
@@ -15,8 +15,15 @@ export class RentalsService {
     });
     if (!item) throw new NotFoundException('Item sewa tidak ditemukan');
 
+    const start = new Date(dto.startDate);
+    const end = new Date(dto.endDate);
+
+    if (end <= start) {
+      throw new BadRequestException('Tanggal selesai harus setelah tanggal mulai');
+    }
+
     const totalDays = Math.ceil(
-      (new Date(dto.endDate).getTime() - new Date(dto.startDate).getTime()) /
+      (end.getTime() - start.getTime()) /
         (1000 * 60 * 60 * 24),
     );
     const totalPrice = Number(item.pricePerDay) * totalDays;
@@ -60,6 +67,15 @@ export class RentalsService {
       },
     });
     if (!rental) throw new NotFoundException('Data sewa tidak ditemukan');
+    return rental;
+  }
+
+  /** findOne dengan IDOR check — hanya pemilik atau ADMIN */
+  async findOneSafe(id: string, requesterId: string, requesterRole: string) {
+    const rental = await this.findOne(id);
+    if (rental.userId !== requesterId && requesterRole !== 'ADMIN') {
+      throw new ForbiddenException('Anda tidak memiliki akses ke data sewa ini');
+    }
     return rental;
   }
 

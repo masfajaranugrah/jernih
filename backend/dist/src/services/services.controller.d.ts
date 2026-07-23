@@ -7,10 +7,10 @@ export declare class ServicesController {
     createForAdmin(req: any, dto: CreateServiceDto): Promise<{
         id: string;
         name: string;
-        slug: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         description: string | null;
         rating: number;
         categoryId: string | null;
@@ -20,22 +20,22 @@ export declare class ServicesController {
         unit: string;
     }>;
     findAll(search?: string, categoryId?: string, mitraId?: string): Promise<({
-        category: {
-            id: string;
-            name: string;
-        };
         mitra: {
             id: string;
             storeName: string;
             city: string;
         };
+        category: {
+            id: string;
+            name: string;
+        };
     } & {
         id: string;
         name: string;
-        slug: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         description: string | null;
         rating: number;
         categoryId: string | null;
@@ -45,13 +45,6 @@ export declare class ServicesController {
         unit: string;
     })[]>;
     findBySlug(slug: string): Promise<{
-        category: {
-            id: string;
-            name: string;
-            slug: string;
-            icon: string | null;
-            createdAt: Date;
-        };
         mitra: {
             id: string;
             storeName: string;
@@ -59,13 +52,20 @@ export declare class ServicesController {
             city: string;
             rating: number;
         };
+        category: {
+            id: string;
+            name: string;
+            createdAt: Date;
+            slug: string;
+            icon: string | null;
+        };
     } & {
         id: string;
         name: string;
-        slug: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         description: string | null;
         rating: number;
         categoryId: string | null;
@@ -75,13 +75,6 @@ export declare class ServicesController {
         unit: string;
     }>;
     findOne(id: string): Promise<{
-        category: {
-            id: string;
-            name: string;
-            slug: string;
-            icon: string | null;
-            createdAt: Date;
-        };
         mitra: {
             id: string;
             storeName: string;
@@ -89,13 +82,20 @@ export declare class ServicesController {
             city: string;
             rating: number;
         };
+        category: {
+            id: string;
+            name: string;
+            createdAt: Date;
+            slug: string;
+            icon: string | null;
+        };
     } & {
         id: string;
         name: string;
-        slug: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         description: string | null;
         rating: number;
         categoryId: string | null;
@@ -107,10 +107,10 @@ export declare class ServicesController {
     update(id: string, dto: UpdateServiceDto): Promise<{
         id: string;
         name: string;
-        slug: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         description: string | null;
         rating: number;
         categoryId: string | null;

@@ -1,3 +1,6 @@
+declare class AddWishlistDto {
+    productId: string;
+}
 import { WishlistService } from './wishlist.service';
 export declare class WishlistController {
     private wishlistService;
@@ -12,10 +15,10 @@ export declare class WishlistController {
         } & {
             id: string;
             name: string;
-            slug: string;
-            createdAt: Date;
             isActive: boolean;
+            createdAt: Date;
             updatedAt: Date;
+            slug: string;
             description: string | null;
             rating: number;
             oldPrice: import("@prisma/client/runtime/library").Decimal | null;
@@ -31,14 +34,14 @@ export declare class WishlistController {
         userId: string;
         productId: string;
     })[]>;
-    add(req: any, productId: string): Promise<{
+    add(req: any, dto: AddWishlistDto): Promise<{
         product: {
             id: string;
             name: string;
-            slug: string;
-            createdAt: Date;
             isActive: boolean;
+            createdAt: Date;
             updatedAt: Date;
+            slug: string;
             description: string | null;
             rating: number;
             oldPrice: import("@prisma/client/runtime/library").Decimal | null;
@@ -58,3 +61,4 @@ export declare class WishlistController {
         message: string;
     }>;
 }
+export {};

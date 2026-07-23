@@ -7,15 +7,17 @@ export const metadata = {
 
 export default function ChatPage() {
   return (
-    <div className="-m-6 md:-m-10 h-[calc(100%-0px)] flex flex-col overflow-hidden">
-      <div className="mb-5 flex items-center gap-4 px-6 md:px-10 pt-0">
+    <div className="flex flex-col flex-1 min-h-0">
+      <div className="mb-5 flex items-center gap-4">
         <h1 className="text-[#191c1d] font-semibold tracking-tight"
           style={{ fontSize: "30px", lineHeight: "1.2" }}>
           Chat
         </h1>
       </div>
-      <div className="flex-1 px-6 md:px-10 pb-6 md:pb-10">
-        <ChatContent />
+      <div className="relative flex-1 min-h-0">
+        <div className="absolute inset-0 flex flex-col">
+          <ChatContent />
+        </div>
       </div>
     </div>
   );

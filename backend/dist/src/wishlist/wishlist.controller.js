@@ -14,6 +14,14 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WishlistController = void 0;
 const common_1 = require("@nestjs/common");
+const class_validator_1 = require("class-validator");
+class AddWishlistDto {
+}
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], AddWishlistDto.prototype, "productId", void 0);
 const wishlist_service_1 = require("./wishlist.service");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 let WishlistController = class WishlistController {
@@ -23,8 +31,8 @@ let WishlistController = class WishlistController {
     findAll(req) {
         return this.wishlistService.findAll(req.user.id);
     }
-    add(req, productId) {
-        return this.wishlistService.add(req.user.id, productId);
+    add(req, dto) {
+        return this.wishlistService.add(req.user.id, dto.productId);
     }
     remove(req, productId) {
         return this.wishlistService.remove(req.user.id, productId);
@@ -41,9 +49,9 @@ __decorate([
 __decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Request)()),
-    __param(1, (0, common_1.Body)('productId')),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:paramtypes", [Object, AddWishlistDto]),
     __metadata("design:returntype", void 0)
 ], WishlistController.prototype, "add", null);
 __decorate([

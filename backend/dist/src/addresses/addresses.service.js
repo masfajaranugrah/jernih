@@ -37,6 +37,13 @@ let AddressesService = class AddressesService {
             throw new common_1.NotFoundException('Alamat tidak ditemukan');
         return address;
     }
+    async findOneSafe(id, requesterId, requesterRole) {
+        const address = await this.findOne(id);
+        if (address.userId !== requesterId && requesterRole !== 'ADMIN') {
+            throw new common_1.ForbiddenException('Anda tidak memiliki akses ke alamat ini');
+        }
+        return address;
+    }
     async update(id, userId, dto) {
         if (dto.isDefault) {
             await this.prisma.address.updateMany({
@@ -46,8 +53,23 @@ let AddressesService = class AddressesService {
         }
         return this.prisma.address.update({ where: { id }, data: dto });
     }
+    async updateSafe(id, userId, dto) {
+        const address = await this.findOne(id);
+        if (address.userId !== userId) {
+            throw new common_1.ForbiddenException('Anda tidak memiliki akses ke alamat ini');
+        }
+        return this.update(id, userId, dto);
+    }
     async remove(id) {
         await this.findOne(id);
+        await this.prisma.address.delete({ where: { id } });
+        return { message: 'Alamat berhasil dihapus' };
+    }
+    async removeSafe(id, requesterId, requesterRole) {
+        const address = await this.findOne(id);
+        if (address.userId !== requesterId && requesterRole !== 'ADMIN') {
+            throw new common_1.ForbiddenException('Anda tidak memiliki akses ke alamat ini');
+        }
         await this.prisma.address.delete({ where: { id } });
         return { message: 'Alamat berhasil dihapus' };
     }

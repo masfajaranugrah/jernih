@@ -10,10 +10,10 @@ export declare class RentalsService {
         rentalItem: {
             id: string;
             name: string;
-            slug: string;
-            createdAt: Date;
             isActive: boolean;
+            createdAt: Date;
             updatedAt: Date;
+            slug: string;
             description: string | null;
             rating: number;
             images: string[];
@@ -38,16 +38,16 @@ export declare class RentalsService {
     findAll(userId?: string, mitraId?: string): Promise<({
         user: {
             id: string;
-            name: string;
             email: string;
+            name: string;
         };
         rentalItem: {
             id: string;
             name: string;
-            slug: string;
-            createdAt: Date;
             isActive: boolean;
+            createdAt: Date;
             updatedAt: Date;
+            slug: string;
             description: string | null;
             rating: number;
             images: string[];
@@ -72,8 +72,8 @@ export declare class RentalsService {
     findOne(id: string): Promise<{
         user: {
             id: string;
-            name: string;
             email: string;
+            name: string;
             phone: string;
         };
         mitra: {
@@ -83,10 +83,49 @@ export declare class RentalsService {
         rentalItem: {
             id: string;
             name: string;
-            slug: string;
-            createdAt: Date;
             isActive: boolean;
+            createdAt: Date;
             updatedAt: Date;
+            slug: string;
+            description: string | null;
+            rating: number;
+            images: string[];
+            mitraId: string | null;
+            pricePerDay: import("@prisma/client/runtime/library").Decimal;
+            deposit: import("@prisma/client/runtime/library").Decimal | null;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        mitraId: string;
+        rentalItemId: string;
+        startDate: Date;
+        endDate: Date;
+        notes: string | null;
+        status: import(".prisma/client").$Enums.RentalStatus;
+        totalDays: number;
+        totalPrice: import("@prisma/client/runtime/library").Decimal;
+    }>;
+    findOneSafe(id: string, requesterId: string, requesterRole: string): Promise<{
+        user: {
+            id: string;
+            email: string;
+            name: string;
+            phone: string;
+        };
+        mitra: {
+            id: string;
+            storeName: string;
+        };
+        rentalItem: {
+            id: string;
+            name: string;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+            slug: string;
             description: string | null;
             rating: number;
             images: string[];
@@ -128,10 +167,10 @@ export declare class RentalsService {
     }): Promise<{
         id: string;
         name: string;
-        slug: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         description: string | null;
         rating: number;
         images: string[];
@@ -142,10 +181,10 @@ export declare class RentalsService {
     findItemById(id: string): Promise<{
         id: string;
         name: string;
-        slug: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         description: string | null;
         rating: number;
         images: string[];
@@ -156,10 +195,10 @@ export declare class RentalsService {
     findItemBySlug(slug: string): Promise<{
         id: string;
         name: string;
-        slug: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         description: string | null;
         rating: number;
         images: string[];
@@ -170,10 +209,10 @@ export declare class RentalsService {
     createItem(dto: CreateRentalItemDto): Promise<{
         id: string;
         name: string;
-        slug: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         description: string | null;
         rating: number;
         images: string[];
@@ -184,10 +223,10 @@ export declare class RentalsService {
     updateItem(id: string, dto: UpdateRentalItemDto): Promise<{
         id: string;
         name: string;
-        slug: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         description: string | null;
         rating: number;
         images: string[];
@@ -198,10 +237,10 @@ export declare class RentalsService {
     removeItem(id: string): Promise<{
         id: string;
         name: string;
-        slug: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         description: string | null;
         rating: number;
         images: string[];

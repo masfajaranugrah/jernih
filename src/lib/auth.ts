@@ -3,14 +3,15 @@
 
 const TOKEN_KEY = "mh_token";
 
-/** Simpan token ke cookie. Default: session cookie (tanpa maxAge) = hilang saat browser tutup.
- *  Set persistent = true agar token tetap ada sampai logout manual.
+/** Simpan token ke cookie dengan expiry 7 hari (sinkron dengan JWT_EXPIRES_IN).
+ *  CATATAN: Cookie ini non-HttpOnly karena admin dashboard membutuhkan
+ *  akses JS ke token untuk Authorization header Bearer.
+ *  Untuk HttpOnly penuh, migrasikan semua admin API call melalui Next.js BFF.
  */
 export function setToken(token: string) {
-  // HttpOnly tidak bisa di-set dari JS — ini sisi client untuk demo.
-  // Saat sudah ada backend nyata, idealnya token di-set via server response Set-Cookie HttpOnly.
-  const maxAge = 60 * 60 * 24 * 365; // 1 tahun — berlaku sampai logout
-  document.cookie = `${TOKEN_KEY}=${token}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  const maxAge = 60 * 60 * 24 * 7; // 7 hari — sinkron JWT_EXPIRES_IN
+  const secure = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  document.cookie = `${TOKEN_KEY}=${token}; path=/; max-age=${maxAge}; SameSite=Lax${secure ? '; secure' : ''}`;
 }
 
 /** Baca token dari cookies */
@@ -22,9 +23,19 @@ export function getToken(): string | null {
   return match ? match.split("=")[1] : null;
 }
 
-/** Hapus token (logout) */
-export function removeToken() {
+/** Hapus client-side cookie */
+function removeTokenClient() {
   document.cookie = `${TOKEN_KEY}=; path=/; max-age=0; SameSite=Lax`;
+}
+
+/** Hapus token via API (hapus httpOnly cookie server) + client-side cookie */
+export async function removeToken() {
+  try {
+    await fetch("/api/auth/logout", { method: "POST" });
+  } catch {
+    // tetap lanjut hapus client cookie meski API gagal
+  }
+  removeTokenClient();
 }
 
 /** Cek apakah user sudah login (ada token) */
@@ -33,9 +44,19 @@ export function isLoggedIn(): boolean {
 }
 
 /** Session expired — hapus token dan redirect ke login */
-export function handleSessionExpired() {
-  removeToken();
+export async function handleSessionExpired() {
+  await removeToken();
   // Simpan pesan di sessionStorage supaya halaman login bisa tampilkan notif
   sessionStorage.setItem("auth_expired", "1");
-  window.location.href = "/dashboard-admin/admin/login";
+  const currentPath = window.location.pathname + window.location.search;
+  window.location.href = `/dashboard-admin/admin/login?from=${encodeURIComponent(currentPath)}`;
+}
+
+/**
+ * Handle 403 Forbidden — redirect ke halaman forbidden.
+ * Dipanggil saat API mengembalikan 403 (authenticated tapi tidak punya akses).
+ */
+export function handleForbidden() {
+  const currentPath = window.location.pathname + window.location.search;
+  window.location.href = `/forbidden?from=${encodeURIComponent(currentPath)}`;
 }

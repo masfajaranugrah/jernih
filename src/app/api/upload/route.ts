@@ -13,11 +13,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Forward ke backend dengan formData yang sudah di-parse
+  // Forward Auth token dari cookie ke backend
+  const token = req.cookies.get("mh_token")?.value;
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
   let res: Response;
   try {
     res = await fetch(`${BACKEND_URL}/upload`, {
       method: "POST",
+      headers,
       body: formData,
     });
   } catch {
@@ -28,9 +33,9 @@ export async function POST(req: NextRequest) {
   }
 
   if (!res.ok) {
-    const errText = await res.text();
+    const errData = await res.json().catch(() => ({}));
     return NextResponse.json(
-      { message: "Upload ke backend gagal", detail: errText },
+      { message: errData.message ?? "Upload ke backend gagal" },
       { status: res.status }
     );
   }

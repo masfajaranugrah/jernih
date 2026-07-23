@@ -160,7 +160,7 @@ export default function WishlistContent() {
                     <img
                       src={entry.product.images[0]}
                       alt={entry.product.name}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      className="w-full h-full object-cover"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-[#bfc9c3]">

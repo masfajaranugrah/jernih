@@ -70,17 +70,18 @@ enum VoucherType {
 // ─── User ─────────────────────────────────────────────────────────────────────
 
 model User {
-  id         String    @id @default(cuid())
-  email      String    @unique
-  password   String
-  name       String
-  phone      String?
-  avatar     String?
-  role       Role      @default(CUSTOMER)
-  isActive   Boolean   @default(true)
-  lastSeenAt DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id           String    @id @default(cuid())
+  email        String    @unique
+  password     String
+  name         String
+  phone        String?
+  avatar       String?
+  role         Role      @default(CUSTOMER)
+  isActive     Boolean   @default(true)
+  lastSeenAt   DateTime?
+  tokenVersion Int       @default(0) // Increment on logout to invalidate all sessions
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   // Relations
   mitra       Mitra?
@@ -272,6 +273,8 @@ model Order {
   paymentMethod   String?
   paymentProof    String?
   paidAt          DateTime?
+  shippingCourier String?
+  trackingNumber  String?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 

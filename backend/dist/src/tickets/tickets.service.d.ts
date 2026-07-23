@@ -11,8 +11,8 @@ export declare class TicketsService {
     create(userId: string, dto: CreateTicketDto): Promise<{
         user: {
             id: string;
-            name: string;
             email: string;
+            name: string;
             avatar: string;
         };
         messages: ({
@@ -25,18 +25,18 @@ export declare class TicketsService {
         } & {
             id: string;
             createdAt: Date;
+            senderId: string;
             message: string;
             imageUrl: string | null;
-            senderId: string;
             isRead: boolean;
             ticketId: string;
         })[];
     } & {
         number: number;
-        category: import(".prisma/client").$Enums.TicketCategory;
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        category: import(".prisma/client").$Enums.TicketCategory;
         userId: string;
         status: import(".prisma/client").$Enums.TicketStatus;
         priority: import(".prisma/client").$Enums.TicketPriority;
@@ -45,16 +45,16 @@ export declare class TicketsService {
     findMine(userId: string): Promise<({
         user: {
             id: string;
-            name: string;
             email: string;
+            name: string;
             avatar: string;
         };
     } & {
         number: number;
-        category: import(".prisma/client").$Enums.TicketCategory;
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        category: import(".prisma/client").$Enums.TicketCategory;
         userId: string;
         status: import(".prisma/client").$Enums.TicketStatus;
         priority: import(".prisma/client").$Enums.TicketPriority;
@@ -65,16 +65,16 @@ export declare class TicketsService {
     findAllAdmin(adminId: string): Promise<({
         user: {
             id: string;
-            name: string;
             email: string;
+            name: string;
             avatar: string;
         };
     } & {
         number: number;
-        category: import(".prisma/client").$Enums.TicketCategory;
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        category: import(".prisma/client").$Enums.TicketCategory;
         userId: string;
         status: import(".prisma/client").$Enums.TicketStatus;
         priority: import(".prisma/client").$Enums.TicketPriority;
@@ -86,8 +86,8 @@ export declare class TicketsService {
     findOne(ticketId: string, requesterId: string, requesterRole: string): Promise<{
         user: {
             id: string;
-            name: string;
             email: string;
+            name: string;
             avatar: string;
         };
         messages: ({
@@ -100,18 +100,18 @@ export declare class TicketsService {
         } & {
             id: string;
             createdAt: Date;
+            senderId: string;
             message: string;
             imageUrl: string | null;
-            senderId: string;
             isRead: boolean;
             ticketId: string;
         })[];
     } & {
         number: number;
-        category: import(".prisma/client").$Enums.TicketCategory;
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        category: import(".prisma/client").$Enums.TicketCategory;
         userId: string;
         status: import(".prisma/client").$Enums.TicketStatus;
         priority: import(".prisma/client").$Enums.TicketPriority;
@@ -127,9 +127,9 @@ export declare class TicketsService {
     } & {
         id: string;
         createdAt: Date;
+        senderId: string;
         message: string;
         imageUrl: string | null;
-        senderId: string;
         isRead: boolean;
         ticketId: string;
     }>;
@@ -139,16 +139,16 @@ export declare class TicketsService {
     update(ticketId: string, dto: UpdateTicketDto): Promise<{
         user: {
             id: string;
-            name: string;
             email: string;
+            name: string;
             avatar: string;
         };
     } & {
         number: number;
-        category: import(".prisma/client").$Enums.TicketCategory;
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        category: import(".prisma/client").$Enums.TicketCategory;
         userId: string;
         status: import(".prisma/client").$Enums.TicketStatus;
         priority: import(".prisma/client").$Enums.TicketPriority;

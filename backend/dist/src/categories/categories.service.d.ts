@@ -9,23 +9,23 @@ export declare class CategoriesService {
     }): Promise<{
         id: string;
         name: string;
+        createdAt: Date;
         slug: string;
         icon: string | null;
-        createdAt: Date;
     }>;
     findAll(): Promise<{
         id: string;
         name: string;
+        createdAt: Date;
         slug: string;
         icon: string | null;
-        createdAt: Date;
     }[]>;
     findOne(id: string): Promise<{
         id: string;
         name: string;
+        createdAt: Date;
         slug: string;
         icon: string | null;
-        createdAt: Date;
     }>;
     update(id: string, dto: {
         name?: string;
@@ -34,15 +34,15 @@ export declare class CategoriesService {
     }): Promise<{
         id: string;
         name: string;
+        createdAt: Date;
         slug: string;
         icon: string | null;
-        createdAt: Date;
     }>;
     remove(id: string): Promise<{
         id: string;
         name: string;
+        createdAt: Date;
         slug: string;
         icon: string | null;
-        createdAt: Date;
     }>;
 }

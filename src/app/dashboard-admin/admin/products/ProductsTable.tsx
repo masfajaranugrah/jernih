@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { handleSessionExpired } from "@/lib/auth";
 import { formatRupiah, type ApiProduct } from "@/lib/api";
+import { adminApi } from "@/lib/admin-api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function ProductsTable({ products }: { products: ApiProduct[] }) {
@@ -12,18 +12,7 @@ export default function ProductsTable({ products }: { products: ApiProduct[] }) 
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const token = document.cookie.split("; ").find(r => r.startsWith("mh_token="))?.split("=")[1] ?? "";
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api"}/products/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.status === 401) {
-        handleSessionExpired();
-        throw new Error("Session expired");
-      }
-      if (!res.ok) {
-        throw new Error("Gagal menghapus produk");
-      }
+      await adminApi(`products/${id}`, { method: "DELETE" });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "products"] });

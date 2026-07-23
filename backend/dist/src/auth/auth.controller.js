@@ -14,6 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
+const throttler_1 = require("@nestjs/throttler");
 const auth_service_1 = require("./auth.service");
 const auth_dto_1 = require("./dto/auth.dto");
 const jwt_auth_guard_1 = require("./guards/jwt-auth.guard");
@@ -30,9 +31,16 @@ let AuthController = class AuthController {
     getMe(req) {
         return this.authService.getMe(req.user.id);
     }
+    logout(req) {
+        return this.authService.logout(req.user.id);
+    }
+    refresh(req) {
+        return this.authService.refreshToken(req.user.id, req.user.email, req.user.role);
+    }
 };
 exports.AuthController = AuthController;
 __decorate([
+    (0, throttler_1.Throttle)({ default: { limit: 5, ttl: 3600000 } }),
     (0, common_1.Post)('register'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -40,6 +48,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "register", null);
 __decorate([
+    (0, throttler_1.Throttle)({ default: { limit: 10, ttl: 60000 } }),
     (0, common_1.Post)('login'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -47,6 +56,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "login", null);
 __decorate([
+    (0, throttler_1.SkipThrottle)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Get)('me'),
     __param(0, (0, common_1.Request)()),
@@ -54,6 +64,24 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "getMe", null);
+__decorate([
+    (0, throttler_1.SkipThrottle)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Post)('logout'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "logout", null);
+__decorate([
+    (0, throttler_1.SkipThrottle)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Post)('refresh'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "refresh", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])

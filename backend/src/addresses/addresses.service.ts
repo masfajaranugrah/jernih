@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAddressDto } from './dto/create-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
@@ -31,6 +31,15 @@ export class AddressesService {
     return address;
   }
 
+  /** findOne dengan IDOR check — hanya pemilik atau ADMIN */
+  async findOneSafe(id: string, requesterId: string, requesterRole: string) {
+    const address = await this.findOne(id);
+    if (address.userId !== requesterId && requesterRole !== 'ADMIN') {
+      throw new ForbiddenException('Anda tidak memiliki akses ke alamat ini');
+    }
+    return address;
+  }
+
   async update(id: string, userId: string, dto: UpdateAddressDto) {
     if (dto.isDefault) {
       await this.prisma.address.updateMany({
@@ -41,8 +50,27 @@ export class AddressesService {
     return this.prisma.address.update({ where: { id }, data: dto });
   }
 
+  /** update dengan IDOR check — hanya pemilik */
+  async updateSafe(id: string, userId: string, dto: UpdateAddressDto) {
+    const address = await this.findOne(id);
+    if (address.userId !== userId) {
+      throw new ForbiddenException('Anda tidak memiliki akses ke alamat ini');
+    }
+    return this.update(id, userId, dto);
+  }
+
   async remove(id: string) {
     await this.findOne(id);
+    await this.prisma.address.delete({ where: { id } });
+    return { message: 'Alamat berhasil dihapus' };
+  }
+
+  /** remove dengan IDOR check — hanya pemilik atau ADMIN */
+  async removeSafe(id: string, requesterId: string, requesterRole: string) {
+    const address = await this.findOne(id);
+    if (address.userId !== requesterId && requesterRole !== 'ADMIN') {
+      throw new ForbiddenException('Anda tidak memiliki akses ke alamat ini');
+    }
     await this.prisma.address.delete({ where: { id } });
     return { message: 'Alamat berhasil dihapus' };
   }

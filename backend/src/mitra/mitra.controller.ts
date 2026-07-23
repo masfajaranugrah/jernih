@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Patch, Param, Body,
-  UseGuards, Request, Query,
+  UseGuards, Request, Query, ForbiddenException,
 } from '@nestjs/common';
 import { MitraService } from './mitra.service';
 import { CreateMitraDto } from './dto/create-mitra.dto';
@@ -39,10 +39,14 @@ export class MitraController {
     return this.mitraService.findOne(id);
   }
 
-  /** PATCH /api/mitra/:id */
+  /** PATCH /api/mitra/:id — hanya pemilik mitra atau ADMIN */
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateMitraDto) {
+  update(@Request() req: any, @Param('id') id: string, @Body() dto: UpdateMitraDto) {
+    // Cek ownership: hanya pemilik mitra (userId) yang bisa update
+    if (req.user.role !== 'ADMIN') {
+      return this.mitraService.updateSafe(id, dto, req.user.id);
+    }
     return this.mitraService.update(id, dto);
   }
 

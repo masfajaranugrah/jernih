@@ -6,8 +6,8 @@ export declare class AddressesService {
     constructor(prisma: PrismaService);
     create(userId: string, dto: CreateAddressDto): Promise<{
         id: string;
-        createdAt: Date;
         phone: string;
+        createdAt: Date;
         updatedAt: Date;
         userId: string;
         city: string;
@@ -20,8 +20,8 @@ export declare class AddressesService {
     }>;
     findAll(userId: string): Promise<{
         id: string;
-        createdAt: Date;
         phone: string;
+        createdAt: Date;
         updatedAt: Date;
         userId: string;
         city: string;
@@ -34,8 +34,22 @@ export declare class AddressesService {
     }[]>;
     findOne(id: string): Promise<{
         id: string;
-        createdAt: Date;
         phone: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        city: string;
+        province: string;
+        label: string;
+        recipient: string;
+        street: string;
+        postalCode: string;
+        isDefault: boolean;
+    }>;
+    findOneSafe(id: string, requesterId: string, requesterRole: string): Promise<{
+        id: string;
+        phone: string;
+        createdAt: Date;
         updatedAt: Date;
         userId: string;
         city: string;
@@ -48,8 +62,22 @@ export declare class AddressesService {
     }>;
     update(id: string, userId: string, dto: UpdateAddressDto): Promise<{
         id: string;
-        createdAt: Date;
         phone: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        city: string;
+        province: string;
+        label: string;
+        recipient: string;
+        street: string;
+        postalCode: string;
+        isDefault: boolean;
+    }>;
+    updateSafe(id: string, userId: string, dto: UpdateAddressDto): Promise<{
+        id: string;
+        phone: string;
+        createdAt: Date;
         updatedAt: Date;
         userId: string;
         city: string;
@@ -61,6 +89,9 @@ export declare class AddressesService {
         isDefault: boolean;
     }>;
     remove(id: string): Promise<{
+        message: string;
+    }>;
+    removeSafe(id: string, requesterId: string, requesterRole: string): Promise<{
         message: string;
     }>;
 }

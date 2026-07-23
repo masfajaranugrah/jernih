@@ -143,8 +143,6 @@ async function main() {
   console.log(`✓ ${products.length} produk selesai`);
 
   console.log('\n✅ Seeding selesai!');
-  console.log('   Admin login: admin@jernihcreative.id / admin123');
-  console.log('   Mitra login: mitra@jernihcreative.id / mitra123');
 }
 
 main()

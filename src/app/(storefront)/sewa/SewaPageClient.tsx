@@ -38,7 +38,7 @@ function RentalCard({ item }: { item: ApiRentalItem }) {
           <img
             src={item.images[0]}
             alt={item.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+            className="w-full h-full object-cover"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

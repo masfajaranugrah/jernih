@@ -5,8 +5,8 @@ export declare class VouchersService {
     constructor(prisma: PrismaService);
     create(dto: CreateVoucherDto): Promise<{
         id: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
         description: string | null;
         startDate: Date | null;
@@ -21,8 +21,8 @@ export declare class VouchersService {
     }>;
     findAll(): Promise<{
         id: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
         description: string | null;
         startDate: Date | null;
@@ -38,8 +38,8 @@ export declare class VouchersService {
     findAvailable(userId: string): Promise<{
         used: boolean;
         id: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
         description: string | null;
         startDate: Date | null;
@@ -54,8 +54,8 @@ export declare class VouchersService {
     }[]>;
     findOne(id: string): Promise<{
         id: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
         description: string | null;
         startDate: Date | null;
@@ -71,8 +71,8 @@ export declare class VouchersService {
     validate(code: string, userId: string, subtotal: number): Promise<{
         voucher: {
             id: string;
-            createdAt: Date;
             isActive: boolean;
+            createdAt: Date;
             updatedAt: Date;
             description: string | null;
             startDate: Date | null;

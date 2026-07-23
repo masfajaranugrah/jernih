@@ -45,6 +45,13 @@ let ComplaintsService = class ComplaintsService {
             throw new common_1.NotFoundException('Komplain tidak ditemukan');
         return complaint;
     }
+    async findOneSafe(id, requesterId, requesterRole) {
+        const complaint = await this.findOne(id);
+        if (complaint.userId !== requesterId && requesterRole !== 'ADMIN') {
+            throw new common_1.ForbiddenException('Anda tidak memiliki akses ke komplain ini');
+        }
+        return complaint;
+    }
     async update(id, dto) {
         await this.findOne(id);
         return this.prisma.complaint.update({ where: { id }, data: dto });

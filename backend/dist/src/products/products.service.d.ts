@@ -8,8 +8,8 @@ export declare class ProductsService {
         types: {
             id: string;
             name: string;
-            createdAt: Date;
             isActive: boolean;
+            createdAt: Date;
             updatedAt: Date;
             oldPrice: import("@prisma/client/runtime/library").Decimal | null;
             price: import("@prisma/client/runtime/library").Decimal;
@@ -19,10 +19,10 @@ export declare class ProductsService {
     } & {
         id: string;
         name: string;
-        slug: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         description: string | null;
         rating: number;
         oldPrice: import("@prisma/client/runtime/library").Decimal | null;
@@ -53,15 +53,15 @@ export declare class ProductsService {
         category: {
             id: string;
             name: string;
+            createdAt: Date;
             slug: string;
             icon: string | null;
-            createdAt: Date;
         };
         types: {
             id: string;
             name: string;
-            createdAt: Date;
             isActive: boolean;
+            createdAt: Date;
             updatedAt: Date;
             oldPrice: import("@prisma/client/runtime/library").Decimal | null;
             price: import("@prisma/client/runtime/library").Decimal;
@@ -71,10 +71,10 @@ export declare class ProductsService {
     } & {
         id: string;
         name: string;
-        slug: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         description: string | null;
         rating: number;
         oldPrice: import("@prisma/client/runtime/library").Decimal | null;
@@ -88,15 +88,15 @@ export declare class ProductsService {
         category: {
             id: string;
             name: string;
+            createdAt: Date;
             slug: string;
             icon: string | null;
-            createdAt: Date;
         };
         types: {
             id: string;
             name: string;
-            createdAt: Date;
             isActive: boolean;
+            createdAt: Date;
             updatedAt: Date;
             oldPrice: import("@prisma/client/runtime/library").Decimal | null;
             price: import("@prisma/client/runtime/library").Decimal;
@@ -106,10 +106,10 @@ export declare class ProductsService {
     } & {
         id: string;
         name: string;
-        slug: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         description: string | null;
         rating: number;
         oldPrice: import("@prisma/client/runtime/library").Decimal | null;
@@ -123,8 +123,8 @@ export declare class ProductsService {
         types: {
             id: string;
             name: string;
-            createdAt: Date;
             isActive: boolean;
+            createdAt: Date;
             updatedAt: Date;
             oldPrice: import("@prisma/client/runtime/library").Decimal | null;
             price: import("@prisma/client/runtime/library").Decimal;
@@ -134,10 +134,10 @@ export declare class ProductsService {
     } & {
         id: string;
         name: string;
-        slug: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         description: string | null;
         rating: number;
         oldPrice: import("@prisma/client/runtime/library").Decimal | null;

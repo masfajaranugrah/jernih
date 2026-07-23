@@ -7,8 +7,8 @@ export declare class ComplaintsService {
     create(userId: string, dto: CreateComplaintDto): Promise<{
         user: {
             id: string;
-            name: string;
             email: string;
+            name: string;
         };
     } & {
         id: string;
@@ -48,8 +48,8 @@ export declare class ComplaintsService {
     findOne(id: string): Promise<{
         user: {
             id: string;
-            name: string;
             email: string;
+            name: string;
         };
         mitra: {
             id: string;
@@ -67,6 +67,51 @@ export declare class ComplaintsService {
             addressId: string | null;
             paymentMethod: string | null;
             shippingCost: import("@prisma/client/runtime/library").Decimal;
+            shippingCourier: string | null;
+            trackingNumber: string | null;
+            voucherUseId: string | null;
+            subtotal: import("@prisma/client/runtime/library").Decimal;
+            discountAmount: import("@prisma/client/runtime/library").Decimal;
+            paymentProof: string | null;
+            paidAt: Date | null;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        description: string;
+        images: string[];
+        mitraId: string | null;
+        status: import(".prisma/client").$Enums.ComplaintStatus;
+        orderId: string | null;
+        title: string;
+        resolution: string | null;
+    }>;
+    findOneSafe(id: string, requesterId: string, requesterRole: string): Promise<{
+        user: {
+            id: string;
+            email: string;
+            name: string;
+        };
+        mitra: {
+            id: string;
+            storeName: string;
+        };
+        order: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            userId: string;
+            total: import("@prisma/client/runtime/library").Decimal;
+            notes: string | null;
+            status: import(".prisma/client").$Enums.OrderStatus;
+            orderNumber: string | null;
+            addressId: string | null;
+            paymentMethod: string | null;
+            shippingCost: import("@prisma/client/runtime/library").Decimal;
+            shippingCourier: string | null;
+            trackingNumber: string | null;
             voucherUseId: string | null;
             subtotal: import("@prisma/client/runtime/library").Decimal;
             discountAmount: import("@prisma/client/runtime/library").Decimal;

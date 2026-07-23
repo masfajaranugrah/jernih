@@ -9,10 +9,10 @@ export declare class RentalsController {
     findAllItems(search?: string, all?: string): Promise<{
         id: string;
         name: string;
-        slug: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         description: string | null;
         rating: number;
         images: string[];
@@ -23,10 +23,10 @@ export declare class RentalsController {
     findItemById(id: string): Promise<{
         id: string;
         name: string;
-        slug: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         description: string | null;
         rating: number;
         images: string[];
@@ -37,10 +37,10 @@ export declare class RentalsController {
     findItemBySlug(slug: string): Promise<{
         id: string;
         name: string;
-        slug: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         description: string | null;
         rating: number;
         images: string[];
@@ -48,13 +48,13 @@ export declare class RentalsController {
         pricePerDay: import("@prisma/client/runtime/library").Decimal;
         deposit: import("@prisma/client/runtime/library").Decimal | null;
     }>;
-    createItem(req: any, dto: CreateRentalItemDto): Promise<{
+    createItem(dto: CreateRentalItemDto): Promise<{
         id: string;
         name: string;
-        slug: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         description: string | null;
         rating: number;
         images: string[];
@@ -65,10 +65,10 @@ export declare class RentalsController {
     updateItem(id: string, dto: UpdateRentalItemDto): Promise<{
         id: string;
         name: string;
-        slug: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         description: string | null;
         rating: number;
         images: string[];
@@ -79,10 +79,10 @@ export declare class RentalsController {
     removeItem(id: string): Promise<{
         id: string;
         name: string;
-        slug: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         description: string | null;
         rating: number;
         images: string[];
@@ -94,10 +94,10 @@ export declare class RentalsController {
         rentalItem: {
             id: string;
             name: string;
-            slug: string;
-            createdAt: Date;
             isActive: boolean;
+            createdAt: Date;
             updatedAt: Date;
+            slug: string;
             description: string | null;
             rating: number;
             images: string[];
@@ -122,16 +122,16 @@ export declare class RentalsController {
     findAll(req: any, mitraId?: string): Promise<({
         user: {
             id: string;
-            name: string;
             email: string;
+            name: string;
         };
         rentalItem: {
             id: string;
             name: string;
-            slug: string;
-            createdAt: Date;
             isActive: boolean;
+            createdAt: Date;
             updatedAt: Date;
+            slug: string;
             description: string | null;
             rating: number;
             images: string[];
@@ -153,11 +153,11 @@ export declare class RentalsController {
         totalDays: number;
         totalPrice: import("@prisma/client/runtime/library").Decimal;
     })[]>;
-    findOne(id: string): Promise<{
+    findOne(req: any, id: string): Promise<{
         user: {
             id: string;
-            name: string;
             email: string;
+            name: string;
             phone: string;
         };
         mitra: {
@@ -167,10 +167,10 @@ export declare class RentalsController {
         rentalItem: {
             id: string;
             name: string;
-            slug: string;
-            createdAt: Date;
             isActive: boolean;
+            createdAt: Date;
             updatedAt: Date;
+            slug: string;
             description: string | null;
             rating: number;
             images: string[];

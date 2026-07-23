@@ -5,56 +5,56 @@ export declare class UsersController {
     constructor(usersService: UsersService);
     findAll(): Promise<{
         id: string;
-        name: string;
-        createdAt: Date;
         email: string;
+        name: string;
         phone: string;
         avatar: string;
         role: import(".prisma/client").$Enums.Role;
         isActive: boolean;
+        createdAt: Date;
     }[]>;
     getMe(req: any): Promise<{
         id: string;
-        name: string;
-        createdAt: Date;
-        _count: {
-            orders: number;
-            wishlist: number;
-        };
         email: string;
+        name: string;
         phone: string;
         avatar: string;
         role: import(".prisma/client").$Enums.Role;
         isActive: boolean;
+        createdAt: Date;
         mitra: {
             id: string;
             storeName: string;
             isVerified: boolean;
+        };
+        _count: {
+            orders: number;
+            wishlist: number;
         };
     }>;
-    findOne(id: string): Promise<{
+    findOne(req: any, id: string): Promise<{
         id: string;
-        name: string;
-        createdAt: Date;
-        _count: {
-            orders: number;
-            wishlist: number;
-        };
         email: string;
+        name: string;
         phone: string;
         avatar: string;
         role: import(".prisma/client").$Enums.Role;
         isActive: boolean;
+        createdAt: Date;
         mitra: {
             id: string;
             storeName: string;
             isVerified: boolean;
+        };
+        _count: {
+            orders: number;
+            wishlist: number;
         };
     }>;
     updateMe(req: any, dto: UpdateUserDto): Promise<{
         id: string;
-        name: string;
         email: string;
+        name: string;
         phone: string;
         avatar: string;
         role: import(".prisma/client").$Enums.Role;

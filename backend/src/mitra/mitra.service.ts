@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMitraDto } from './dto/create-mitra.dto';
 import { UpdateMitraDto } from './dto/update-mitra.dto';
@@ -54,6 +54,15 @@ export class MitraService {
   }
 
   async update(id: string, dto: UpdateMitraDto) {
+    return this.prisma.mitra.update({ where: { id }, data: dto });
+  }
+
+  /** update dengan IDOR check — hanya pemilik mitra */
+  async updateSafe(id: string, dto: UpdateMitraDto, userId: string) {
+    const mitra = await this.findOne(id);
+    if (mitra.userId !== userId) {
+      throw new ForbiddenException('Anda tidak memiliki akses ke mitra ini');
+    }
     return this.prisma.mitra.update({ where: { id }, data: dto });
   }
 

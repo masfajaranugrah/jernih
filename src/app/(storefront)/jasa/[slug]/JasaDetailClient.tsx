@@ -35,9 +35,20 @@ function parsePackages(description: string | null | undefined) {
 
 function cleanDescription(description: string | null | undefined) {
   if (!description) return "";
-  const start = description.indexOf("||PACKAGES_START||");
-  if (start === -1) return description.trim();
-  return description.slice(0, start).trim();
+  return description
+    .replace(/\|\|PACKAGES_START\|\|[\s\S]*?\|\|PACKAGES_END\|\|/g, "")
+    .replace(/\|\|METHODOLOGY_START\|\|[\s\S]*?\|\|METHODOLOGY_END\|\|/g, "")
+    .trim();
+}
+
+function parseMethodology(description: string | null | undefined): string {
+  if (!description) return "";
+  const start = description.indexOf("||METHODOLOGY_START||");
+  const end = description.indexOf("||METHODOLOGY_END||");
+  if (start !== -1 && end !== -1) {
+    return description.slice(start + "||METHODOLOGY_START||".length, end).trim();
+  }
+  return "";
 }
 
 const PHONE_NUMBER = "6281234567890";
@@ -88,7 +99,7 @@ function ShareModal({ open, onClose, title }: { open: boolean; onClose: () => vo
               rel="noopener noreferrer"
               className="flex flex-col items-center gap-2"
             >
-              <div className={`w-12 h-12 ${s.color} rounded-full flex items-center justify-center text-white shadow-md hover:scale-110 transition-transform`}>
+              <div className={`w-12 h-12 ${s.color} rounded-full flex items-center justify-center text-white shadow-md`}>
                 <span className="material-symbols-outlined text-xl">
                   {s.name === "Facebook" ? "facebook" : s.name === "Twitter" ? "X" : s.name === "WhatsApp" ? "chat" : s.name === "LinkedIn" ? "work" : "send"}
                 </span>
@@ -111,6 +122,7 @@ export default function JasaDetailClient({ service }: { service: ApiService }) {
   const images = service.images ?? [];
   const packages = parsePackages(service.description);
   const description = cleanDescription(service.description);
+  const methodologyText = parseMethodology(service.description);
   const currentPkg = packages?.[activePkg] ?? null;
 
   const TABS: { id: TabId; label: string }[] = [
@@ -138,19 +150,16 @@ export default function JasaDetailClient({ service }: { service: ApiService }) {
           <span className="text-[#0b1c30] font-medium line-clamp-1">{service.name}</span>
         </nav>
 
-        {/* Hero: Gallery + Pricing */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-16">
+        {/* Two-Column Layout ala Fastwork */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-          {/* Left: Carousel + Info */}
-          <div className="lg:col-span-7 flex flex-col gap-4">
-            {/* Main image */}
+          {/* ═══ LEFT COLUMN: Gallery + Info + Tabs ═══ */}
+          <div className="lg:col-span-8 flex flex-col gap-6">
+
+            {/* ── Gallery ── */}
             <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-[#e5eeff] shadow-sm group">
               {images.length > 0 ? (
-                <img
-                  src={images[activeImg]}
-                  alt={service.name}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
+                <img src={images[activeImg]} alt={service.name} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
                   <span className="material-symbols-outlined text-7xl text-[#737784]">design_services</span>
@@ -158,208 +167,92 @@ export default function JasaDetailClient({ service }: { service: ApiService }) {
               )}
               {images.length > 1 && (
                 <div className="absolute inset-0 flex items-center justify-between p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => setActiveImg((p) => (p - 1 + images.length) % images.length)}
-                    className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-[#0b1c30] hover:bg-white transition-colors shadow-sm"
-                  >
+                  <button onClick={() => setActiveImg((p) => (p - 1 + images.length) % images.length)}
+                    className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-[#0b1c30] hover:bg-white transition-colors shadow-sm">
                     <span className="material-symbols-outlined">chevron_left</span>
                   </button>
-                  <button
-                    onClick={() => setActiveImg((p) => (p + 1) % images.length)}
-                    className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-[#0b1c30] hover:bg-white transition-colors shadow-sm"
-                  >
+                  <button onClick={() => setActiveImg((p) => (p + 1) % images.length)}
+                    className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-[#0b1c30] hover:bg-white transition-colors shadow-sm">
                     <span className="material-symbols-outlined">chevron_right</span>
                   </button>
                 </div>
               )}
+              <div className="absolute bottom-3 right-3 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                {activeImg + 1}/{images.length || 1}
+              </div>
             </div>
 
             {/* Thumbnails */}
             {images.length > 1 && (
-              <div className="flex gap-4 overflow-x-auto pb-2">
-                {images.slice(0, 4).map((img, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setActiveImg(i)}
-                    className={`flex-shrink-0 w-24 aspect-video rounded-lg overflow-hidden border-2 transition-all ${
-                      activeImg === i
-                        ? "border-[#003c90] opacity-100"
-                        : "border-transparent opacity-70 hover:opacity-100"
-                    }`}
-                  >
+              <div className="flex gap-3 overflow-x-auto pb-1">
+                {images.slice(0, 6).map((img, i) => (
+                  <button key={i} onClick={() => setActiveImg(i)}
+                    className={`flex-shrink-0 w-20 aspect-video rounded-lg overflow-hidden border-2 transition-all ${
+                      activeImg === i ? "border-[#003c90] opacity-100" : "border-transparent opacity-60 hover:opacity-100"
+                    }`}>
                     <img src={img} alt={`thumb-${i}`} className="w-full h-full object-cover" />
                   </button>
                 ))}
-                {images.length > 4 && (
-                  <button className="flex-shrink-0 w-24 aspect-video rounded-lg bg-[#e5eeff] flex items-center justify-center text-[#737784] hover:text-[#003c90] hover:bg-[#dce9ff] transition-colors">
-                    <span className="material-symbols-outlined">add_photo_alternate</span>
-                  </button>
-                )}
               </div>
             )}
 
-            {/* Title + Description (always visible on left) */}
-            <div className="mt-4">
-              <div className="flex items-center gap-3 mb-2">
+            {/* ── Service Title + Badges ── */}
+            <div>
+              <div className="flex flex-wrap items-center gap-3 mb-3">
                 <span className="px-3 py-1 bg-[#d3e4fe] text-[#003c90] text-xs font-semibold rounded-full">
                   {service.category?.name ?? "Layanan"}
                 </span>
                 {service.rating > 0 && (
                   <div className="flex items-center gap-1 text-[#003c90]">
                     <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                    <span className="text-xs font-semibold ml-1">{service.rating.toFixed(1)} ({Math.floor(service.rating * 27)} ulasan)</span>
+                    <span className="text-xs font-semibold ml-1">{service.rating.toFixed(1)}</span>
                   </div>
                 )}
+                <span className="text-xs text-[#737784]">Terjual {Math.floor(service.rating * 5) || 1} kali</span>
               </div>
-              <h1 className="text-3xl md:text-4xl font-bold text-[#0b1c30] mb-4 leading-tight">{service.name}</h1>
-              {description && (
-                <p className="text-base md:text-lg text-[#434653] leading-relaxed max-w-2xl">{description}</p>
-              )}
+              <h1 className="text-2xl md:text-3xl font-bold text-[#0b1c30] leading-tight">{service.name}</h1>
             </div>
-          </div>
 
-          {/* Right: Package Switcher */}
-          <div className="lg:col-span-5">
-            <div className="sticky top-28 bg-white rounded-xl border border-[#c3c6d5] shadow-sm p-6 lg:p-8">
-              {/* Package Tabs */}
-              {packages && packages.length > 0 && (
-                <div className="flex p-1 bg-[#e5eeff] rounded-lg mb-6" role="tablist">
-                  {packages.map((pkg: { name: string }, i: number) => (
-                    <button
-                      key={i}
-                      onClick={() => setActivePkg(i)}
-                      className={`flex-1 py-2 px-4 rounded-md text-xs font-semibold transition-colors focus:outline-none ${
-                        activePkg === i
-                          ? "bg-white shadow-sm text-[#003c90]"
-                          : "text-[#434653] hover:text-[#003c90]"
-                      }`}
-                      role="tab"
-                      aria-selected={activePkg === i}
-                    >
-                      {pkg.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Package Content */}
-              <div>
-                <div className="flex justify-between items-baseline mb-2">
-                  <h2 className="text-lg font-bold text-[#0b1c30]">{currentPkg?.name ?? "Paket"}</h2>
-                  <span className="text-2xl font-bold text-[#003c90]">
-                    {currentPkg?.price ? formatRupiah(currentPkg.price) : formatRupiah(service.priceFrom)}
-                  </span>
-                </div>
-                <p className="text-sm text-[#434653] mb-6">
-                  {currentPkg?.name === "Basic"
-                    ? "Cocok untuk kebutuhan dasar."
-                    : currentPkg?.name === "Pro"
-                    ? "Sempurna untuk bisnis yang berkembang."
-                    : currentPkg?.name === "Enterprise"
-                    ? "Solusi lengkap untuk skala besar."
-                    : `Mulai dari ${formatRupiah(service.priceFrom)}/${service.unit}`}
-                </p>
-
-                {/* Features */}
-                <div className="space-y-4 mb-8">
-                  {(currentPkg?.features ?? []).slice(0, 5).map((f: string, i: number) => (
-                    <div key={i} className="flex items-start gap-3">
-                      <span className="material-symbols-outlined text-[#006a61] mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                      <span className="text-sm text-[#434653]">{f}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Delivery estimate */}
-                <div className="flex items-center gap-2 mb-6 text-xs text-[#737784]">
-                  <span className="material-symbols-outlined text-base">schedule</span>
-                  <span>Estimasi pengerjaan: 14-21 hari</span>
-                </div>
-
-                {/* Buttons */}
-                <a
-                  href={`https://wa.me/${PHONE_NUMBER}?text=Halo%20saya%20tertarik%20dengan%20${encodeURIComponent(service.name)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex w-full items-center justify-center gap-2 bg-[#003c90] text-white font-semibold text-sm py-4 rounded-lg hover:bg-[#0f52ba] transition-colors shadow-sm"
-                >
-                  <span>Konsultasi Sekarang</span>
-                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                </a>
-                <button
-                  onClick={() => setShareOpen(true)}
-                  className="flex w-full items-center justify-center gap-2 mt-3 border border-[#003c90] text-[#003c90] font-semibold text-sm py-4 rounded-lg hover:bg-[#d9e2ff] transition-colors"
-                >
-                  <span className="material-symbols-outlined text-base">share</span>
-                  Bagikan
+            {/* ── Tab Navigation ── */}
+            <div className="flex border-b border-[#c3c6d5] gap-6">
+              {TABS.map((tab) => (
+                <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                  className={`pb-3 text-sm font-semibold transition-colors ${
+                    activeTab === tab.id ? "border-b-2 border-[#003c90] text-[#003c90]" : "text-[#737784] hover:text-[#003c90]"
+                  }`}>
+                  {tab.label}
                 </button>
-              </div>
+              ))}
             </div>
-          </div>
-        </div>
 
-        {/* Provider info */}
-        {service.mitra && (
-          <div className="flex items-center gap-3 mb-10 p-4 bg-white rounded-xl border border-[#c3c6d5]">
-            <div className="w-10 h-10 rounded-full bg-[#003c90] flex items-center justify-center flex-shrink-0">
-              {service.mitra.logo ? (
-                <img src={service.mitra.logo} alt="logo" className="w-full h-full object-cover rounded-full" />
-              ) : (
-                <span className="text-white text-xs font-bold">{service.mitra.storeName.charAt(0)}</span>
-              )}
-            </div>
-            <div>
-              <p className="text-xs text-[#737784]">Disediakan oleh</p>
-              <p className="text-sm font-semibold text-[#003c90]">{service.mitra.storeName}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Tabs: Deskripsi / Paket / Portofolio */}
-        <div className="pb-16">
-          <div className="flex border-b border-[#c3c6d5] mb-6 gap-6">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`pb-4 text-sm font-semibold transition-colors ${
-                  activeTab === tab.id ? "active-tab" : "text-[#737784] hover:text-[#003c90]"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {activeTab === "deskripsi" && (
+            {activeTab === "deskripsi" && (
             <div className="space-y-8 py-4 max-w-4xl">
-              <div>
-                <h3 className="text-xl font-bold text-[#003c90] mb-4">Proses Layanan yang Terpersonalisasi</h3>
-                {description ? (
-                  <p className="whitespace-pre-line text-[#434653] text-sm leading-relaxed">{description}</p>
-                ) : (
-                  <p className="text-[#737784] italic text-sm">Belum ada deskripsi untuk jasa ini.</p>
-                )}
-              </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
-                {[
-                  { step: "1", title: "Discovery & Briefing", desc: "Pertemuan awal untuk memahami kebutuhan, gaya, dan anggaran Anda secara mendalam." },
-                  { step: "2", title: "Konsep & Moodboard", desc: "Penyusunan palet, material, dan referensi visual untuk menyatukan visi." },
-                  { step: "3", title: "Eksekusi & Delivery", desc: "Pengerjaan detail dengan standar kualitas tinggi sesuai timeline yang disepakati." },
-                  { step: "4", title: "Revisi & Finalisasi", desc: "Penyesuaian berdasarkan feedback hingga Anda puas dengan hasilnya." },
-                ].map((item) => (
-                  <div key={item.step} className="flex gap-4">
-                    <span className="w-8 h-8 rounded-full bg-[#d3e4fe] flex items-center justify-center font-bold text-[#003c90] shrink-0">
-                      {item.step}
-                    </span>
+              {methodologyText ? (
+                <div className="whitespace-pre-line text-[#434653] text-sm leading-relaxed bg-[#f0f4ff] rounded-xl p-6 border border-[#d3e4fe]">
+                  <h4 className="font-bold text-[#003c90] mb-3 text-base">Metodologi & Proses</h4>
+                  {methodologyText}
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-6">
+                  {[
+                    { step: "1", title: "Discovery & Briefing", desc: "Pertemuan awal untuk memahami kebutuhan, gaya, dan anggaran Anda secara mendalam." },
+                    { step: "2", title: "Konsep & Moodboard", desc: "Penyusunan palet, material, dan referensi visual untuk menyatukan visi." },
+                    { step: "3", title: "Eksekusi & Delivery", desc: "Pengerjaan detail dengan standar kualitas tinggi sesuai timeline yang disepakati." },
+                    { step: "4", title: "Revisi & Finalisasi", desc: "Penyesuaian berdasarkan feedback hingga Anda puas dengan hasilnya." },
+                  ].map((item) => (
+                    <div key={item.step} className="flex gap-4">
+                      <span className="w-8 h-8 rounded-full bg-[#d3e4fe] flex items-center justify-center font-bold text-[#003c90] shrink-0">
+                        {item.step}
+                      </span>
                     <div>
                       <h4 className="font-semibold text-[#0b1c30] text-sm">{item.title}</h4>
                       <p className="text-[#434653] text-sm mt-1">{item.desc}</p>
                     </div>
                   </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
 
               <div className="grid sm:grid-cols-3 gap-4 mt-2">
                 <div className="rounded-xl border border-[#c3c6d5] bg-white p-4 flex items-start gap-3">
@@ -392,7 +285,104 @@ export default function JasaDetailClient({ service }: { service: ApiService }) {
             </div>
           )}
 
-          {activeTab === "paket" && (
+          </div>
+          {/* ═══ RIGHT COLUMN: Price + CTA + Trust ═══ */}
+          <div className="lg:col-span-4">
+            <div className="sticky top-28 space-y-6">
+              {/* Price Card */}
+              <div className="bg-white rounded-xl border border-[#c3c6d5] shadow-sm p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm text-[#737784]">Harga Mulai</span>
+                  {packages && packages.length > 0 && (
+                    <span className="text-[10px] bg-[#d3e4fe] text-[#003c90] font-semibold px-2 py-0.5 rounded">
+                      {packages.length} paket
+                    </span>
+                  )}
+                </div>
+                <div className="text-3xl font-bold text-[#003c90] mb-1">
+                  {currentPkg?.price ? formatRupiah(currentPkg.price) : formatRupiah(service.priceFrom)}
+                </div>
+                <p className="text-xs text-[#737784] mb-5">/{service.unit}</p>
+
+                {/* CTA Buttons */}
+                <a href={`https://wa.me/${PHONE_NUMBER}?text=Halo%2C%20saya%20tertarik%20dengan%20paket%20${encodeURIComponent(currentPkg?.name ?? "")}%20${encodeURIComponent(service.name)}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="flex w-full items-center justify-center gap-2 bg-[#003c90] text-white font-semibold text-sm py-3.5 rounded-lg hover:bg-[#0f52ba] transition-colors shadow-sm">
+                  <span>Konsultasi Sekarang</span>
+                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                </a>
+                <button onClick={() => setShareOpen(true)}
+                  className="flex w-full items-center justify-center gap-2 mt-2.5 border border-[#003c90] text-[#003c90] font-semibold text-sm py-3 rounded-lg hover:bg-[#d9e2ff] transition-colors">
+                  <span className="material-symbols-outlined text-base">share</span>
+                  Bagikan
+                </button>
+              </div>
+
+              {/* Provider Info */}
+              {service.mitra && (
+                <div className="bg-white rounded-xl border border-[#c3c6d5] p-5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-[#737784] mb-3">Disediakan Oleh</p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[#003c90] flex items-center justify-center flex-shrink-0">
+                      {service.mitra.logo ? (
+                        <img src={service.mitra.logo} alt="logo" className="w-full h-full object-cover rounded-full" />
+                      ) : (
+                        <span className="text-white text-xs font-bold">{service.mitra.storeName.charAt(0)}</span>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-[#0b1c30]">{service.mitra.storeName}</p>
+                      {service.mitra.city && <p className="text-xs text-[#737784]">{service.mitra.city}</p>}
+                    </div>
+                  </div>
+                  <p className="text-xs text-[#737784] mt-3 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-sm">verified</span>
+                    Penyelesaian 100%
+                  </p>
+                </div>
+              )}
+
+              {/* Trust Badge */}
+              <div className="bg-gradient-to-br from-[#003c90]/5 to-[#003c90]/10 rounded-xl border border-[#003c90]/20 p-5">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#003c90] flex items-center justify-center flex-shrink-0">
+                    <span className="material-symbols-outlined text-white text-lg">verified</span>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-[#003c90]">Garansi Jasa</h4>
+                    <p className="text-xs text-[#434653] mt-1 leading-relaxed">
+                      Pesanan Anda aman dengan sistem escrow. Dana akan dirilis setelah pekerjaan selesai dan Anda setuju.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* How to Hire */}
+              <div className="bg-white rounded-xl border border-[#c3c6d5] p-5">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[#737784] mb-4">Cara Pesan</h4>
+                <div className="space-y-4">
+                  {[
+                    { step: "1", title: "Diskusi", desc: "Chat dengan penyedia jasa" },
+                    { step: "2", title: "Setuju & Bayar", desc: "Sepakat harga, lakukan pembayaran" },
+                    { step: "3", title: "Selesai & Review", desc: "Terima hasil & beri ulasan" },
+                  ].map((item) => (
+                    <div key={item.step} className="flex gap-3">
+                      <span className="w-6 h-6 rounded-full bg-[#d3e4fe] flex items-center justify-center text-[10px] font-bold text-[#003c90] shrink-0 mt-0.5">
+                        {item.step}
+                      </span>
+                      <div>
+                        <p className="text-sm font-semibold text-[#0b1c30]">{item.title}</p>
+                        <p className="text-xs text-[#737784]">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {activeTab === "paket" && (
             <div className="py-4">
               {!packages || packages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -400,14 +390,13 @@ export default function JasaDetailClient({ service }: { service: ApiService }) {
                   <p className="text-[#737784] text-sm">Belum ada paket layanan yang tersedia.</p>
                 </div>
               ) : (
-                <div className="grid md:grid-cols-3 gap-5 max-w-4xl">
+                <div className="space-y-5 max-w-2xl">
                   {packages.map((pkg: { name: string; price?: number | null; recommended?: boolean; features: string[] }, i: number) => (
-                    <div
-                      key={i}
-                      className={`p-6 rounded-xl shadow-sm space-y-4 relative ${
-                        pkg.recommended
-                          ? "bg-white border-2 border-[#003c90] shadow-md"
-                          : "bg-white border border-[#c3c6d5]"
+                    <div key={i} onClick={() => setActivePkg(i)}
+                      className={`p-6 rounded-xl shadow-sm space-y-4 relative cursor-pointer transition-all hover:shadow-md ${
+                        activePkg === i
+                          ? "ring-2 ring-[#003c90] bg-white border-2 border-[#003c90] shadow-md"
+                          : "bg-white border border-[#c3c6d5] hover:border-[#003c90]/40"
                       }`}
                     >
                       {pkg.recommended && (
@@ -427,7 +416,8 @@ export default function JasaDetailClient({ service }: { service: ApiService }) {
                           </li>
                         ))}
                       </ul>
-                      <button className={`w-full mt-2 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                      <button onClick={() => { setActivePkg(i); setActiveTab("paket"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                        className={`w-full mt-2 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
                         pkg.recommended
                           ? "bg-[#003c90] text-white hover:bg-[#0f52ba]"
                           : "border border-[#c3c6d5] text-[#003c90] hover:bg-[#e5eeff]"
@@ -456,7 +446,7 @@ export default function JasaDetailClient({ service }: { service: ApiService }) {
                       onClick={() => { setActiveImg(i); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                       className="group relative overflow-hidden rounded-xl aspect-square cursor-pointer"
                     >
-                      <img src={img} alt={`portofolio-${i + 1}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                      <img src={img} alt={`portofolio-${i + 1}`} className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100 transition-opacity">
                         <span className="text-white font-semibold text-sm">Foto {i + 1}</span>
                         <span className="text-white/70 text-xs">{service.name}</span>
@@ -467,7 +457,6 @@ export default function JasaDetailClient({ service }: { service: ApiService }) {
               )}
             </div>
           )}
-        </div>
 
         {/* Reviews Section */}
         <section className="mb-16">

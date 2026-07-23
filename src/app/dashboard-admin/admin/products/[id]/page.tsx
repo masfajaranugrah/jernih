@@ -1,7 +1,6 @@
 "use client";
 
 import { useParams, notFound } from "next/navigation";
-import DashboardSidebar from "@/app/dashboard-admin/DashboardSidebar";
 import EditProductForm from "../EditProductForm";
 import type { ApiProduct } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
@@ -81,7 +80,6 @@ export default function EditProductPage() {
         .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; vertical-align:middle; }
       `}</style>
 
-      <DashboardSidebar />
 
       {loading || !product ? (
         <EditSkeleton />

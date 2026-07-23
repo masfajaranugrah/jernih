@@ -7,8 +7,8 @@ export declare class OrdersService {
     create(userId: string, dto: CreateOrderDto): Promise<{
         address: {
             id: string;
-            createdAt: Date;
             phone: string;
+            createdAt: Date;
             updatedAt: Date;
             userId: string;
             city: string;
@@ -41,6 +41,8 @@ export declare class OrdersService {
         addressId: string | null;
         paymentMethod: string | null;
         shippingCost: import("@prisma/client/runtime/library").Decimal;
+        shippingCourier: string | null;
+        trackingNumber: string | null;
         voucherUseId: string | null;
         subtotal: import("@prisma/client/runtime/library").Decimal;
         discountAmount: import("@prisma/client/runtime/library").Decimal;
@@ -50,13 +52,13 @@ export declare class OrdersService {
     findAll(userId?: string, status?: string): Promise<({
         user: {
             id: string;
-            name: string;
             email: string;
+            name: string;
         };
         address: {
             id: string;
-            createdAt: Date;
             phone: string;
+            createdAt: Date;
             updatedAt: Date;
             userId: string;
             city: string;
@@ -67,7 +69,18 @@ export declare class OrdersService {
             postalCode: string;
             isDefault: boolean;
         };
-        items: {
+        items: ({
+            product: {
+                id: string;
+                name: string;
+                images: string[];
+            };
+            service: {
+                id: string;
+                name: string;
+                images: string[];
+            };
+        } & {
             id: string;
             name: string;
             price: import("@prisma/client/runtime/library").Decimal;
@@ -76,7 +89,7 @@ export declare class OrdersService {
             quantity: number;
             subtotal: import("@prisma/client/runtime/library").Decimal;
             orderId: string;
-        }[];
+        })[];
     } & {
         id: string;
         createdAt: Date;
@@ -89,23 +102,25 @@ export declare class OrdersService {
         addressId: string | null;
         paymentMethod: string | null;
         shippingCost: import("@prisma/client/runtime/library").Decimal;
+        shippingCourier: string | null;
+        trackingNumber: string | null;
         voucherUseId: string | null;
         subtotal: import("@prisma/client/runtime/library").Decimal;
         discountAmount: import("@prisma/client/runtime/library").Decimal;
         paymentProof: string | null;
         paidAt: Date | null;
     })[]>;
-    findOne(id: string): Promise<{
+    findOne(id: string, requesterId?: string, requesterRole?: string): Promise<{
         user: {
             id: string;
-            name: string;
             email: string;
+            name: string;
             phone: string;
         };
         address: {
             id: string;
-            createdAt: Date;
             phone: string;
+            createdAt: Date;
             updatedAt: Date;
             userId: string;
             city: string;
@@ -119,8 +134,8 @@ export declare class OrdersService {
         voucherUse: {
             voucher: {
                 id: string;
-                createdAt: Date;
                 isActive: boolean;
+                createdAt: Date;
                 updatedAt: Date;
                 description: string | null;
                 startDate: Date | null;
@@ -172,6 +187,8 @@ export declare class OrdersService {
         addressId: string | null;
         paymentMethod: string | null;
         shippingCost: import("@prisma/client/runtime/library").Decimal;
+        shippingCourier: string | null;
+        trackingNumber: string | null;
         voucherUseId: string | null;
         subtotal: import("@prisma/client/runtime/library").Decimal;
         discountAmount: import("@prisma/client/runtime/library").Decimal;
@@ -190,6 +207,31 @@ export declare class OrdersService {
         addressId: string | null;
         paymentMethod: string | null;
         shippingCost: import("@prisma/client/runtime/library").Decimal;
+        shippingCourier: string | null;
+        trackingNumber: string | null;
+        voucherUseId: string | null;
+        subtotal: import("@prisma/client/runtime/library").Decimal;
+        discountAmount: import("@prisma/client/runtime/library").Decimal;
+        paymentProof: string | null;
+        paidAt: Date | null;
+    }>;
+    sendBotMessage(orderId: string, customerId: string): Promise<{
+        message: string;
+    }>;
+    uploadPayment(id: string, userId: string, paymentProof: string): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        total: import("@prisma/client/runtime/library").Decimal;
+        notes: string | null;
+        status: import(".prisma/client").$Enums.OrderStatus;
+        orderNumber: string | null;
+        addressId: string | null;
+        paymentMethod: string | null;
+        shippingCost: import("@prisma/client/runtime/library").Decimal;
+        shippingCourier: string | null;
+        trackingNumber: string | null;
         voucherUseId: string | null;
         subtotal: import("@prisma/client/runtime/library").Decimal;
         discountAmount: import("@prisma/client/runtime/library").Decimal;

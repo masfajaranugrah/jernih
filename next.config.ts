@@ -23,8 +23,18 @@ const nextConfig: NextConfig = {
         source: "/dashboard-admin/:path*",
         headers: [
           { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           // No cache untuk halaman admin — selalu fresh
           { key: "Cache-Control", value: "no-store" },
+        ],
+      },
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
         ],
       },
       // _next/static headers dihapus — Next.js mengelola ini sendiri

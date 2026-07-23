@@ -40,9 +40,20 @@ function parsePackages(description: string | null | undefined): PackageTier[] | 
 
 function cleanDescription(description: string | null | undefined) {
   if (!description) return "";
-  const start = description.indexOf("||PACKAGES_START||");
-  if (start === -1) return description.trim();
-  return description.slice(0, start).trim();
+  return description
+    .replace(/\|\|PACKAGES_START\|\|[\s\S]*?\|\|PACKAGES_END\|\|/g, "")
+    .replace(/\|\|METHODOLOGY_START\|\|[\s\S]*?\|\|METHODOLOGY_END\|\|/g, "")
+    .trim();
+}
+
+function parseMethodology(description: string | null | undefined): string {
+  if (!description) return "";
+  const start = description.indexOf("||METHODOLOGY_START||");
+  const end = description.indexOf("||METHODOLOGY_END||");
+  if (start !== -1 && end !== -1) {
+    return description.slice(start + "||METHODOLOGY_START||".length, end).trim();
+  }
+  return "";
 }
 
 export default function EditServiceForm({ service }: { service: ApiService }) {
@@ -53,7 +64,7 @@ export default function EditServiceForm({ service }: { service: ApiService }) {
 
   const [name, setName] = useState(service.name);
   const [description, setDescription] = useState(cleanDescription(service.description));
-  const [methodology, setMethodology] = useState("");
+  const [methodology, setMethodology] = useState(parseMethodology(service.description));
   const [priceFrom, setPriceFrom] = useState(String(parseFloat(String(service.priceFrom))));
   const [unit, setUnit] = useState(service.unit ?? "project");
   const [isActive, setIsActive] = useState(service.isActive);
@@ -124,9 +135,11 @@ export default function EditServiceForm({ service }: { service: ApiService }) {
       features: t.features.split("\n").map((f) => f.trim()).filter(Boolean),
     }));
 
+    const methodologyData = methodology.trim();
     const fullDescription = [
       description,
       tiersData.length ? `||PACKAGES_START||${JSON.stringify(tiersData)}||PACKAGES_END||` : "",
+      methodologyData ? `||METHODOLOGY_START||${methodologyData}||METHODOLOGY_END||` : "",
     ].filter(Boolean).join("\n");
 
     startTransition(async () => {

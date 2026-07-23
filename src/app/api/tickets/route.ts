@@ -1,3 +1,4 @@
+import { bffResponse } from "@/lib/bff-response";
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL = process.env.API_URL ?? "http://localhost:3001/api";
@@ -24,7 +25,7 @@ export async function GET(req: NextRequest) {
   }
 
   const data = await res.json();
-  return NextResponse.json(data, { status: res.status });
+  return bffResponse(data, res.status);
 }
 
 /** POST /api/tickets — buat tiket bantuan baru */
@@ -34,7 +35,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
   }
 
-  const body = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ message: "Invalid JSON body" }, { status: 400 });
+  }
 
   let res: Response;
   try {
@@ -51,5 +57,5 @@ export async function POST(req: NextRequest) {
   }
 
   const data = await res.json();
-  return NextResponse.json(data, { status: res.status });
+  return bffResponse(data, res.status);
 }

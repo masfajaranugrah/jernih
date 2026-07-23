@@ -1,3 +1,4 @@
+import { bffResponse } from "@/lib/bff-response";
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL = process.env.API_URL ?? "http://localhost:3001/api";
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
   const data = await res.json();
 
   if (!res.ok) {
-    return NextResponse.json(data, { status: res.status });
+    return bffResponse(data, res.status);
   }
 
   const response = NextResponse.json(data);
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 365,
+    maxAge: 60 * 60 * 24 * 7, // 7 hari — sinkron dengan JWT_EXPIRES_IN
   });
   return response;
 }

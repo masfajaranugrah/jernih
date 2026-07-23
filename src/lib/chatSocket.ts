@@ -13,7 +13,7 @@ export function getChatSocket(token?: string): Socket {
     auth: token ? { token } : undefined,
     transports: ["websocket", "polling"],
     reconnection: true,
-    reconnectionAttempts: Infinity,
+    reconnectionAttempts: 10,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
     path: "/api/socket.io",
@@ -21,6 +21,11 @@ export function getChatSocket(token?: string): Socket {
 
   socket.on("connect_error", (err) => {
     console.warn("Socket connection error:", err.message);
+    // Stop reconnect jika token expired — redirect ke login
+    if (err.message === "jwt expired" || err.message === "invalid token") {
+      socket?.disconnect();
+      window.location.href = "/dashboard/pelanggan/login";
+    }
   });
 
   return socket;

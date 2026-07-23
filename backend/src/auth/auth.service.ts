@@ -38,7 +38,7 @@ export class AuthService {
         password: hashedPassword,
         name: dto.name,
         phone: dto.phone,
-        role: dto.role ?? 'CUSTOMER',
+        role: 'CUSTOMER', // Wajib — ignore apapun yang dikirim client
       },
       select: {
         id: true,
@@ -50,7 +50,7 @@ export class AuthService {
       },
     });
 
-    const token = this.signToken(user.id, user.email, user.role);
+    const token = await this.signToken(user.id, user.email, user.role);
 
     return { user, access_token: token };
   }
@@ -75,7 +75,7 @@ export class AuthService {
       throw new UnauthorizedException('Email atau password salah');
     }
 
-    const token = this.signToken(user.id, user.email, user.role);
+    const token = await this.signToken(user.id, user.email, user.role);
 
     const { password: _, ...userWithoutPassword } = user;
 
@@ -107,11 +107,44 @@ export class AuthService {
   }
 
   // ── Helper: sign JWT ────────────────────────────────────────────────────────
-  private signToken(userId: string, email: string, role: string): string {
-    const payload: JwtPayload = { sub: userId, email, role };
+  private async signToken(userId: string, email: string, role: string): Promise<string> {
+    // Baca tokenVersion dari DB — untuk deteksi logout / sesi expired
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { tokenVersion: true },
+    });
+    const payload: JwtPayload = {
+      sub: userId,
+      email,
+      role,
+      tokenVersion: user?.tokenVersion ?? 0,
+    };
     return this.jwt.sign(payload, {
       secret: this.config.get<string>('JWT_SECRET'),
       expiresIn: this.config.get<string>('JWT_EXPIRES_IN') ?? '7d',
     });
+  }
+
+  // ── Logout: increment tokenVersion — invalidate semua sesi sebelumnya ──────
+  async logout(userId: string) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { tokenVersion: { increment: 1 } },
+    });
+    return { message: 'Berhasil logout' };
+  }
+
+  // ── Refresh token: buat JWT baru dengan tokenVersion terbaru ─────────────
+  async refreshToken(userId: string, email: string, role: string) {
+    const token = await this.signToken(userId, email, role);
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true, email: true, name: true, phone: true,
+        role: true, createdAt: true,
+        mitra: { select: { id: true, storeName: true, isVerified: true, logo: true } },
+      },
+    });
+    return { user, access_token: token };
   }
 }

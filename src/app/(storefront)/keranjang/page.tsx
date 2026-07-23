@@ -12,6 +12,7 @@ import {
   type CartItem,
   CART_EVENT,
 } from "@/lib/cart";
+import { useAuth } from "@/lib/auth-context";
 
 function formatPrice(n: number) {
   return `Rp${n.toLocaleString("id-ID")}`;
@@ -31,6 +32,7 @@ type Address = {
 
 export default function KeranjangPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
   const [mounted, setMounted] = useState(false);
   const [notes, setNotes] = useState("");
@@ -114,8 +116,7 @@ export default function KeranjangPage() {
     setError(null);
 
     // Wajib login dulu — arahkan ke halaman login pelanggan
-    const stored = localStorage.getItem("mh_user");
-    if (!stored) {
+    if (!user) {
       router.push("/dashboard/pelanggan/login?from=/keranjang");
       return;
     }
@@ -151,8 +152,8 @@ export default function KeranjangPage() {
 
       // Sukses — kosongkan keranjang & arahkan ke halaman pesanan dashboard
       clearCart();
-      const user = JSON.parse(stored) as { slug: string };
-      router.push(`/dashboard/pelanggan/${user.slug}/orders`);
+      const slug = user?.slug ?? user?.name?.toLowerCase().replace(/\s+/g, '-') ?? '';
+      router.push(`/dashboard/pelanggan/${slug}/orders`);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Terjadi kesalahan");
       setSubmitting(false);

@@ -1,48 +1,42 @@
 import { CategoriesService } from './categories.service';
+import { CreateCategoryDto } from './dto/create-category.dto';
+import { UpdateCategoryDto } from './dto/update-category.dto';
 export declare class CategoriesController {
     private categoriesService;
     constructor(categoriesService: CategoriesService);
     findAll(): Promise<{
         id: string;
         name: string;
+        createdAt: Date;
         slug: string;
         icon: string | null;
-        createdAt: Date;
     }[]>;
     findOne(id: string): Promise<{
         id: string;
         name: string;
+        createdAt: Date;
         slug: string;
         icon: string | null;
-        createdAt: Date;
     }>;
-    create(dto: {
-        name: string;
-        slug?: string;
-        icon?: string;
-    }): Promise<{
+    create(dto: CreateCategoryDto): Promise<{
         id: string;
         name: string;
+        createdAt: Date;
         slug: string;
         icon: string | null;
-        createdAt: Date;
     }>;
-    update(id: string, dto: {
-        name?: string;
-        slug?: string;
-        icon?: string;
-    }): Promise<{
+    update(id: string, dto: UpdateCategoryDto): Promise<{
         id: string;
         name: string;
+        createdAt: Date;
         slug: string;
         icon: string | null;
-        createdAt: Date;
     }>;
     remove(id: string): Promise<{
         id: string;
         name: string;
+        createdAt: Date;
         slug: string;
         icon: string | null;
-        createdAt: Date;
     }>;
 }

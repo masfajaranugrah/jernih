@@ -17,7 +17,10 @@ const common_1 = require("@nestjs/common");
 const orders_service_1 = require("./orders.service");
 const create_order_dto_1 = require("./dto/create-order.dto");
 const update_order_status_dto_1 = require("./dto/update-order-status.dto");
+const upload_payment_dto_1 = require("./dto/upload-payment.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
+const roles_guard_1 = require("../auth/guards/roles.guard");
+const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 let OrdersController = class OrdersController {
     constructor(ordersService) {
         this.ordersService = ordersService;
@@ -29,11 +32,17 @@ let OrdersController = class OrdersController {
         const isAdmin = req.user.role === 'ADMIN';
         return this.ordersService.findAll(isAdmin ? undefined : req.user.id, status);
     }
-    findOne(id) {
-        return this.ordersService.findOne(id);
+    findOne(req, id) {
+        return this.ordersService.findOne(id, req.user.id, req.user.role);
     }
     updateStatus(id, dto) {
         return this.ordersService.updateStatus(id, dto);
+    }
+    sendBotMessage(req, id) {
+        return this.ordersService.sendBotMessage(id, req.user.id);
+    }
+    uploadPayment(req, id, dto) {
+        return this.ordersService.uploadPayment(id, req.user.id, dto.paymentProof);
     }
 };
 exports.OrdersController = OrdersController;
@@ -55,12 +64,15 @@ __decorate([
 ], OrdersController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], OrdersController.prototype, "findOne", null);
 __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('ADMIN'),
     (0, common_1.Patch)(':id/status'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
@@ -68,6 +80,25 @@ __decorate([
     __metadata("design:paramtypes", [String, update_order_status_dto_1.UpdateOrderStatusDto]),
     __metadata("design:returntype", void 0)
 ], OrdersController.prototype, "updateStatus", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('ADMIN'),
+    (0, common_1.Post)(':id/bot-message'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], OrdersController.prototype, "sendBotMessage", null);
+__decorate([
+    (0, common_1.Patch)(':id/payment'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, upload_payment_dto_1.UploadPaymentDto]),
+    __metadata("design:returntype", void 0)
+], OrdersController.prototype, "uploadPayment", null);
 exports.OrdersController = OrdersController = __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Controller)('orders'),

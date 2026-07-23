@@ -22,7 +22,12 @@ let RentalsService = class RentalsService {
         });
         if (!item)
             throw new common_1.NotFoundException('Item sewa tidak ditemukan');
-        const totalDays = Math.ceil((new Date(dto.endDate).getTime() - new Date(dto.startDate).getTime()) /
+        const start = new Date(dto.startDate);
+        const end = new Date(dto.endDate);
+        if (end <= start) {
+            throw new common_1.BadRequestException('Tanggal selesai harus setelah tanggal mulai');
+        }
+        const totalDays = Math.ceil((end.getTime() - start.getTime()) /
             (1000 * 60 * 60 * 24));
         const totalPrice = Number(item.pricePerDay) * totalDays;
         return this.prisma.rental.create({
@@ -63,6 +68,13 @@ let RentalsService = class RentalsService {
         });
         if (!rental)
             throw new common_1.NotFoundException('Data sewa tidak ditemukan');
+        return rental;
+    }
+    async findOneSafe(id, requesterId, requesterRole) {
+        const rental = await this.findOne(id);
+        if (rental.userId !== requesterId && requesterRole !== 'ADMIN') {
+            throw new common_1.ForbiddenException('Anda tidak memiliki akses ke data sewa ini');
+        }
         return rental;
     }
     async update(id, dto) {

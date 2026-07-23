@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { getHeroDataFromBackend } from "@/lib/hero-store";
+import { getHomepageSections } from "@/lib/homepage-settings";
 import { HeroSkeleton, PromoSkeleton } from "./components/Skeletons";
 import PromoSection from "./components/PromoSection";
 import ProductSection from "./components/ProductSection";
@@ -32,7 +33,7 @@ async function HeroContent() {
             fill
             priority
             sizes="(min-width: 1024px) 66vw, 100vw"
-            className="object-cover transition-transform duration-700 group-hover:scale-105"
+            className="object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/20 to-transparent" />
           <div className="relative z-10 flex h-full max-w-2xl flex-col justify-center p-8 text-white sm:p-12">
@@ -68,7 +69,7 @@ async function HeroContent() {
           <img
             src={b0.imageUrl}
             alt={b0.label}
-            className="absolute inset-0 h-full w-full object-cover opacity-40 transition-transform duration-500 group-hover:scale-110"
+            className="absolute inset-0 h-full w-full object-cover opacity-40"
           />
           <div className={`relative z-10 flex h-full flex-col justify-between p-6 text-white sm:p-8 ${
             b0.align === "right" ? "items-end text-right" : b0.align === "center" ? "items-center text-center" : "items-start"
@@ -165,26 +166,33 @@ async function HeroContent() {
   );
 }
 
-// ── Page utama — render langsung tanpa blocking fetch ────────────────────────
-export default function Home() {
+// ── Page utama — render sesuai pengaturan section dari admin ─────────────────
+export default async function Home() {
+  // Baca toggle section dari admin (homepage_sections). Selalu return default jika gagal.
+  const sections = await getHomepageSections();
+
   return (
     <>
       {/* ── Hero: stream dari backend database ── */}
-      <Suspense fallback={<HeroSkeleton />}>
-        <HeroContent />
-      </Suspense>
+      {sections.showHero && (
+        <Suspense fallback={<HeroSkeleton />}>
+          <HeroContent />
+        </Suspense>
+      )}
 
       {/* ── Main sections: masing-masing stream sendiri ── */}
       <main className="flex w-full flex-col gap-14 px-4 py-12 md:px-8 md:py-20">
 
-        <Suspense fallback={<PromoSkeleton />}>
-          <PromoSection />
-        </Suspense>
+        {sections.showPromo && (
+          <Suspense fallback={<PromoSkeleton />}>
+            <PromoSection />
+          </Suspense>
+        )}
 
         {/* Sections di bawah ini pakai TanStack Query — data real-time tanpa Next.js cache */}
-        <ProductSection />
-        <JasaSection />
-        <SewaSection />
+        {sections.showProduct && <ProductSection />}
+        {sections.showJasa && <JasaSection />}
+        {sections.showSewa && <SewaSection />}
 
       </main>
 

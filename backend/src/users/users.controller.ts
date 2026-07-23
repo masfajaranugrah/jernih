@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Delete, Param, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Patch, Delete, Param, Body, UseGuards, Request, ForbiddenException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -24,9 +24,12 @@ export class UsersController {
     return this.usersService.findOne(req.user.id);
   }
 
-  /** GET /api/users/:id */
+  /** GET /api/users/:id — hanya admin atau user yang bersangkutan */
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Request() req: any, @Param('id') id: string) {
+    if (req.user.id !== id && req.user.role !== 'ADMIN') {
+      throw new ForbiddenException('Anda tidak memiliki akses ke user ini');
+    }
     return this.usersService.findOne(id);
   }
 

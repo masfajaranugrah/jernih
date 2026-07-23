@@ -28,20 +28,12 @@ export default function SidebarPelanggan({ nama }: { nama: string }) {
     <>
       {/* Desktop sidebar */}
       <aside className="hidden md:flex h-screen w-64 fixed left-0 top-0 bg-white border-r border-[#e1e3e4] flex-col py-6 px-3 overflow-y-auto z-50 shadow-sm">
-        {/* Brand + avatar */}
-        <div className="mb-8 px-1 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#e7e8e9] overflow-hidden shrink-0">
+        {/* Brand */}
+        <div className="mb-8 px-1">
+          <Link href="/" className="inline-flex">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCl2-YncPXbaGQkoCESsmhtcSYO6idgm8Eq-TqCePrSZ7UfCmEU2hxTlqJkmcp_nMJPNdLsPwgLKFszUnKzXLWUmz6v-K8eMWjhaC8_vteIoR6RbSiFw3AmElGP2xneI5rqtiYTn-A5Q67dejBPyVYl53vR4IEFUAPKA4jz2PHcud1Pg5UoDXNeF6ZpWPbZx4Fpw1Gzrz6gyXoSdrL1bBAI41sLDdL8sTos3xeACWecV8AyxY4tHbkk"
-              alt="User"
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <div>
-            <h2 className="text-[#003527] font-bold text-lg leading-tight truncate">Jernih Creatife</h2>
-            <p className="text-xs text-[#404944]">Premium Member</p>
-          </div>
+            <img src="/logo.svg" alt="Jernih Creatife" className="h-10 w-auto" />
+          </Link>
         </div>
 
         {/* Nav */}

@@ -35,7 +35,7 @@ let AuthService = class AuthService {
                 password: hashedPassword,
                 name: dto.name,
                 phone: dto.phone,
-                role: dto.role ?? 'CUSTOMER',
+                role: 'CUSTOMER',
             },
             select: {
                 id: true,
@@ -46,7 +46,7 @@ let AuthService = class AuthService {
                 createdAt: true,
             },
         });
-        const token = this.signToken(user.id, user.email, user.role);
+        const token = await this.signToken(user.id, user.email, user.role);
         return { user, access_token: token };
     }
     async login(dto) {
@@ -63,7 +63,7 @@ let AuthService = class AuthService {
         if (!passwordMatch) {
             throw new common_1.UnauthorizedException('Email atau password salah');
         }
-        const token = this.signToken(user.id, user.email, user.role);
+        const token = await this.signToken(user.id, user.email, user.role);
         const { password: _, ...userWithoutPassword } = user;
         return { user: userWithoutPassword, access_token: token };
     }
@@ -89,12 +89,40 @@ let AuthService = class AuthService {
             },
         });
     }
-    signToken(userId, email, role) {
-        const payload = { sub: userId, email, role };
+    async signToken(userId, email, role) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: { tokenVersion: true },
+        });
+        const payload = {
+            sub: userId,
+            email,
+            role,
+            tokenVersion: user?.tokenVersion ?? 0,
+        };
         return this.jwt.sign(payload, {
             secret: this.config.get('JWT_SECRET'),
             expiresIn: this.config.get('JWT_EXPIRES_IN') ?? '7d',
         });
+    }
+    async logout(userId) {
+        await this.prisma.user.update({
+            where: { id: userId },
+            data: { tokenVersion: { increment: 1 } },
+        });
+        return { message: 'Berhasil logout' };
+    }
+    async refreshToken(userId, email, role) {
+        const token = await this.signToken(userId, email, role);
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true, email: true, name: true, phone: true,
+                role: true, createdAt: true,
+                mitra: { select: { id: true, storeName: true, isVerified: true, logo: true } },
+            },
+        });
+        return { user, access_token: token };
     }
 };
 exports.AuthService = AuthService;

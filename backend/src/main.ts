@@ -3,10 +3,19 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import * as compression from 'compression';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Security headers via helmet (non-CSP — CSP di-handle Next.js)
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
+    }),
+  );
 
   // Gzip/Brotli compression — kurangi ukuran response JSON hingga 70%
   app.use(compression({ level: 6, threshold: 1024 }));

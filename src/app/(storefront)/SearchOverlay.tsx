@@ -460,7 +460,7 @@ export default function SearchOverlay({ isOpen, onClose }: Props) {
                               alt={item.name}
                               fill
                               sizes="56px"
-                              className="object-cover transition-transform duration-500 group-hover:scale-105"
+                              className="object-cover"
                             />
                           ) : (
                             <div className="w-full h-full bg-[#edeeef] flex items-center justify-center text-gray-300">📷</div>
@@ -535,7 +535,7 @@ export default function SearchOverlay({ isOpen, onClose }: Props) {
                                 alt={item.name}
                                 fill
                                 sizes="56px"
-                                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                className="object-cover"
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-[#bfc9c3]">

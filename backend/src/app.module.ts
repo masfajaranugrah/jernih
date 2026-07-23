@@ -1,5 +1,7 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -18,10 +20,16 @@ import { UploadModule } from './upload/upload.module';
 import { SettingsModule } from './settings/settings.module';
 import { CategoriesModule } from './categories/categories.module';
 import { WishlistModule } from './wishlist/wishlist.module';
+import { CsrfOriginMiddleware } from './common/middleware/csrf-origin.middleware';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    // Rate limiting global: 100 request per 60 detik
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 100,
+    }]),
     PrismaModule,
     AuthModule,
     UsersModule,
@@ -41,5 +49,15 @@ import { WishlistModule } from './wishlist/wishlist.module';
     CategoriesModule,
     WishlistModule,
   ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(CsrfOriginMiddleware).forRoutes('*');
+  }
+}

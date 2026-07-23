@@ -25,8 +25,8 @@ export default async function DashboardPelangganLayout({
         .icon-fill { font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24; }
       `}</style>
       <SidebarPelanggan nama={nama} />
-      <main className="flex-1 md:ml-64">
-        <div className="p-6 md:p-10 max-w-[1280px] mx-auto overflow-x-hidden pb-24 md:pb-10">
+      <main className="flex-1 md:ml-64 flex flex-col min-h-0 max-w-[1280px] max-h-screen">
+        <div className="p-6 md:p-10 pb-24 md:pb-10 flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden">
           {children}
         </div>
       </main>

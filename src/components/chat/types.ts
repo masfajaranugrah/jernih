@@ -24,6 +24,7 @@ export type ChatMessage = {
   product: ChatProduct | null;
   isDeleted: boolean;
   isRead: boolean;
+  isSystem?: boolean;
   createdAt: string;
   sender?: ChatUser;
   receiver?: ChatUser;
@@ -52,6 +53,7 @@ export function formatChatTime(iso: string): string {
 
 /** Preview teks untuk inbox jika pesan tanpa teks */
 export function previewText(msg: ChatMessage): string {
+  if (msg.isSystem) return "🔔 " + msg.message.replace(/\n/g, " ").slice(0, 50);
   if (msg.isDeleted) return "Pesan telah dihapus";
   if (msg.message) return msg.message;
   if (msg.imageUrl) return "📷 Foto";

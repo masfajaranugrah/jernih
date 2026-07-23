@@ -5,8 +5,8 @@ export declare class VouchersController {
     constructor(vouchersService: VouchersService);
     create(dto: CreateVoucherDto): Promise<{
         id: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
         description: string | null;
         startDate: Date | null;
@@ -21,8 +21,8 @@ export declare class VouchersController {
     }>;
     findAll(): Promise<{
         id: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
         description: string | null;
         startDate: Date | null;
@@ -38,8 +38,8 @@ export declare class VouchersController {
     findAvailable(req: any): Promise<{
         used: boolean;
         id: string;
-        createdAt: Date;
         isActive: boolean;
+        createdAt: Date;
         updatedAt: Date;
         description: string | null;
         startDate: Date | null;
@@ -58,8 +58,8 @@ export declare class VouchersController {
     }): Promise<{
         voucher: {
             id: string;
-            createdAt: Date;
             isActive: boolean;
+            createdAt: Date;
             updatedAt: Date;
             description: string | null;
             startDate: Date | null;

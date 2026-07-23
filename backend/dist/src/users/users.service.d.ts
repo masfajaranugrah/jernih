@@ -5,37 +5,37 @@ export declare class UsersService {
     constructor(prisma: PrismaService);
     findAll(): Promise<{
         id: string;
-        name: string;
-        createdAt: Date;
         email: string;
+        name: string;
         phone: string;
         avatar: string;
         role: import(".prisma/client").$Enums.Role;
         isActive: boolean;
+        createdAt: Date;
     }[]>;
     findOne(id: string): Promise<{
         id: string;
-        name: string;
-        createdAt: Date;
-        _count: {
-            orders: number;
-            wishlist: number;
-        };
         email: string;
+        name: string;
         phone: string;
         avatar: string;
         role: import(".prisma/client").$Enums.Role;
         isActive: boolean;
+        createdAt: Date;
         mitra: {
             id: string;
             storeName: string;
             isVerified: boolean;
         };
+        _count: {
+            orders: number;
+            wishlist: number;
+        };
     }>;
     update(id: string, dto: UpdateUserDto): Promise<{
         id: string;
-        name: string;
         email: string;
+        name: string;
         phone: string;
         avatar: string;
         role: import(".prisma/client").$Enums.Role;

@@ -1,4 +1,3 @@
-import DashboardSidebar from "@/app/dashboard-admin/DashboardSidebar";
 import AddServiceForm from "../AddServiceForm";
 
 export const metadata = { title: "Tambah Jasa - Admin Jernih Creatife" };
@@ -11,7 +10,6 @@ export default function NewServicePage() {
         .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; vertical-align:middle; }
       `}</style>
 
-      <DashboardSidebar />
 
       <div className="lg:ml-64 min-h-screen flex flex-col pb-24 lg:pb-0">
         {/* Top bar */}

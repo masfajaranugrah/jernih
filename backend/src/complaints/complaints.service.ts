@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateComplaintDto } from './dto/create-complaint.dto';
 import { UpdateComplaintDto } from './dto/update-complaint.dto';
@@ -35,6 +35,15 @@ export class ComplaintsService {
       },
     });
     if (!complaint) throw new NotFoundException('Komplain tidak ditemukan');
+    return complaint;
+  }
+
+  /** findOne dengan IDOR check — hanya pemilik atau ADMIN */
+  async findOneSafe(id: string, requesterId: string, requesterRole: string) {
+    const complaint = await this.findOne(id);
+    if (complaint.userId !== requesterId && requesterRole !== 'ADMIN') {
+      throw new ForbiddenException('Anda tidak memiliki akses ke komplain ini');
+    }
     return complaint;
   }
 
