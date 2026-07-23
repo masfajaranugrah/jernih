@@ -166,35 +166,44 @@ async function HeroContent() {
   );
 }
 
-// ── Page utama — render sesuai pengaturan section dari admin ─────────────────
-export default async function Home() {
-  // Baca toggle section dari admin (homepage_sections). Selalu return default jika gagal.
+// ── Konten utama — baca toggle admin via getHomepageSections ────────────────
+async function MainContent() {
+  // Sekarang pakai ISR cache (revalidate: 60) — tidak blocking lama
   const sections = await getHomepageSections();
 
   return (
     <>
-      {/* ── Hero: stream dari backend database ── */}
+      {/* Hero — conditional sesuai toggle admin, stream data via Suspense sendiri */}
       {sections.showHero && (
         <Suspense fallback={<HeroSkeleton />}>
           <HeroContent />
         </Suspense>
       )}
 
-      {/* ── Main sections: masing-masing stream sendiri ── */}
       <main className="flex w-full flex-col gap-14 px-4 py-12 md:px-8 md:py-20">
-
         {sections.showPromo && (
           <Suspense fallback={<PromoSkeleton />}>
             <PromoSection />
           </Suspense>
         )}
 
-        {/* Sections di bawah ini pakai TanStack Query — data real-time tanpa Next.js cache */}
+        {/* Sections di bawah ini pakai TanStack Query — data real-time via browser */}
         {sections.showProduct && <ProductSection />}
         {sections.showJasa && <JasaSection />}
         {sections.showSewa && <SewaSection />}
-
       </main>
+    </>
+  );
+}
+
+// ── Page utama ─────────────────────────────────────────────────────────────
+export default async function Home() {
+  return (
+    <>
+      {/* Streaming penuh: fallback langsung terkirim, konten menyusul */}
+      <Suspense fallback={<HeroSkeleton />}>
+        <MainContent />
+      </Suspense>
 
       <StorefrontFooter />
     </>

@@ -2,6 +2,7 @@
 // Baca HttpOnly cookie server-side, forward ke backend sebagai Bearer token
 // Aman dari XSS karena token tidak pernah terekspose ke JavaScript
 
+import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL = process.env.API_URL ?? "http://localhost:3001/api";
@@ -85,6 +86,20 @@ async function proxy(
     });
 
     const data = await res.json().catch(() => null);
+
+    // Revalidate cache Next.js untuk data yang diubah admin
+    if (res.ok) {
+      if (apiPath === "settings/homepage_sections") {
+        revalidateTag("homepage_sections");
+      }
+      if (apiPath.startsWith("hero")) {
+        revalidateTag("hero");
+      }
+      if (apiPath.startsWith("promo")) {
+        revalidateTag("promo");
+      }
+    }
+
     return NextResponse.json(data, { status: res.status });
   } catch {
     return NextResponse.json(

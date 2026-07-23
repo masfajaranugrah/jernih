@@ -20,7 +20,7 @@ const DEFAULTS: HomepageSections = {
 export async function getHomepageSections(): Promise<HomepageSections> {
   try {
     const res = await fetch(`${API_BASE}/settings/homepage_sections`, {
-      cache: "no-store", // selalu ambil data terbaru, tidak cache
+      next: { revalidate: 60, tags: ["homepage_sections"] },
     });
     if (!res.ok) return DEFAULTS;
     const data = await res.json();
