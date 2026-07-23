@@ -40,7 +40,8 @@ let ChatGateway = class ChatGateway {
     async handleConnection(client) {
         const token = this.extractToken(client);
         if (!token) {
-            client.disconnect();
+            client.data.userId = 'guest-' + client.id.slice(0, 8);
+            client.join('guests');
             return;
         }
         try {
@@ -55,12 +56,13 @@ let ChatGateway = class ChatGateway {
             }
         }
         catch {
-            client.disconnect();
+            client.data.userId = 'guest-' + client.id.slice(0, 8);
+            client.join('guests');
         }
     }
     async handleDisconnect(client) {
         const userId = client.data?.userId;
-        if (!userId)
+        if (!userId || userId.startsWith('guest-'))
             return;
         const prev = this.connections.get(userId) ?? 0;
         const next = Math.max(0, prev - 1);

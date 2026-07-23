@@ -7,13 +7,6 @@ export declare class ChatService {
     constructor(prisma: PrismaService, gateway: ChatGateway);
     private sanitize;
     sendMessage(senderId: string, dto: SendMessageDto): Promise<{
-        product: {
-            id: string;
-            name: string;
-            slug: string;
-            price: import("@prisma/client/runtime/library").Decimal;
-            images: string[];
-        };
         sender: {
             id: string;
             name: string;
@@ -24,17 +17,24 @@ export declare class ChatService {
             name: string;
             avatar: string;
         };
+        product: {
+            id: string;
+            name: string;
+            slug: string;
+            price: import("@prisma/client/runtime/library").Decimal;
+            images: string[];
+        };
     } & {
         id: string;
         createdAt: Date;
-        productId: string | null;
-        senderId: string;
-        receiverId: string;
         message: string;
         imageUrl: string | null;
-        videoUrl: string | null;
-        isDeleted: boolean;
         isRead: boolean;
+        senderId: string;
+        receiverId: string;
+        videoUrl: string | null;
+        productId: string | null;
+        isDeleted: boolean;
         isSystem: boolean;
     }>;
     sendSystemMessage(adminId: string, body: {
@@ -51,25 +51,18 @@ export declare class ChatService {
     } & {
         id: string;
         createdAt: Date;
-        productId: string | null;
-        senderId: string;
-        receiverId: string;
         message: string;
         imageUrl: string | null;
-        videoUrl: string | null;
-        isDeleted: boolean;
         isRead: boolean;
+        senderId: string;
+        receiverId: string;
+        videoUrl: string | null;
+        productId: string | null;
+        isDeleted: boolean;
         isSystem: boolean;
     }>;
     private getGateway;
     getConversation(userId: string, otherId: string): Promise<({
-        product: {
-            id: string;
-            name: string;
-            slug: string;
-            price: import("@prisma/client/runtime/library").Decimal;
-            images: string[];
-        };
         sender: {
             id: string;
             name: string;
@@ -80,28 +73,28 @@ export declare class ChatService {
             name: string;
             avatar: string;
         };
+        product: {
+            id: string;
+            name: string;
+            slug: string;
+            price: import("@prisma/client/runtime/library").Decimal;
+            images: string[];
+        };
     } & {
         id: string;
         createdAt: Date;
-        productId: string | null;
-        senderId: string;
-        receiverId: string;
         message: string;
         imageUrl: string | null;
-        videoUrl: string | null;
-        isDeleted: boolean;
         isRead: boolean;
+        senderId: string;
+        receiverId: string;
+        videoUrl: string | null;
+        productId: string | null;
+        isDeleted: boolean;
         isSystem: boolean;
     })[]>;
     getInbox(userId: string): Promise<{
         lastMessage: {
-            product: {
-                id: string;
-                name: string;
-                slug: string;
-                price: import("@prisma/client/runtime/library").Decimal;
-                images: string[];
-            };
             sender: {
                 id: string;
                 name: string;
@@ -112,17 +105,24 @@ export declare class ChatService {
                 name: string;
                 avatar: string;
             };
+            product: {
+                id: string;
+                name: string;
+                slug: string;
+                price: import("@prisma/client/runtime/library").Decimal;
+                images: string[];
+            };
         } & {
             id: string;
             createdAt: Date;
-            productId: string | null;
-            senderId: string;
-            receiverId: string;
             message: string;
             imageUrl: string | null;
-            videoUrl: string | null;
-            isDeleted: boolean;
             isRead: boolean;
+            senderId: string;
+            receiverId: string;
+            videoUrl: string | null;
+            productId: string | null;
+            isDeleted: boolean;
             isSystem: boolean;
         };
         unreadCount: number;

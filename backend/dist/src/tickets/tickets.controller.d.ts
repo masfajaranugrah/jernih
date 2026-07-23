@@ -22,22 +22,22 @@ export declare class TicketsController {
         } & {
             id: string;
             createdAt: Date;
-            senderId: string;
             message: string;
             imageUrl: string | null;
             isRead: boolean;
+            senderId: string;
             ticketId: string;
         })[];
     } & {
         number: number;
         id: string;
+        userId: string;
+        category: import(".prisma/client").$Enums.TicketCategory;
+        priority: import(".prisma/client").$Enums.TicketPriority;
+        status: import(".prisma/client").$Enums.TicketStatus;
+        subject: string;
         createdAt: Date;
         updatedAt: Date;
-        category: import(".prisma/client").$Enums.TicketCategory;
-        userId: string;
-        status: import(".prisma/client").$Enums.TicketStatus;
-        priority: import(".prisma/client").$Enums.TicketPriority;
-        subject: string;
     }>;
     mine(req: any): Promise<({
         user: {
@@ -49,13 +49,13 @@ export declare class TicketsController {
     } & {
         number: number;
         id: string;
+        userId: string;
+        category: import(".prisma/client").$Enums.TicketCategory;
+        priority: import(".prisma/client").$Enums.TicketPriority;
+        status: import(".prisma/client").$Enums.TicketStatus;
+        subject: string;
         createdAt: Date;
         updatedAt: Date;
-        category: import(".prisma/client").$Enums.TicketCategory;
-        userId: string;
-        status: import(".prisma/client").$Enums.TicketStatus;
-        priority: import(".prisma/client").$Enums.TicketPriority;
-        subject: string;
     } & {
         unreadCount: number;
     })[]>;
@@ -69,13 +69,13 @@ export declare class TicketsController {
     } & {
         number: number;
         id: string;
+        userId: string;
+        category: import(".prisma/client").$Enums.TicketCategory;
+        priority: import(".prisma/client").$Enums.TicketPriority;
+        status: import(".prisma/client").$Enums.TicketStatus;
+        subject: string;
         createdAt: Date;
         updatedAt: Date;
-        category: import(".prisma/client").$Enums.TicketCategory;
-        userId: string;
-        status: import(".prisma/client").$Enums.TicketStatus;
-        priority: import(".prisma/client").$Enums.TicketPriority;
-        subject: string;
     } & {
         unreadCount: number;
     })[]>;
@@ -96,22 +96,22 @@ export declare class TicketsController {
         } & {
             id: string;
             createdAt: Date;
-            senderId: string;
             message: string;
             imageUrl: string | null;
             isRead: boolean;
+            senderId: string;
             ticketId: string;
         })[];
     } & {
         number: number;
         id: string;
+        userId: string;
+        category: import(".prisma/client").$Enums.TicketCategory;
+        priority: import(".prisma/client").$Enums.TicketPriority;
+        status: import(".prisma/client").$Enums.TicketStatus;
+        subject: string;
         createdAt: Date;
         updatedAt: Date;
-        category: import(".prisma/client").$Enums.TicketCategory;
-        userId: string;
-        status: import(".prisma/client").$Enums.TicketStatus;
-        priority: import(".prisma/client").$Enums.TicketPriority;
-        subject: string;
     }>;
     addMessage(req: any, id: string, dto: SendTicketMessageDto): Promise<{
         sender: {
@@ -123,10 +123,10 @@ export declare class TicketsController {
     } & {
         id: string;
         createdAt: Date;
-        senderId: string;
         message: string;
         imageUrl: string | null;
         isRead: boolean;
+        senderId: string;
         ticketId: string;
     }>;
     markRead(req: any, id: string): Promise<{
@@ -142,12 +142,12 @@ export declare class TicketsController {
     } & {
         number: number;
         id: string;
+        userId: string;
+        category: import(".prisma/client").$Enums.TicketCategory;
+        priority: import(".prisma/client").$Enums.TicketPriority;
+        status: import(".prisma/client").$Enums.TicketStatus;
+        subject: string;
         createdAt: Date;
         updatedAt: Date;
-        category: import(".prisma/client").$Enums.TicketCategory;
-        userId: string;
-        status: import(".prisma/client").$Enums.TicketStatus;
-        priority: import(".prisma/client").$Enums.TicketPriority;
-        subject: string;
     }>;
 }

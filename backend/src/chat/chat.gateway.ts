@@ -60,7 +60,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleConnection(client: Socket) {
     const token = this.extractToken(client);
     if (!token) {
-      client.disconnect();
+      // Guest connection — tetap izinkan, dengan ID guest
+      client.data.userId = 'guest-' + client.id.slice(0, 8);
+      client.join('guests');
       return;
     }
     try {
@@ -75,13 +77,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.server.emit('presence:update', { userId, online: true });
       }
     } catch {
-      client.disconnect();
+      // Token invalid — tetap izinkan sebagai guest
+      client.data.userId = 'guest-' + client.id.slice(0, 8);
+      client.join('guests');
     }
   }
 
   async handleDisconnect(client: Socket) {
     const userId = client.data?.userId as string | undefined;
-    if (!userId) return;
+    if (!userId || userId.startsWith('guest-')) return;
 
     const prev = this.connections.get(userId) ?? 0;
     const next = Math.max(0, prev - 1);
