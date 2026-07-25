@@ -34,11 +34,12 @@ function LoginPageContent() {
 
       // Session disimpan via HttpOnly cookie oleh /api/auth/login
       const slug = data.user?.name?.toLowerCase().replace(/\s+/g, "-") ?? "";
-      // Redirect: ke halaman asal (from) atau default ke orders
+      // Redirect: ke halaman asal (from) atau default (mobile → profile, desktop → orders)
       if (from && from !== "/dashboard/pelanggan") {
         router.push(from);
       } else {
-        router.push(`/dashboard/pelanggan/${slug}/orders`);
+        const isMobile = window.innerWidth < 768;
+        router.push(isMobile ? `/dashboard/pelanggan/${slug}/profile` : `/dashboard/pelanggan/${slug}/orders`);
       }
       router.refresh();
     } catch (err: any) {

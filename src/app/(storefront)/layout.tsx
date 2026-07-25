@@ -53,7 +53,9 @@ export default async function StorefrontLayout({
   return (
     <StorefrontProviders>
       <Navbar />
-      {children}
+      <div className="min-h-screen bg-[#e3e5e0] text-black">
+        {children}
+      </div>
     </StorefrontProviders>
   );
 }

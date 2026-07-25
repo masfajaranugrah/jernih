@@ -2,8 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { formatRupiah, type ApiProduct } from "@/lib/api";
+import { emitWishlistChange } from "@/lib/cart";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
 
@@ -20,64 +22,89 @@ async function fetchProductsClient(limit = 12): Promise<ApiProduct[]> {
   }
 }
 
-function formatNumber(num: number): string {
-  if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, "") + "rb";
-  return String(num);
+function HeartIcon({ isFav }: { isFav: boolean }) {
+  return (
+    <svg
+      className={`w-5 h-5 shrink-0 ${isFav ? "fill-white text-white" : "fill-none stroke-black stroke-2"}`}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+    </svg>
+  );
 }
 
-function ProductCard({ product }: { product: ApiProduct }) {
-  if (!product) return null;
+function getBadgeText(product: ApiProduct, idx?: number): string | null {
+  if (product.description) {
+    const m = product.description.match(/^\[badge:([A-Z0-9%\s-]+)\]/i);
+    if (m) return m[1].trim().toUpperCase();
+  }
+
   const oldP = product.oldPrice ? Number(product.oldPrice) : 0;
   const curP = Number(product.price);
   const discountPercent = oldP > curP ? Math.round(((oldP - curP) / oldP) * 100) : 0;
-  const hasDiscount = discountPercent > 0;
+  if (discountPercent > 0) {
+    return `-${discountPercent}%`;
+  }
+
+  if (typeof idx === "number") {
+    const demoBadges = ["PROMO", "NEW", "HOT", null];
+    return demoBadges[idx % demoBadges.length];
+  }
+
+  return null;
+}
+
+function ProductCard({
+  product,
+  index,
+}: {
+  product: ApiProduct;
+  index?: number;
+}) {
+  if (!product) return null;
+  const badgeText = getBadgeText(product, index);
 
   return (
     <Link
       href={`/produk/${product.slug}`}
-      className="group flex h-full w-[170px] flex-shrink-0 flex-col overflow-hidden rounded-[8px] bg-white shadow-[0_1px_2px_0_rgba(0,0,0,0.08)] transition-all duration-200 hover:shadow-[0_4px_12px_0_rgba(0,0,0,0.12)] sm:w-[200px]"
+      className="group relative flex h-full w-[210px] sm:w-[240px] flex-shrink-0 flex-col justify-between rounded-[28px] sm:rounded-[32px] bg-white p-3.5 sm:p-4 shadow-sm hover:shadow-xl transition-all duration-300 border border-neutral-100"
     >
-      <div className="relative aspect-square overflow-hidden bg-[#f5f5f5]">
+      {/* Top Left Black Capsule Pill Badge (Promo, -5%, New, Hot) */}
+      {badgeText && (
+        <div className="absolute top-2.5 left-2.5 z-20 rounded-full bg-black px-3.5 py-1 text-[11px] font-extrabold text-white shadow-md flex items-center justify-center whitespace-nowrap tracking-wide">
+          {badgeText}
+        </div>
+      )}
+
+      {/* Top Image Box with Light Tinted Background matching screenshot */}
+      <div className="relative aspect-square w-full overflow-hidden rounded-[22px] sm:rounded-[24px] bg-[#f3f4f1] flex items-center justify-center p-3 sm:p-4 transition-colors group-hover:bg-[#ebece8]">
+
+        {/* Top Right Black Circle Button with Diagonal Arrow ↗ matching screenshot */}
+        <div className="absolute top-2.5 right-2.5 z-10 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black text-white flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-200">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5 stroke-white fill-none stroke-[2.5]" viewBox="0 0 24 24">
+            <path d="M7 17L17 7M17 7H7M17 7V17" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+
+        {/* Product Image */}
         <Image
           src={product.images && product.images[0] ? product.images[0] : "/placeholder.png"}
           alt={product.name}
           fill
-          sizes="200px"
-          className="object-cover"
+          sizes="240px"
+          className="object-contain p-2 transition-transform duration-300 group-hover:scale-105"
         />
-        {hasDiscount && (
-          <div className="absolute top-2 left-0 rounded-r-[4px] bg-[#ee4d2d] px-1.5 py-[3px] text-[11px] font-bold leading-none text-white">
-            {discountPercent}%
-          </div>
-        )}
       </div>
-      <div className="flex flex-1 flex-col gap-[3px] p-2.5 sm:p-3">
-        <h3 className="line-clamp-2 text-[13px] font-normal leading-[18px] text-[#191c1d]">
+
+      {/* Info Section - Left Aligned Title & Price matching screenshot */}
+      <div className="mt-3 flex flex-col items-start text-left px-1">
+        <h3 className="line-clamp-1 font-bold text-base sm:text-lg text-black group-hover:underline">
           {product.name}
         </h3>
-        <div className="flex items-center gap-1.5 text-[11px] text-[#6b7280]">
-          <span className="flex items-center gap-[2px]">
-            <svg className="h-3 w-3 fill-[#f59e0b]" viewBox="0 0 24 24">
-              <path d="m12 2 2.9 6 6.6.9-4.8 4.7 1.1 6.6L12 17.1l-5.8 3.1 1.1-6.6-4.8-4.7 6.6-.9L12 2Z" />
-            </svg>
-            5.0
-          </span>
-          {product.totalSold > 0 && (
-            <>
-              <span className="text-[#d1d5db]">|</span>
-              <span>Terjual {formatNumber(product.totalSold)}</span>
-            </>
-          )}
-        </div>
-        <div className="flex items-baseline gap-1.5">
-          {hasDiscount && (
-            <span className="text-[11px] text-[#6b7280] line-through">{formatRupiah(product.oldPrice!)}</span>
-          )}
-          <span className="text-sm font-bold text-[#191c1d] leading-none">{formatRupiah(product.price)}</span>
-        </div>
-        <div className="mt-auto pt-[2px]">
-          <span className="text-[10px] font-normal text-[#6b7280]">Jakarta</span>
-        </div>
+        <p className="mt-1 font-semibold text-sm sm:text-base text-neutral-600">
+          {formatRupiah(product.price)}
+        </p>
       </div>
     </Link>
   );
@@ -85,19 +112,19 @@ function ProductCard({ product }: { product: ApiProduct }) {
 
 function SkeletonCard() {
   return (
-    <div className="flex h-full w-[170px] flex-shrink-0 flex-col overflow-hidden rounded-[8px] bg-white shadow-[0_1px_2px_0_rgba(0,0,0,0.08)] sm:w-[200px]">
-      <div className="aspect-square bg-[#f5f5f5] animate-pulse" />
-      <div className="flex flex-col gap-2 p-2.5 sm:p-3">
-        <div className="h-3 w-3/4 rounded bg-[#f5f5f5] animate-pulse" />
-        <div className="h-3 w-1/2 rounded bg-[#f5f5f5] animate-pulse" />
-        <div className="h-3.5 w-16 rounded bg-[#f5f5f5] animate-pulse" />
-        <div className="h-3 w-12 rounded bg-[#f5f5f5] animate-pulse" />
+    <div className="flex h-full w-[210px] sm:w-[240px] flex-shrink-0 flex-col justify-between rounded-[28px] sm:rounded-[32px] bg-white p-3.5 sm:p-4 shadow-xs border border-neutral-100 animate-pulse">
+      <div className="aspect-square w-full rounded-[22px] sm:rounded-[24px] bg-[#f3f4f1]" />
+      <div className="mt-3 space-y-2 flex flex-col items-start px-1">
+        <div className="h-4 w-3/4 rounded-full bg-neutral-200" />
+        <div className="h-4 w-1/2 rounded-full bg-neutral-200" />
       </div>
     </div>
   );
 }
 
 export default function ProductSectionClient() {
+  const [favMap, setFavMap] = useState<Record<string, boolean>>({});
+
   const { data, isPending } = useQuery({
     queryKey: ["storefront-products"],
     queryFn: () => fetchProductsClient(12),
@@ -105,11 +132,19 @@ export default function ProductSectionClient() {
 
   const products: ApiProduct[] = Array.isArray(data) ? data : [];
 
+  function toggleFav(id: string) {
+    setFavMap((prev) => {
+      const next = { ...prev, [id]: !prev[id] };
+      emitWishlistChange();
+      return next;
+    });
+  }
+
   if (isPending) {
     return (
-      <div className="mt-5 overflow-x-auto pb-2 scrollbar-hide md:max-w-[1260px]">
-        <div className="flex gap-3">
-          {Array.from({ length: 6 }).map((_, i) => (
+      <div className="mt-5 overflow-x-auto pb-4 scrollbar-hide">
+        <div className="flex gap-4 sm:gap-5">
+          {Array.from({ length: 5 }).map((_, i) => (
             <SkeletonCard key={i} />
           ))}
         </div>
@@ -120,11 +155,18 @@ export default function ProductSectionClient() {
   if (products.length === 0) return null;
 
   return (
-    <div className="mt-5 overflow-x-auto pb-2 scrollbar-hide md:max-w-[1260px]">
-      <div className="flex gap-3">
-        {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
+    <div className="space-y-5">
+      {/* Horizontal Scroll / Grid Cards matching screenshot */}
+      <div className="overflow-x-auto pb-4 scrollbar-hide pt-1">
+        <div className="flex gap-4 sm:gap-6">
+          {products.map((product, idx) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              index={idx}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

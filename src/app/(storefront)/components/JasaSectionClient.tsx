@@ -2,9 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ApiService } from "@/lib/service-actions";
 import { formatRupiah } from "@/lib/api";
+import { emitWishlistChange } from "@/lib/cart";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
 
@@ -23,81 +25,101 @@ async function fetchServicesClient(limit = 12): Promise<ApiService[]> {
   }
 }
 
-function ServiceCard({ service }: { service: ApiService }) {
+function HeartIcon({ isFav }: { isFav: boolean }) {
+  return (
+    <svg
+      className={`w-5 h-5 shrink-0 ${isFav ? "fill-white text-white" : "fill-none stroke-black stroke-2"}`}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+    </svg>
+  );
+}
+
+function ServiceCard({
+  service,
+  isFav,
+  onToggleFav,
+}: {
+  service: ApiService;
+  isFav: boolean;
+  onToggleFav: () => void;
+}) {
   if (!service) return null;
   return (
-    <Link
-      href={`/jasa/${service.slug}`}
-      className="group flex h-full w-[170px] flex-shrink-0 flex-col overflow-hidden rounded-[8px] bg-white shadow-[0_1px_2px_0_rgba(0,0,0,0.08)] transition-all duration-200 hover:shadow-[0_4px_12px_0_rgba(0,0,0,0.12)] sm:w-[200px]"
-    >
-      <div className="relative aspect-square overflow-hidden bg-[#f5f5f5]">
+    <div className="group relative flex h-full w-[200px] sm:w-[220px] flex-shrink-0 flex-col justify-between rounded-[28px] sm:rounded-[32px] bg-white p-4 sm:p-5 shadow-xs hover:shadow-xl transition-all duration-300 border border-black/5">
+      {/* Badge */}
+      <div className="absolute top-4 right-4 z-10 rounded-full bg-black px-2.5 py-1 text-[11px] font-bold text-white shadow-xs">
+        Jasa
+      </div>
+
+      <Link href={`/jasa/${service.slug}`} className="relative aspect-square w-full overflow-hidden rounded-2xl flex items-center justify-center p-2">
         {service.images && service.images[0] ? (
           <Image
             src={service.images[0]}
             alt={service.name}
             fill
-            sizes="200px"
-            className="object-cover"
+            sizes="220px"
+            className="object-contain transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <svg className="h-10 w-10 fill-[#bfc9c3]" viewBox="0 0 24 24">
+          <div className="flex h-full w-full items-center justify-center text-neutral-300">
+            <svg className="h-10 w-10 fill-current" viewBox="0 0 24 24">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" />
             </svg>
           </div>
         )}
-        <div className="absolute top-2 left-0 rounded-r-[4px] bg-[#1e3a8a] px-1.5 py-[3px] text-[10px] font-bold leading-none text-white">
-          Jasa
-        </div>
-      </div>
-      <div className="flex flex-1 flex-col gap-[3px] p-2.5 sm:p-3">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-[#1e3a8a]">
-          {service.category?.name ?? "Layanan Profesional"}
-        </p>
-        <h3 className="line-clamp-2 text-[13px] font-normal leading-[18px] text-[#191c1d]">
+      </Link>
+
+      <div className="mt-3 flex flex-col items-center text-center">
+        <Link href={`/jasa/${service.slug}`} className="line-clamp-1 font-bold text-base sm:text-lg text-black hover:underline">
           {service.name}
-        </h3>
-        {service.rating > 0 && (
-          <div className="flex items-center gap-1.5 text-[11px] text-[#6b7280]">
-            <span className="flex items-center gap-[2px]">
-              <svg className="h-3 w-3 fill-[#f59e0b]" viewBox="0 0 24 24">
-                <path d="m12 2 2.9 6 6.6.9-4.8 4.7 1.1 6.6L12 17.1l-5.8 3.1 1.1-6.6-4.8-4.7 6.6-.9L12 2Z" />
-              </svg>
-              {service.rating}
-            </span>
-          </div>
-        )}
-        <div className="mt-auto pt-1">
-          <span className="text-sm font-bold text-[#191c1d] leading-none">
-            Mulai {formatRupiah(service.priceFrom)}
-          </span>
-          <span className="text-[10px] font-normal text-[#6b7280]">/{service.unit}</span>
+        </Link>
+        <div className="mt-1 font-extrabold text-lg sm:text-xl text-black">
+          {formatRupiah(service.priceFrom)}
         </div>
-        {service.mitra?.city && (
-          <div className="pt-[2px]">
-            <span className="text-[10px] font-normal text-[#6b7280]">{service.mitra.city}</span>
-          </div>
-        )}
       </div>
-    </Link>
+
+      <div className="mt-4 flex justify-center">
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggleFav();
+          }}
+          aria-label="Favoritkan layanan jasa"
+          className={`w-11 h-11 rounded-full flex items-center justify-center shadow-xs transition-all duration-200 cursor-pointer ${
+            isFav
+              ? "bg-black text-white hover:scale-105 shadow-black/20"
+              : "bg-white text-black border border-neutral-200/80 hover:bg-neutral-100 hover:scale-105"
+          }`}
+        >
+          <HeartIcon isFav={isFav} />
+        </button>
+      </div>
+    </div>
   );
 }
 
 function SkeletonCard() {
   return (
-    <div className="flex h-full w-[170px] flex-shrink-0 flex-col overflow-hidden rounded-[8px] bg-white shadow-[0_1px_2px_0_rgba(0,0,0,0.08)] sm:w-[200px]">
-      <div className="aspect-square bg-[#f5f5f5] animate-pulse" />
-      <div className="flex flex-col gap-2 p-2.5 sm:p-3">
-        <div className="h-2.5 w-16 rounded bg-[#f5f5f5] animate-pulse" />
-        <div className="h-3 w-3/4 rounded bg-[#f5f5f5] animate-pulse" />
-        <div className="h-3 w-1/2 rounded bg-[#f5f5f5] animate-pulse" />
-        <div className="h-3.5 w-20 rounded bg-[#f5f5f5] animate-pulse" />
+    <div className="flex h-full w-[200px] sm:w-[220px] flex-shrink-0 flex-col justify-between rounded-[28px] sm:rounded-[32px] bg-white p-4 sm:p-5 shadow-xs border border-black/5 animate-pulse">
+      <div className="aspect-square w-full rounded-2xl bg-neutral-100" />
+      <div className="mt-4 space-y-2 flex flex-col items-center">
+        <div className="h-4 w-3/4 rounded-full bg-neutral-100" />
+        <div className="h-5 w-1/2 rounded-full bg-neutral-100" />
+      </div>
+      <div className="mt-4 flex justify-center">
+        <div className="w-11 h-11 rounded-full bg-neutral-100" />
       </div>
     </div>
   );
 }
 
 export default function JasaSectionClient() {
+  const [favMap, setFavMap] = useState<Record<string, boolean>>({});
+
   const { data, isPending } = useQuery({
     queryKey: ["storefront-services"],
     queryFn: () => fetchServicesClient(12),
@@ -105,11 +127,19 @@ export default function JasaSectionClient() {
 
   const services: ApiService[] = Array.isArray(data) ? data : [];
 
+  function toggleFav(id: string) {
+    setFavMap((prev) => {
+      const next = { ...prev, [id]: !prev[id] };
+      emitWishlistChange();
+      return next;
+    });
+  }
+
   if (isPending) {
     return (
-      <div className="mt-5 overflow-x-auto pb-2 scrollbar-hide md:max-w-[1260px]">
-        <div className="flex gap-3">
-          {Array.from({ length: 6 }).map((_, i) => (
+      <div className="mt-5 overflow-x-auto pb-4 scrollbar-hide">
+        <div className="flex gap-4 sm:gap-5">
+          {Array.from({ length: 5 }).map((_, i) => (
             <SkeletonCard key={i} />
           ))}
         </div>
@@ -117,25 +147,18 @@ export default function JasaSectionClient() {
     );
   }
 
-  if (services.length === 0) {
-    return (
-      <div className="mt-5 w-full rounded-2xl border border-dashed border-[#bfc9c3] bg-white px-6 py-10 text-center">
-        <p className="text-sm font-semibold text-[#404944]">Jasa tidak tersedia saat ini</p>
-        <Link
-          href="/jasa"
-          className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-[#bfc9c3] px-4 py-1.5 text-xs font-semibold text-[#404944] transition-colors hover:border-[#1e3a8a] hover:text-[#1e3a8a]"
-        >
-          Lihat Halaman Jasa
-        </Link>
-      </div>
-    );
-  }
+  if (services.length === 0) return null;
 
   return (
-    <div className="mt-5 overflow-x-auto pb-2 scrollbar-hide md:max-w-[1260px]">
-      <div className="flex gap-3">
-        {services.map((svc) => (
-          <ServiceCard key={svc.id} service={svc} />
+    <div className="mt-5 overflow-x-auto pb-4 scrollbar-hide pt-1">
+      <div className="flex gap-4 sm:gap-6">
+        {services.map((svc, idx) => (
+          <ServiceCard
+            key={svc.id}
+            service={svc}
+            isFav={Boolean(favMap[svc.id] ?? (idx === 2))}
+            onToggleFav={() => toggleFav(svc.id)}
+          />
         ))}
       </div>
     </div>

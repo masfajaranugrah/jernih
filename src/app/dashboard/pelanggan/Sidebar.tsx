@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import MobileBottomNav from "@/components/MobileBottomNav";
 
 export default function SidebarPelanggan({ nama }: { nama: string }) {
   const pathname = usePathname();
@@ -86,33 +87,8 @@ export default function SidebarPelanggan({ nama }: { nama: string }) {
         </div>
       </aside>
 
-      {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-[#e1e3e4] flex justify-around items-center px-2 py-2">
-        {navItems.slice(0, 4).map((item) => {
-          const active = isActive(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              prefetch={false}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors ${
-                active ? "text-[#003527]" : "text-[#707974]"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[22px]">{item.icon}</span>
-              <span className="text-[10px] font-semibold">{item.label}</span>
-            </Link>
-          );
-        })}
-        <Link
-          href={`/dashboard/pelanggan/${nama}/profile`}
-          prefetch={false}
-          className="flex flex-col items-center gap-0.5 px-3 py-1 text-[#707974]"
-        >
-          <span className="material-symbols-outlined text-[22px]">person</span>
-          <span className="text-[10px] font-semibold">Profile</span>
-        </Link>
-      </nav>
+      {/* Mobile bottom nav — unified MobileBottomNav floating bar */}
+      <MobileBottomNav />
     </>
   );
 }

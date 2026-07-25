@@ -70,14 +70,14 @@ export default function StorefrontFooter() {
       <section className="border-b border-[#e2e8f0] bg-white">
         <div className="mx-auto max-w-[1280px] px-6 py-14 md:px-12">
           <div className="mx-auto max-w-4xl text-center">
-            <h2 className="text-xl font-bold text-[#1e3a8a] md:text-2xl">Jernih Kreatif</h2>
+            <h2 className="text-xl font-bold text-black md:text-2xl">Jernih Kreatif</h2>
             <p className="mt-1 text-sm text-[#64748b]">Solusi Belanja, Sewa, dan Jasa dalam Satu Tempat</p>
             <div className="mx-auto mt-6 max-w-3xl space-y-3 text-left text-xs leading-relaxed text-[#475569]">
               <p>Selamat datang di Jernih Kreatif, platform marketplace yang menghadirkan pengalaman berbelanja, menyewa, dan mencari jasa dengan mudah, aman, serta harga yang terjangkau.</p>
               <p>Di Jernih Kreatif, Anda dapat menemukan beragam produk berkualitas untuk memenuhi kebutuhan sehari hari, perlengkapan rumah tangga, elektronik, gadget, komputer, fashion, hobi, perlengkapan usaha, hingga berbagai kategori produk lainnya. Selain itu, kami juga menghadirkan layanan sewa serta berbagai jasa profesional yang siap membantu kebutuhan pribadi maupun bisnis Anda.</p>
               <p>Tak hanya menjadi tempat bertransaksi, Jernih Kreatif juga menjadi wadah bagi UMKM, pelaku usaha, distributor, maupun individu untuk memasarkan produk dan layanan kepada lebih banyak pelanggan di seluruh Indonesia.</p>
             </div>
-            <p className="mt-4 text-xs font-semibold text-[#1e3a8a]">Semua kebutuhan Anda, dalam satu platform terpercaya.</p>
+            <p className="mt-4 text-xs font-semibold text-black">Semua kebutuhan Anda, dalam satu platform terpercaya.</p>
           </div>
         </div>
       </section>
@@ -86,7 +86,7 @@ export default function StorefrontFooter() {
       <section className="border-b border-[#e2e8f0] bg-white">
         <div className="mx-auto max-w-[1280px] px-6 py-14 md:px-12">
           <div className="text-center">
-            <h2 className="text-lg font-bold text-[#1e3a8a] md:text-xl">Mengapa Memilih Jernih Kreatif?</h2>
+            <h2 className="text-lg font-bold text-black md:text-xl">Mengapa Memilih Jernih Kreatif?</h2>
             <p className="mt-1 text-xs text-[#64748b]">Kenapa Harus Jernih Kreatif?</p>
           </div>
           <div className="mx-auto mt-8 grid max-w-5xl gap-x-8 gap-y-5 md:grid-cols-2 lg:grid-cols-3">
@@ -101,17 +101,17 @@ export default function StorefrontFooter() {
               <div key={item.title} className="flex items-start gap-3">
                 <span className="mt-0.5 shrink-0 text-base">{item.icon}</span>
                 <div>
-                  <p className="text-xs font-bold text-[#1e3a8a]">{item.title}</p>
+                  <p className="text-xs font-bold text-black">{item.title}</p>
                   <p className="mt-0.5 text-xs leading-relaxed text-[#475569]">{item.desc}</p>
                 </div>
               </div>
             ))}
           </div>
           <div className="mx-auto mt-10 max-w-3xl border-t border-[#e2e8f0] pt-8 text-center">
-            <h3 className="text-base font-bold text-[#1e3a8a]">Mulai Bersama Jernih Kreatif</h3>
+            <h3 className="text-base font-bold text-black">Mulai Bersama Jernih Kreatif</h3>
             <p className="mx-auto mt-2 max-w-2xl text-xs leading-relaxed text-[#475569]">Baik Anda ingin berbelanja, menyewa, menggunakan jasa profesional, maupun membuka toko dan menjual produk, Jernih Kreatif adalah solusi yang tepat.</p>
             <p className="mt-2 text-xs leading-relaxed text-[#475569]">Bergabunglah bersama kami dan rasakan pengalaman marketplace yang lebih lengkap, praktis, dan menguntungkan.</p>
-            <p className="mt-4 text-xs font-bold text-[#1e3a8a]">Jernih Kreatif Belanja Mudah, Harga Bersahabat, Peluang Usaha Tanpa Batas.</p>
+            <p className="mt-4 text-xs font-bold text-black">Jernih Kreatif Belanja Mudah, Harga Bersahabat, Peluang Usaha Tanpa Batas.</p>
           </div>
         </div>
       </section>
@@ -121,32 +121,32 @@ export default function StorefrontFooter() {
         <div className="mx-auto max-w-[1280px] px-6 py-12 md:px-12">
           <div className="grid gap-4 md:grid-cols-3">
             <div className="flex items-start gap-4 rounded-lg border border-[#e2e8f0] bg-white p-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1e3a8a]/10 text-[#1e3a8a]">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1e3a8a]/10 text-black">
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0 1 12 2.944a11.955 11.955 0 0 1-8.618 3.04A12.02 12.02 0 0 0 3 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#1e3a8a]">Transparan</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-black">Transparan</p>
                 <p className="mt-1.5 text-[10px] leading-relaxed text-[#475569]">Temukan Produk dari Ribuan Toko / Online Shop terpercaya di Indonesia, dan baca review nya di Jernih Kreatif</p>
                 <p className="mt-1 text-[10px] leading-relaxed text-[#475569]">Pembayaran Anda baru diteruskan ke penjual setelah barang Anda terima</p>
                 <p className="mt-1 text-[10px] leading-relaxed text-[#475569]">Belanja Online Aman, Bebas Penipuan di Jernih Kreatif</p>
               </div>
             </div>
             <div className="flex items-start gap-4 rounded-lg border border-[#e2e8f0] bg-white p-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1e3a8a]/10 text-[#1e3a8a]">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1e3a8a]/10 text-black">
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 15v2m-6 4h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2zm10-10V7a4 4 0 0 0-8 0v4h8z"/></svg>
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#1e3a8a]">Aman</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-black">Aman</p>
                 <p className="mt-1.5 text-[10px] leading-relaxed text-[#475569]">Bandingkan review untuk berbagai online shop terpercaya di Indonesia</p>
                 <p className="mt-1 text-[10px] leading-relaxed text-[#475569]">Belanja produk apa saja di Jernih Kreatif, gratis tanpa biaya tambahan</p>
               </div>
             </div>
             <div className="flex items-start gap-4 rounded-lg border border-[#e2e8f0] bg-white p-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1e3a8a]/10 text-[#1e3a8a]">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1e3a8a]/10 text-black">
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3z"/></svg>
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#1e3a8a]">Fasilitas Escrow Gratis</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-black">Fasilitas Escrow Gratis</p>
                 <p className="mt-1.5 text-[10px] leading-relaxed text-[#475569]">Fasilitas Escrow (Rekening Bersama) Jernih Kreatif tidak dikenakan biaya tambahan</p>
               </div>
             </div>
@@ -157,17 +157,17 @@ export default function StorefrontFooter() {
       <div className="border-t-2 border-dashed border-[#cbd5e1]">
         <div className="mx-auto grid max-w-[1280px] grid-cols-1 gap-12 px-6 py-16 md:grid-cols-4 md:px-12 md:py-20">
           <div className="space-y-6">
-            <div className="text-2xl font-extrabold tracking-tight text-[#1e3a8a]">Jernih Creative</div>
+            <div className="text-2xl font-extrabold tracking-tight text-black">Jernih Creative</div>
             <p className="max-w-sm text-base leading-7 text-[#475569]">
               Menyediakan segala produk, jasa, dan layanan sewa untuk kebutuhan kreatif Anda.
             </p>
           </div>
 
           <div className="space-y-6">
-            <h4 className="text-sm font-bold uppercase tracking-[0.18em] text-[#1e3a8a]">Perusahaan</h4>
+            <h4 className="text-sm font-bold uppercase tracking-[0.18em] text-black">Perusahaan</h4>
             <nav className="flex flex-col gap-3" aria-label="Footer perusahaan">
               {companyLinks.map((item) => (
-                <Link key={item.label} href={item.href} className="text-base font-bold text-[#475569] transition-colors hover:text-[#1e3a8a]">
+                <Link key={item.label} href={item.href} className="text-base font-bold text-[#475569] transition-colors hover:text-black">
                   {item.label}
                 </Link>
               ))}
@@ -175,23 +175,23 @@ export default function StorefrontFooter() {
           </div>
 
           <div className="space-y-6">
-            <h4 className="text-sm font-bold uppercase tracking-[0.18em] text-[#1e3a8a]">Legal</h4>
+            <h4 className="text-sm font-bold uppercase tracking-[0.18em] text-black">Legal</h4>
             <nav className="flex flex-col gap-3" aria-label="Footer legal">
               {legalLinks.map((item) => (
-                <Link key={item.label} href={item.href} className="text-base font-bold text-[#475569] transition-colors hover:text-[#1e3a8a]">
+                <Link key={item.label} href={item.href} className="text-base font-bold text-[#475569] transition-colors hover:text-black">
                   {item.label}
                 </Link>
               ))}
               <div className="flex gap-6 pt-2 text-2xl text-[#475569]">
-                <FooterIcon name="public" className="cursor-pointer transition-colors hover:text-[#1e3a8a]" />
-                <FooterIcon name="leaf" className="cursor-pointer transition-colors hover:text-[#1e3a8a]" />
-                <FooterIcon name="analytics" className="cursor-pointer transition-colors hover:text-[#1e3a8a]" />
+                <FooterIcon name="public" className="cursor-pointer transition-colors hover:text-black" />
+                <FooterIcon name="leaf" className="cursor-pointer transition-colors hover:text-black" />
+                <FooterIcon name="analytics" className="cursor-pointer transition-colors hover:text-black" />
               </div>
             </nav>
           </div>
 
           <div className="space-y-6">
-            <h4 className="text-sm font-bold uppercase tracking-[0.18em] text-[#1e3a8a]">Metode Pembayaran</h4>
+            <h4 className="text-sm font-bold uppercase tracking-[0.18em] text-black">Metode Pembayaran</h4>
             <div className="flex flex-wrap gap-3">
               {paymentMethods.map((item) => (
                 <Image

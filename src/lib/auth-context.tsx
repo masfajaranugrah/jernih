@@ -17,12 +17,14 @@ type AuthContextType = {
   user: AuthUser;
   loading: boolean;
   refresh: () => Promise<void>;
+  logout: (redirectTo?: string) => Promise<void>;
 };
 
 const AuthCtx = createContext<AuthContextType>({
   user: null,
   loading: true,
   refresh: async () => {},
+  logout: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -44,12 +46,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const logout = useCallback(async (redirectTo?: string) => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {}
+    document.cookie = "mh_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+    setUser(null);
+    if (typeof window !== "undefined") {
+      window.location.href = redirectTo ?? "/dashboard/pelanggan/login";
+    }
+  }, []);
+
   useEffect(() => {
     refresh();
   }, [refresh]);
 
   return (
-    <AuthCtx.Provider value={{ user, loading, refresh }}>
+    <AuthCtx.Provider value={{ user, loading, refresh, logout }}>
       {children}
     </AuthCtx.Provider>
   );

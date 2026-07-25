@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import SearchOverlay from "@/app/(storefront)/SearchOverlay";
 import { getCartCount, CART_EVENT, WISHLIST_EVENT } from "@/lib/cart";
 import { useAuth } from "@/lib/auth-context";
+import MobileBottomNav from "@/components/MobileBottomNav";
 
 const navLinks = [
   { label: "Beranda", href: "/", icon: "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" },
@@ -61,7 +62,7 @@ function IconWithBadge({ count, children }: { count: number; children: React.Rea
     <span className="relative inline-flex">
       {children}
       {count > 0 && (
-        <span className="absolute -right-1.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#dc2626] px-1 text-[10px] font-black leading-none text-white">
+        <span className="absolute -right-1.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-black px-1 text-[10px] font-black leading-none text-white border border-white">
           {count > 99 ? "99+" : count}
         </span>
       )}
@@ -71,7 +72,7 @@ function IconWithBadge({ count, children }: { count: number; children: React.Rea
 
 function DashboardIcon() {
   return (
-    <svg className="h-5 w-5 fill-current text-[#94a3b8]" viewBox="0 0 24 24" aria-hidden="true">
+    <svg className="h-5 w-5 fill-current text-neutral-600" viewBox="0 0 24 24" aria-hidden="true">
       <path d="M4 13h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1Zm0 8h6a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1Zm10 0h6a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1Zm0-18v4a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1Z" />
     </svg>
   );
@@ -88,14 +89,14 @@ function LogoutIcon() {
 /* ───────── Shared styles ───────── */
 
 const DESKTOP_ICON_BTN =
-  "flex h-10 w-10 items-center justify-center rounded-full text-[#475569] transition hover:bg-[#e2e8f0] hover:text-[#1e3a8a]";
+  "flex h-10 w-10 items-center justify-center rounded-full text-neutral-800 transition hover:bg-neutral-100 hover:text-black";
 
 /* ───────── Navbar component ───────── */
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user: authUser, loading: authLoading } = useAuth();
+  const { user: authUser, loading: authLoading, logout } = useAuth();
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -160,15 +161,9 @@ export default function Navbar() {
   }
 
   async function handleLogout() {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-    } catch {
-      // tetap lanjut hapus local storage meski API gagal
-    }
-    document.cookie = "mh_token=; path=/; max-age=0; SameSite=Lax";
     setDropdownOpen(false);
-    router.push("/");
-    router.refresh();
+    setMobileOpen(false);
+    await logout("/dashboard/pelanggan/login");
   }
 
   function getInitial(name: string) {
@@ -185,7 +180,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 w-full border-b border-[#e2e8f0] bg-white/95 shadow-sm backdrop-blur-md">
+      <nav className="sticky top-0 z-50 w-full border-b border-neutral-200 bg-white/95 shadow-xs backdrop-blur-md max-md:hidden">
         <div className="mx-auto grid max-w-7xl grid-cols-3 items-center px-4 py-3 sm:px-6 lg:px-8">
           {/* ── Logo (kiri) ── */}
           <Link href="/" className="flex justify-start">
@@ -193,16 +188,16 @@ export default function Navbar() {
             <img src="/logo.svg" alt="Jernih Creatife" className="h-8 w-auto sm:h-9" />
           </Link>
 
-          {/* ── Desktop nav links (tengah) ── */}
-          <div className="hidden justify-center gap-1 md:flex">
+          {/* ── Tablet & Desktop nav links (tengah) ── */}
+          <div className="hidden justify-center gap-0.5 md:flex lg:gap-1">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`rounded-lg px-4 py-2 text-sm font-semibold tracking-wide transition-all hover:bg-[#f1f5f9] hover:text-[#1e3a8a] ${
+                className={`rounded-xl px-3 py-2 text-sm font-semibold tracking-wide transition-all hover:bg-neutral-100 hover:text-black lg:px-4 ${
                   isActive(link.href)
-                    ? "bg-[#eef2ff] text-[#1e3a8a]"
-                    : "text-[#475569]"
+                    ? "bg-black text-white"
+                    : "text-neutral-700"
                 }`}
               >
                 {link.label}
@@ -231,23 +226,23 @@ export default function Navbar() {
               <div className="relative ml-3" ref={dropdownRef}>
                 <button
                   onClick={() => setDropdownOpen((v) => !v)}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1e3a8a] text-sm font-bold text-white shadow-sm transition hover:bg-[#1e40af] hover:shadow-md"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-black text-sm font-bold text-white shadow-sm transition hover:bg-neutral-800"
                 >
                   {getInitial(user.name)}
                 </button>
                 {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 origin-top-right overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-black/5 z-50">
+                  <div className="absolute right-0 mt-2 w-48 origin-top-right overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-black/5 z-50 border border-neutral-100">
                     <Link
                       href={`/dashboard/pelanggan/${user.slug}/`}
                       onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-[#0f172a] transition hover:bg-[#f1f5f9]"
+                      className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-100"
                     >
                       <DashboardIcon />
                       Dashboard
                     </Link>
                     <button
                       onClick={handleLogout}
-                      className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-[#dc2626] transition hover:bg-[#fecaca]"
+                      className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-neutral-900 transition hover:bg-neutral-100"
                     >
                       <LogoutIcon />
                       Logout
@@ -256,16 +251,16 @@ export default function Navbar() {
                 )}
               </div>
             ) : (
-              <div className="ml-3 flex items-center gap-2">
+              <div className="ml-3 flex items-center gap-1 lg:gap-2">
                 <Link
                   href="/dashboard/pelanggan/login"
-                  className="rounded-lg border border-[#1e3a8a] px-4 py-2 text-sm font-semibold text-[#1e3a8a] transition hover:bg-[#1e3a8a] hover:text-white"
+                  className="rounded-xl border border-black px-3.5 py-1.5 text-xs font-bold text-black transition hover:bg-black hover:text-white lg:px-4 lg:py-2 lg:text-sm"
                 >
                   Masuk
                 </Link>
                 <Link
                   href="/dashboard/pelanggan/register"
-                  className="rounded-lg bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1e40af] hover:shadow-md"
+                  className="rounded-xl bg-black px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-neutral-800 hover:shadow-md lg:px-4 lg:py-2 lg:text-sm"
                 >
                   Daftar
                 </Link>
@@ -274,7 +269,7 @@ export default function Navbar() {
           </div>
 
           {/* ── Mobile right section ── */}
-          <div className="flex items-center gap-0 md:hidden">
+          <div className="flex items-center gap-0.5 md:hidden">
             <button aria-label="Cari" onClick={() => setSearchOpen(true)} className={DESKTOP_ICON_BTN}>
               <SearchIcon />
             </button>
@@ -301,7 +296,7 @@ export default function Navbar() {
 
       {/* ── Mobile sidebar backdrop ── */}
       <div
-        className={`fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm transition-opacity duration-300 md:hidden ${
+        className={`fixed inset-0 z-[60] bg-black/50 backdrop-blur-xs transition-opacity duration-300 md:hidden ${
           mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         onClick={() => setMobileOpen(false)}
@@ -315,7 +310,7 @@ export default function Navbar() {
         }`}
       >
         {/* Sidebar header */}
-        <div className="flex items-center justify-between border-b border-[#e2e8f0] px-5 py-4">
+        <div className="flex items-center justify-between border-b border-neutral-200 px-5 py-4">
           <Link href="/" onClick={handleLinkClick} className="flex items-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.svg" alt="Jernih Creatife" className="h-8 w-auto" />
@@ -330,16 +325,16 @@ export default function Navbar() {
         </div>
 
         {/* Sidebar nav links — scrollable */}
-        <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-4">
+        <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-4">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               onClick={handleLinkClick}
-              className={`flex items-center gap-4 rounded-2xl px-4 py-3 text-sm font-bold transition-all ${
+              className={`flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-bold transition-all ${
                 isActive(link.href)
-                  ? "bg-[#1e3a8a] text-white shadow-sm"
-                  : "text-[#475569] hover:bg-[#f1f5f9] hover:text-[#1e3a8a]"
+                  ? "bg-black text-white shadow-xs"
+                  : "text-neutral-700 hover:bg-neutral-100 hover:text-black"
               }`}
             >
               <svg className="h-5 w-5 shrink-0 fill-current" viewBox="0 0 24 24" aria-hidden="true">
@@ -349,19 +344,19 @@ export default function Navbar() {
             </Link>
           ))}
 
-          <hr className="my-2 border-[#e2e8f0]" />
+          <hr className="my-3 border-neutral-200" />
 
           <Link
             href={wishlistHref}
             onClick={handleLinkClick}
-            className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-bold text-[#475569] transition-all hover:bg-[#f1f5f9] hover:text-[#1e3a8a]"
+            className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold text-neutral-700 transition-all hover:bg-neutral-100 hover:text-black"
           >
             <span className="flex items-center gap-4">
               <HeartIcon />
               Wishlist
             </span>
             {wishlistCount > 0 && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#dc2626] px-1.5 text-[11px] font-black text-white">
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-black px-1.5 text-[11px] font-black text-white">
                 {wishlistCount > 99 ? "99+" : wishlistCount}
               </span>
             )}
@@ -369,14 +364,14 @@ export default function Navbar() {
           <Link
             href="/keranjang"
             onClick={handleLinkClick}
-            className="flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-bold text-[#475569] transition-all hover:bg-[#f1f5f9] hover:text-[#1e3a8a]"
+            className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold text-neutral-700 transition-all hover:bg-neutral-100 hover:text-black"
           >
             <span className="flex items-center gap-4">
               <CartIcon />
               Keranjang
             </span>
             {cartCount > 0 && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#dc2626] px-1.5 text-[11px] font-black text-white">
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-black px-1.5 text-[11px] font-black text-white">
                 {cartCount > 99 ? "99+" : cartCount}
               </span>
             )}
@@ -384,19 +379,19 @@ export default function Navbar() {
         </nav>
 
         {/* Sidebar footer — auth */}
-        <div className="border-t border-[#e2e8f0] px-5 py-4">
+        <div className="border-t border-neutral-200 px-5 py-4">
           {user ? (
             <div className="space-y-2">
               <div className="flex items-center gap-3 px-1">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1e3a8a] text-sm font-bold text-white">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-sm font-bold text-white">
                   {getInitial(user.name)}
                 </div>
-                <span className="truncate text-sm font-semibold text-[#0f172a]">{user.name}</span>
+                <span className="truncate text-sm font-semibold text-neutral-900">{user.name}</span>
               </div>
               <Link
                 href={`/dashboard/pelanggan/${user.slug}/`}
                 onClick={handleLinkClick}
-                className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold text-[#0f172a] transition hover:bg-[#f1f5f9]"
+                className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-100"
               >
                 <DashboardIcon />
                 Dashboard saya
@@ -406,7 +401,7 @@ export default function Navbar() {
                   handleLogout();
                   handleLinkClick();
                 }}
-                className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm font-semibold text-[#dc2626] transition hover:bg-[#fecaca]"
+                className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm font-semibold text-neutral-900 transition hover:bg-neutral-100"
               >
                 <LogoutIcon />
                 Logout
@@ -417,24 +412,26 @@ export default function Navbar() {
               <Link
                 href="/dashboard/pelanggan/login"
                 onClick={handleLinkClick}
-                className="flex-1 rounded-xl border border-[#1e3a8a] py-2.5 text-center text-sm font-bold text-[#1e3a8a] transition hover:bg-[#1e3a8a] hover:text-white"
+                className="flex-1 rounded-xl border border-black py-2.5 text-center text-sm font-bold text-black transition hover:bg-black hover:text-white"
               >
                 Masuk
               </Link>
               <Link
                 href="/dashboard/pelanggan/register"
                 onClick={handleLinkClick}
-                className="flex-1 rounded-xl bg-[#1e3a8a] py-2.5 text-center text-sm font-bold text-white transition hover:bg-[#1e40af]"
+                className="flex-1 rounded-xl bg-black py-2.5 text-center text-sm font-bold text-white transition hover:bg-neutral-800"
               >
                 Daftar
               </Link>
             </div>
           )}
-          <p className="mt-3 text-center text-xs text-[#94a3b8]">© 2025 Jernih Creatife</p>
+          <p className="mt-3 text-center text-xs text-neutral-400">© 2025 Jernih Creatife</p>
         </div>
       </div>
 
       <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+
+      <MobileBottomNav />
     </>
   );
 }
