@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, FormEvent, Suspense } from "react";
+import { useState, FormEvent, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { getToken } from "@/lib/auth";
 
 function LoginPageContent() {
   const router = useRouter();
@@ -12,6 +13,36 @@ function LoginPageContent() {
   const rawFrom = searchParams.get("from");
   const from = rawFrom?.startsWith("/") ? rawFrom : "/dashboard/pelanggan";
   const justRegistered = searchParams.get("registered") === "1";
+
+  // Auto-redirect jika sudah punya cookie token (misal dari MobileBottomNav
+  // yang ke redirect ke login karena auth belum selesai loading)
+  useEffect(() => {
+    const token = getToken();
+    if (!token) return;
+
+    if (rawFrom?.startsWith("/")) {
+      router.replace(rawFrom);
+      return;
+    }
+
+    // from tidak valid (e.g. "wishlist") — cari slug user via API biar bisa redirect ke halaman benar
+    fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data?.name) { router.replace("/"); return; }
+        // from=wishlist → /dashboard/pelanggan/[slug]/wishlist, dst
+        const slug = (data.slug ?? data.name.toLowerCase().replace(/\s+/g, "-"));
+        const knownPages: Record<string, string> = {
+          wishlist: `/dashboard/pelanggan/${slug}/wishlist`,
+          orders: `/dashboard/pelanggan/${slug}/orders`,
+          vouchers: `/dashboard/pelanggan/${slug}/vouchers`,
+          profile: `/dashboard/pelanggan/${slug}/profile`,
+          chat: `/dashboard/pelanggan/${slug}/chat`,
+        };
+        router.replace(knownPages[rawFrom ?? ""] ?? `/dashboard/pelanggan/${slug}/profile`);
+      })
+      .catch(() => router.replace("/"));
+  }, [rawFrom, router]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

@@ -74,9 +74,9 @@ function ProductCard({
   const ratingValue = (product.rating && product.rating > 0) ? product.rating.toFixed(1) : (4.5 + ((index || 0) % 5) * 0.1).toFixed(1);
 
   return (
-    <div className="group relative flex h-full flex-col justify-between rounded-[28px] bg-white p-3.5 sm:p-4 shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-neutral-100">
+    <div className="group relative flex h-full flex-col justify-between rounded-[28px] bg-white p-3.5 sm:p-4 shadow-xs border border-neutral-100">
       {/* Top Image Box */}
-      <Link href={`/produk/${product.slug}`} className="block relative aspect-square w-full overflow-hidden rounded-[22px] bg-[#f2f4f7] p-3 transition-colors group-hover:bg-[#ebece8]">
+      <Link href={`/produk/${product.slug}`} className="block relative aspect-square w-full overflow-hidden rounded-[22px] bg-[#f2f4f7] p-3">
         {badgeText && (
           <div className="absolute top-2.5 left-2.5 z-10 rounded-full bg-black px-3 py-1 text-[10px] font-extrabold text-white shadow-md uppercase tracking-wider">
             {badgeText}
@@ -87,7 +87,7 @@ function ProductCard({
           type="button"
           aria-label="Tambah ke Favorit"
           onClick={(e) => onToggleFavorite(product.id, e)}
-          className="absolute top-2.5 right-2.5 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center shadow-xs hover:bg-white hover:scale-110 active:scale-95 transition-all cursor-pointer"
+          className="absolute top-2.5 right-2.5 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center shadow-xs cursor-pointer"
         >
           <HeartIcon isFav={isFavorite} />
         </button>
@@ -97,7 +97,7 @@ function ProductCard({
           <img
             src={product.images[0]}
             alt={product.name}
-            className="w-full h-full object-contain p-2 transition-transform duration-300 group-hover:scale-105"
+            className="w-full h-full object-contain p-2"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-neutral-300">
@@ -200,7 +200,8 @@ export default function ProdukPageClient({
       const next = exists ? prev.filter((item) => item !== id) : [...prev, id];
       try {
         localStorage.setItem("mh_wishlist_ids", JSON.stringify(next));
-        emitWishlistChange();
+        // Jangan panggil emitWishlistChange — ini hanya localStorage,
+        // bukan API. Navbar/MobileBottomNav tidak perlu refetch.
       } catch {}
       return next;
     });

@@ -5,18 +5,35 @@ import { PrismaService } from '../prisma/prisma.service';
 export class WishlistService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(userId: string) {
-    return this.prisma.wishlist.findMany({
-      where: { userId },
-      include: {
-        product: {
-          include: {
-            category: { select: { id: true, name: true, slug: true } },
+  async findAll(userId: string, page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      this.prisma.wishlist.findMany({
+        where: { userId },
+        include: {
+          product: {
+            include: {
+              category: { select: { id: true, name: true, slug: true } },
+            },
           },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.wishlist.count({ where: { userId } }),
+    ]);
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async count(userId: string) {
+    return this.prisma.wishlist.count({ where: { userId } });
   }
 
   async add(userId: string, productId: string) {

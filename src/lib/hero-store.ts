@@ -85,7 +85,7 @@ const defaultHero: HeroData = {
       label: "eraXpress",
       bgColor: "#1e3a8a",
       imageUrl:
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuCOaofM_Tbe2B0v9VD3NKO41giRxx-uNHrtaga7sfsGGRItPF-mhKYuxyA7v0wyKOuTxVuvrOMPhYj1v54wmnIX66gYcGvfEixhBOELGoqdSyWdp_3YNo_4_iz_48L_q6ZY9mGsKNPWndexdjfydsbB9uCuGmq-FKs34Oaxitcdg-xGZkAc9TGXiEUc52Bkl",
+        "",
       tagline: "Pasti sampai hari ini",
       title: "eraXpress",
       subtitle: "",

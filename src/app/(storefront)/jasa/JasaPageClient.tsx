@@ -32,7 +32,7 @@ function ServiceCard({ svc }: { svc: ApiService }) {
   return (
     <Link
       href={`/jasa/${svc.slug}`}
-      className="premium-shadow bg-white rounded-xl overflow-hidden group cursor-pointer block"
+      className="bg-white rounded-xl overflow-hidden group cursor-pointer block"
     >
       <div className="relative h-48 overflow-hidden bg-[#edeeef]">
         {svc.images[0] ? (
@@ -243,8 +243,6 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0,0;24,300,1,0&display=block');
         .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24; vertical-align:middle; }
-        .premium-shadow { box-shadow:0px 4px 20px rgba(0,0,0,0.04); transition:box-shadow .3s,transform .3s; }
-        .premium-shadow:hover { box-shadow:0px 12px 40px rgba(0,0,0,0.08); transform:translateY(-4px); }
       `}</style>
 
       <div className="mx-auto flex max-w-[1680px] flex-col gap-6 px-4 pt-8 pb-20 md:flex-row md:gap-10 md:px-8 lg:px-12 xl:gap-14 2xl:px-16">
@@ -266,7 +264,7 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
             {FilterPanel}
             <button
               onClick={() => setActiveFilter({ ...draftFilter })}
-              className="mt-6 w-full rounded-xl bg-[#1e3a8a] py-2.5 text-sm font-semibold text-white hover:bg-[#1e40af] transition-colors"
+              className="mt-6 w-full rounded-xl bg-black py-2.5 text-sm font-semibold text-white hover:bg-neutral-800 transition-colors"
             >
               Terapkan Filter
             </button>
@@ -331,7 +329,7 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
               <p className="mt-1 text-sm text-[#707974]">Coba ubah atau reset filter</p>
               <button
                 onClick={() => setActiveFilter(DEFAULT_FILTER)}
-                className="mt-4 rounded-xl bg-[#1e3a8a] px-5 py-2.5 text-sm font-semibold text-white"
+                className="mt-4 rounded-xl bg-black px-5 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800"
               >
                 Reset Filter
               </button>
@@ -424,7 +422,7 @@ export default function JasaPageClient({ services, categories, resolvedSearch }:
               </button>
               <button
                 onClick={applyFilter}
-                className="flex-[2] rounded-xl bg-[#1e3a8a] py-3 text-sm font-semibold text-white"
+                className="flex-[2] rounded-xl bg-black py-3 text-sm font-semibold text-white hover:bg-neutral-800"
               >
                 Simpan Filter
               </button>

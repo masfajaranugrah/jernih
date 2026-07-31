@@ -62,8 +62,10 @@ export class ProductsService {
       }),
     };
 
-    // Mode light: hanya field yang dipakai kartu list (home & /produk).
-    // Relasi types tidak diambil, dan images dipotong jadi 1 di bawah.
+    // Mode light: HANYA field untuk kartu list (gambar, nama, rating, harga)
+    // + slug (link) + oldPrice (harga coret) + category (filter /produk & search).
+    // Tidak ada description/totalSold/createdAt — hemat payload & percepat respons.
+    // Data lengkap baru diambil via GET /products/slug/:slug saat klik detail.
     const findManyArgs: any = {
       where,
       orderBy: { createdAt: 'desc' },
@@ -78,12 +80,8 @@ export class ProductsService {
         slug: true,
         price: true,
         oldPrice: true,
-        images: true,
         rating: true,
-        totalSold: true,
-        createdAt: true,
-        description: true,
-        categoryId: true,
+        images: true,
         category: { select: { id: true, name: true, slug: true } },
       };
     } else {

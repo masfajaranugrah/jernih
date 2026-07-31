@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import SearchOverlay from "@/app/(storefront)/SearchOverlay";
 import { getCartCount, CART_EVENT, WISHLIST_EVENT } from "@/lib/cart";
+import { getTokenSlug } from "@/lib/auth";
 import { useAuth } from "@/lib/auth-context";
 import MobileBottomNav from "@/components/MobileBottomNav";
 
@@ -93,7 +94,7 @@ const DESKTOP_ICON_BTN =
 
 /* ───────── Navbar component ───────── */
 
-export default function Navbar() {
+export default function Navbar({ initialSlug }: { initialSlug?: string | null }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user: authUser, loading: authLoading, logout } = useAuth();
@@ -126,22 +127,23 @@ export default function Navbar() {
     let cancelled = false;
     async function fetchWishlistCount() {
       try {
-        const res = await fetch("/api/wishlist", { cache: "no-store" });
+        const res = await fetch("/api/wishlist/count", { cache: "no-store" });
         if (!res.ok) {
           if (!cancelled) setWishlistCount(0);
           return;
         }
         const data = await res.json();
-        if (!cancelled) setWishlistCount(Array.isArray(data) ? data.length : 0);
+        if (!cancelled) setWishlistCount(typeof data.count === "number" ? data.count : 0);
       } catch {
         if (!cancelled) setWishlistCount(0);
       }
     }
     fetchWishlistCount();
-    window.addEventListener(WISHLIST_EVENT, fetchWishlistCount);
+    const handler = () => { fetchWishlistCount(); };
+    window.addEventListener(WISHLIST_EVENT, handler);
     return () => {
       cancelled = true;
-      window.removeEventListener(WISHLIST_EVENT, fetchWishlistCount);
+      window.removeEventListener(WISHLIST_EVENT, handler);
     };
   }, [user]);
 
@@ -174,8 +176,11 @@ export default function Navbar() {
     return pathname === href || (href !== "/" && pathname.startsWith(href));
   }
 
-  const wishlistHref = user
-    ? `/dashboard/pelanggan/${user.slug}/wishlist`
+  // Slug dari server (cookie) dipakai dulu agar href konsisten server↔client
+  // (hindari hydration error). user?.slug menyusul setelah /api/auth/me selesai.
+  const wishlistSlug = user?.slug ?? initialSlug ?? getTokenSlug();
+  const wishlistHref = wishlistSlug
+    ? `/dashboard/pelanggan/${wishlistSlug}/wishlist`
     : "/dashboard/pelanggan/login?from=wishlist";
 
   return (
@@ -431,7 +436,7 @@ export default function Navbar() {
 
       <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
 
-      <MobileBottomNav />
+      <MobileBottomNav initialSlug={initialSlug} />
     </>
   );
 }

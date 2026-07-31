@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Param, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, Query, UseGuards, Request } from '@nestjs/common';
 import { IsString, IsNotEmpty } from 'class-validator';
 
 class AddWishlistDto {
@@ -12,10 +12,21 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 export class WishlistController {
   constructor(private wishlistService: WishlistService) {}
 
-  /** GET /api/wishlist — daftar wishlist milik user */
+  /** GET /api/wishlist — daftar wishlist milik user (dengan pagination) */
   @Get()
-  findAll(@Request() req: any) {
-    return this.wishlistService.findAll(req.user.id);
+  findAll(
+    @Request() req: any,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.wishlistService.findAll(req.user.id, Number(page) || 1, Number(limit) || 20);
+  }
+
+  /** GET /api/wishlist/count — jumlah wishlist (ringan, untuk badge) */
+  @Get('count')
+  async getCount(@Request() req: any) {
+    const count = await this.wishlistService.count(req.user.id);
+    return { count };
   }
 
   /** POST /api/wishlist — tambah produk ke wishlist */

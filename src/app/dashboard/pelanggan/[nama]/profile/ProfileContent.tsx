@@ -1,19 +1,33 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { getTokenSlug } from "@/lib/auth";
+
+type Toast = { type: "success" | "error"; message: string } | null;
 
 export default function ProfileContent() {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, logout, refresh, clearAuthCache, loading } = useAuth();
 
-  const userSlug = user?.slug ?? user?.name?.toLowerCase().replace(/\s+/g, "-") ?? "";
+  // Fallback ke slug dari token (tanpa API) supaya link menu (wishlist, orders,
+  // dll.) selalu mengarah ke halaman langsung meski user auth belum selesai load.
+  const userSlug =
+    user?.slug ??
+    user?.name?.toLowerCase().replace(/\s+/g, "-") ??
+    getTokenSlug() ??
+    "";
   const segments = pathname.split("/");
   const nama = segments[3] || userSlug || "user";
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [toast, setToast] = useState<Toast>(null);
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -32,12 +46,98 @@ export default function ProfileContent() {
         email: user.email || "",
         phone: user.phone || "",
       });
+      setAvatarUrl(user.avatar || "");
     }
   }, [user]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setAvatarUploading(true);
+    setToast(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("files", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Gagal upload foto");
+      }
+
+      const data = await res.json();
+      const url = data.urls?.[0];
+      if (!url) throw new Error("Gagal mendapatkan URL foto");
+
+      setAvatarUrl(url);
+      setToast({ type: "success", message: "Foto berhasil diupload!" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Gagal upload foto";
+      setToast({ type: "error", message: msg });
+    } finally {
+      setAvatarUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    setToast(null);
+    const name = `${form.firstName} ${form.lastName}`.trim();
+    const body: Record<string, string> = { name };
+    if (form.phone) body.phone = form.phone;
+    if (avatarUrl) body.avatar = avatarUrl;
+    try {
+      const res = await fetch("/api/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Gagal menyimpan perubahan");
+      }
+
+      // Pakai response data agar form tetap terbaru meski auth-cache stale
+      const updated = await res.json();
+      if (updated.name) {
+        const nameParts = updated.name.trim().split(" ");
+        setForm({
+          firstName: nameParts[0] || "",
+          lastName: nameParts.slice(1).join(" ") || "",
+          email: updated.email ?? form.email,
+          phone: updated.phone ?? form.phone,
+        });
+        setAvatarUrl(updated.avatar ?? avatarUrl);
+      }
+
+      // Re-issue JWT agar name di token ikut terbaru (name dibaca dari token)
+      try {
+        await fetch("/api/auth/refresh", { method: "POST" });
+      } catch {}
+
+      // Bersihkan cache auth agar refresh() ambil data terbaru dari DB
+      clearAuthCache();
+      await refresh();
+      setToast({ type: "success", message: "Profil berhasil diperbarui!" });
+      setIsModalOpen(false);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Terjadi kesalahan";
+      setToast({ type: "error", message: msg });
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function handleLogout() {
     await logout("/dashboard/pelanggan/login");
@@ -52,7 +152,10 @@ export default function ProfileContent() {
     { href: `/dashboard/pelanggan/${nama}/addresses`, icon: "location_on", label: "Daftar Alamat" },
   ];
 
-  const fullDisplayName = user?.name || `${form.firstName} ${form.lastName}`.trim() || "Pengguna";
+  const fullDisplayName =
+    user?.name ||
+    `${form.firstName} ${form.lastName}`.trim() ||
+    (loading ? "" : "Pengguna");
   const displayEmail = form.email || user?.email || "email@domain.com";
   const displayPhone = form.phone || user?.phone || "-";
 
@@ -73,11 +176,23 @@ export default function ProfileContent() {
 
       {/* DESKTOP ONLY: Full Profile Form Card (Unchanged for Desktop) */}
       <div className="hidden md:block bg-white rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] border border-[#e1e3e4] p-10 max-w-3xl">
-        <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
+        <form className="space-y-8" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarChange}
+          />
           <div className="flex items-center gap-6 pb-8 border-b border-[#e1e3e4]">
-            <div className="relative group cursor-pointer flex-shrink-0">
+            <div className="relative group cursor-pointer flex-shrink-0" onClick={() => fileInputRef.current?.click()}>
               <div className="w-28 h-28 rounded-full overflow-hidden border-2 border-[#bfc9c3] group-hover:border-[#003527] transition-colors duration-300 bg-[#003527] text-white flex items-center justify-center font-bold text-3xl">
-                {fullDisplayName.charAt(0).toUpperCase()}
+                {avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  fullDisplayName.charAt(0).toUpperCase()
+                )}
               </div>
             </div>
             <div>
@@ -85,9 +200,11 @@ export default function ProfileContent() {
               <p className="text-[#707974] text-sm mb-4">{displayEmail}</p>
               <button
                 type="button"
-                className="px-4 py-2 bg-[#f3f4f5] hover:bg-[#edeeef] border border-[#bfc9c3] rounded-lg font-semibold text-sm text-[#191c1d] transition-colors cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={avatarUploading}
+                className="px-4 py-2 bg-[#f3f4f5] hover:bg-[#edeeef] border border-[#bfc9c3] rounded-lg font-semibold text-sm text-[#191c1d] transition-colors cursor-pointer disabled:opacity-50"
               >
-                Ubah Foto
+                {avatarUploading ? "Mengupload..." : "Ubah Foto"}
               </button>
             </div>
           </div>
@@ -162,9 +279,10 @@ export default function ProfileContent() {
             </button>
             <button
               type="submit"
-              className="px-6 py-3 bg-[#003527] hover:bg-[#064e3b] text-white font-semibold text-sm rounded-lg transition-colors shadow-sm cursor-pointer"
+              disabled={saving}
+              className="px-6 py-3 bg-[#003527] hover:bg-[#064e3b] text-white font-semibold text-sm rounded-lg transition-colors shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Simpan Perubahan
+              {saving ? "Menyimpan..." : "Simpan Perubahan"}
             </button>
           </div>
         </form>
@@ -178,8 +296,13 @@ export default function ProfileContent() {
         >
           {/* Avatar & User Details */}
           <div className="flex items-center gap-3.5 min-w-0">
-            <div className="w-14 h-14 shrink-0 rounded-full bg-[#003527] text-white flex items-center justify-center font-bold text-xl border-2 border-white shadow-sm">
-              {fullDisplayName.charAt(0).toUpperCase()}
+            <div className="w-14 h-14 shrink-0 rounded-full bg-[#003527] text-white flex items-center justify-center font-bold text-xl border-2 border-white shadow-sm overflow-hidden">
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                fullDisplayName.charAt(0).toUpperCase()
+              )}
             </div>
             <div className="min-w-0 flex-1">
               <h3 className="font-bold text-base text-[#191c1d] truncate leading-tight mb-0.5">
@@ -272,17 +395,24 @@ export default function ProfileContent() {
             <div className="p-6 overflow-y-auto space-y-6 flex-1">
               {/* Photo Area */}
               <div className="flex items-center gap-4 pb-4 border-b border-[#e1e3e4]">
-                <div className="w-16 h-16 rounded-full bg-[#003527] text-white flex items-center justify-center font-bold text-2xl border-2 border-white shadow-sm shrink-0">
-                  {fullDisplayName.charAt(0).toUpperCase()}
+                <div className="w-16 h-16 rounded-full bg-[#003527] text-white flex items-center justify-center font-bold text-2xl border-2 border-white shadow-sm shrink-0 overflow-hidden">
+                  {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    fullDisplayName.charAt(0).toUpperCase()
+                  )}
                 </div>
                 <div>
                   <h4 className="font-semibold text-sm text-[#191c1d]">{fullDisplayName}</h4>
                   <p className="text-xs text-[#707974] mb-2">{displayEmail}</p>
                   <button
                     type="button"
-                    className="px-3 py-1.5 bg-[#f3f4f5] hover:bg-[#edeeef] border border-[#bfc9c3] rounded-md font-semibold text-xs text-[#191c1d] cursor-pointer"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={avatarUploading}
+                    className="px-3 py-1.5 bg-[#f3f4f5] hover:bg-[#edeeef] border border-[#bfc9c3] rounded-md font-semibold text-xs text-[#191c1d] cursor-pointer disabled:opacity-50"
                   >
-                    Ubah Foto
+                    {avatarUploading ? "Mengupload..." : "Ubah Foto"}
                   </button>
                 </div>
               </div>
@@ -364,12 +494,31 @@ export default function ProfileContent() {
               </button>
               <button
                 type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="px-5 py-2.5 bg-[#003527] hover:bg-[#064e3b] text-white font-semibold text-xs rounded-lg transition-colors shadow-xs cursor-pointer"
+                onClick={handleSave}
+                disabled={saving}
+                className="px-5 py-2.5 bg-[#003527] hover:bg-[#064e3b] text-white font-semibold text-xs rounded-lg transition-colors shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Simpan Perubahan
+                {saving ? "Menyimpan..." : "Simpan Perubahan"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 z-[60] animate-in slide-in-from-bottom fade-in duration-300">
+          <div
+            className={`flex items-center gap-2.5 px-5 py-3 rounded-xl shadow-2xl text-sm font-semibold ${
+              toast.type === "success"
+                ? "bg-[#003527] text-white"
+                : "bg-red-600 text-white"
+            }`}
+          >
+            <span className="material-symbols-outlined text-base">
+              {toast.type === "success" ? "check_circle" : "error"}
+            </span>
+            {toast.message}
           </div>
         </div>
       )}

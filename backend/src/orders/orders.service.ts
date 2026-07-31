@@ -27,7 +27,7 @@ export class OrdersService {
           // Cek kecukupan stok
           if (Number(product.stock) < qty) {
             throw new BadRequestException(
-              `Stok "${product.name}" tidak mencukupi. Tersedia: ${product.stock}, diminta: ${qty}`,
+              `Maaf, produk "${product.name}" saat ini stok habis.`,
             );
           }
 

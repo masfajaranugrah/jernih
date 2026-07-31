@@ -161,9 +161,9 @@ export default function KeranjangPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-gray-800">
+    <div className="min-h-screen bg-[#f8f9fb] text-neutral-900">
       <main className="mx-auto max-w-5xl px-4 py-8 md:px-6">
-        <h1 className="text-2xl font-black text-gray-950">Keranjang Belanja</h1>
+        <h1 className="text-2xl font-black text-neutral-900">Keranjang Belanja</h1>
 
         {!mounted ? null : items.length === 0 ? (
           <div className="mt-16 flex flex-col items-center justify-center text-center">
@@ -173,7 +173,7 @@ export default function KeranjangPage() {
             <p className="mt-4 text-gray-500">Keranjang Anda masih kosong.</p>
             <Link
               href="/produk"
-              className="mt-6 rounded-xl bg-[#1e3a8a] px-6 py-3 text-sm font-black text-white transition hover:bg-[#1e40af]"
+              className="mt-6 rounded-xl bg-black px-6 py-3 text-sm font-black text-white transition hover:bg-neutral-800"
             >
               Belanja Sekarang
             </Link>
@@ -191,7 +191,7 @@ export default function KeranjangPage() {
                     <Image src={item.image} alt={item.name} fill sizes="80px" className="object-contain p-1" />
                   </Link>
                   <div className="min-w-0 flex-1">
-                    <Link href={`/produk/${item.slug}`} className="line-clamp-2 text-sm font-bold text-gray-950 hover:text-[#1e3a8a]">
+                    <Link href={`/produk/${item.slug}`} className="line-clamp-2 text-sm font-bold text-gray-950 hover:text-neutral-900">
                       {item.name}
                     </Link>
                     {item.typeName && (
@@ -248,7 +248,7 @@ export default function KeranjangPage() {
                       id="order-address"
                       value={selectedAddressId ?? ""}
                       onChange={(e) => setSelectedAddressId(e.target.value || null)}
-                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#1e3a8a]"
+                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-900"
                     >
                       {addresses.map((a) => (
                         <option key={a.id} value={a.id}>
@@ -272,7 +272,7 @@ export default function KeranjangPage() {
                       onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
                       placeholder="Masukkan kode"
                       disabled={!!appliedVoucher}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-sm uppercase tracking-wider outline-none focus:border-[#1e3a8a] disabled:bg-gray-50 disabled:text-gray-400"
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-sm uppercase tracking-wider outline-none focus:border-neutral-900 disabled:bg-gray-50 disabled:text-gray-400"
                     />
                     {appliedVoucher ? (
                       <button
@@ -287,7 +287,7 @@ export default function KeranjangPage() {
                         type="button"
                         onClick={handleApplyVoucher}
                         disabled={voucherChecking || !voucherCode.trim()}
-                        className="shrink-0 rounded-lg bg-[#1e3a8a] px-3 py-2 text-xs font-bold text-white hover:bg-[#1e40af] disabled:opacity-50"
+                        className="shrink-0 rounded-lg bg-black px-3 py-2 text-xs font-bold text-white hover:bg-neutral-800 disabled:opacity-50"
                       >
                         {voucherChecking ? "..." : "Pakai"}
                       </button>
@@ -331,7 +331,7 @@ export default function KeranjangPage() {
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Catatan untuk penjual..."
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#1e3a8a]"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
                   />
                 </div>
 
@@ -344,7 +344,7 @@ export default function KeranjangPage() {
                 <button
                   onClick={handleCheckout}
                   disabled={submitting}
-                  className="mt-4 flex h-11 w-full items-center justify-center rounded-xl bg-[#1e3a8a] text-sm font-black text-white transition hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-4 flex h-11 w-full items-center justify-center rounded-xl bg-black text-sm font-black text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {submitting ? "Memproses..." : "Buat Pesanan"}
                 </button>

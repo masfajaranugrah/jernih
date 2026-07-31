@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 // HTTP keep-alive agent — reuse koneksi ke backend, kurangi TCP handshake overhead
 // Ini signifikan saat Next.js server action/server component fetch ke NestJS
 const nextConfig: NextConfig = {
+  devIndicators: false,
   images: {
     unoptimized: true,
     remotePatterns: [

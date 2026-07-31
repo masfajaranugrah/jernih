@@ -487,6 +487,7 @@ model Wishlist {
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
+  @@index([userId])
   @@map("wishlists")
 }
 

@@ -245,67 +245,82 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
   return (
     <div className="min-h-screen bg-[#e3e5e0] text-black w-full overflow-x-hidden">
-      {/* ── TOP FLOATING BUTTONS BAR ── */}
-      <header className="sticky top-0 z-40 w-full px-4 py-4 md:px-8 flex items-center justify-between pointer-events-none">
-        {/* Left: Floating Back Circle Button */}
-        <button
-          onClick={() => router.back()}
-          aria-label="Kembali"
-          className="pointer-events-auto w-12 h-12 rounded-full bg-white/90 backdrop-blur-md text-black flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all border border-white/60 cursor-pointer"
-        >
-          <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
-          </svg>
-        </button>
+      {/* ── MAIN HERO SHOWCASE AREA ── */}
+      <main className="w-full relative">
+        {/* Full-bleed Product Image Hero Container with Patented Aspect Ratio */}
+        <div className="relative w-full aspect-[4/5] max-h-[480px] sm:max-h-[560px] rounded-b-[36px] sm:rounded-b-[48px] overflow-hidden bg-neutral-900 shadow-xl">
+          {/* Main Product Image (Fills Entire Hero Box) */}
+          <Image
+            src={gallery[activeImage]}
+            alt={product.title}
+            fill
+            priority
+            sizes="(min-width: 1024px) 800px, 100vw"
+            className="object-cover w-full h-full transition-all duration-300"
+          />
 
-        {/* Right: Floating Share & Wishlist Heart Circle Buttons */}
-        <div className="pointer-events-auto flex items-center gap-3">
-          {/* Share Button */}
-          <div className="relative">
+          {/* Top Floating Overlay Buttons Bar */}
+          <div className="absolute top-4 left-4 right-4 z-30 flex items-center justify-between pointer-events-none">
+            {/* Top-Left: Floating Back Circle Button */}
             <button
-              onClick={() => setShareOpen((v) => !v)}
-              aria-label="Bagikan"
-              className="w-12 h-12 rounded-full bg-white/90 backdrop-blur-md text-black flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all border border-white/60 cursor-pointer"
+              onClick={() => router.back()}
+              aria-label="Kembali"
+              className="pointer-events-auto w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white/90 backdrop-blur-md text-black flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/40"
             >
               <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M18 16.1c-.8 0-1.5.3-2 .8L8.9 12.8c.1-.3.1-.5.1-.8s0-.5-.1-.8L16 7.1A3 3 0 1 0 15 5c0 .3 0 .5.1.8L8 9.9A3 3 0 1 0 8 14l7.1 4.2c-.1.2-.1.5-.1.8a3 3 0 1 0 3-2.9Z" />
+                <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
               </svg>
             </button>
-            {shareOpen && <SharePopover title={product.title} onClose={() => setShareOpen(false)} />}
+
+            {/* Top-Right: Floating Share & Wishlist Circle Buttons */}
+            <div className="pointer-events-auto flex items-center gap-2.5">
+              <div className="relative">
+                <button
+                  onClick={() => setShareOpen((v) => !v)}
+                  aria-label="Bagikan"
+                  className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white/90 backdrop-blur-md text-black flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/40"
+                >
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18 16.1c-.8 0-1.5.3-2 .8L8.9 12.8c.1-.3.1-.5.1-.8s0-.5-.1-.8L16 7.1A3 3 0 1 0 15 5c0 .3 0 .5.1.8L8 9.9A3 3 0 1 0 8 14l7.1 4.2c-.1.2-.1.5-.1.8a3 3 0 1 0 3-2.9Z" />
+                  </svg>
+                </button>
+                {shareOpen && <SharePopover title={product.title} onClose={() => setShareOpen(false)} />}
+              </div>
+
+              <button
+                onClick={handleToggleWishlist}
+                disabled={wishlistBusy}
+                aria-label="Wishlist"
+                className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white/90 backdrop-blur-md text-black flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer disabled:opacity-50 border border-white/40"
+              >
+                <svg className={`w-5 h-5 ${inWishlist ? "fill-black text-black" : "fill-none stroke-black stroke-2"}`} viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                </svg>
+              </button>
+            </div>
           </div>
 
-          {/* Wishlist Heart Button */}
-          <button
-            onClick={handleToggleWishlist}
-            disabled={wishlistBusy}
-            aria-label="Wishlist"
-            className="w-12 h-12 rounded-full bg-white/90 backdrop-blur-md text-black flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all border border-white/60 cursor-pointer disabled:opacity-50"
-          >
-            <svg className={`w-5 h-5 ${inWishlist ? "fill-black text-black" : "fill-none stroke-black stroke-2"}`} viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-            </svg>
-          </button>
-        </div>
-      </header>
-
-      {/* ── MAIN HERO SHOWCASE AREA ── */}
-      <main className="w-full">
-        <div className="relative flex flex-col items-center justify-center min-h-[320px] sm:min-h-[400px] py-4 px-4">
-          {/* Main Hero Product Image */}
-          <div className="relative aspect-square w-full max-w-[360px] sm:max-w-[460px] flex items-center justify-center">
-            <Image
-              src={gallery[activeImage]}
-              alt={product.title}
-              fill
-              priority
-              sizes="(min-width: 1024px) 500px, 100vw"
-              className="object-contain p-2 sm:p-4 transition-all duration-300"
-            />
-          </div>
+          {/* Floating Dots Carousel Indicators (Floating Bottom-Center Inside Image) */}
+          {gallery.length > 1 && (
+            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-black/40 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 shadow-lg">
+              {gallery.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setActiveImage(index)}
+                  aria-label={`Lihat foto ${index + 1}`}
+                  className={`transition-all duration-300 cursor-pointer ${
+                    index === activeImage
+                      ? "w-5 h-2 bg-white rounded-full shadow-xs"
+                      : "w-2 h-2 bg-white/40 hover:bg-white/70 rounded-full"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ── BOTTOM SHEET CARD CONTAINER ── */}
-        <div className="w-full bg-white/95 backdrop-blur-xl rounded-t-[40px] sm:rounded-t-[48px] px-6 sm:px-12 py-8 sm:py-10 space-y-6 border-t border-white/80 z-10">
+        <div className="w-full bg-white rounded-t-[36px] sm:rounded-t-[48px] -mt-6 relative z-20 px-6 sm:px-12 py-8 sm:py-10 space-y-6 border-t border-white/80 shadow-2xl">
           {/* Drag Handle Indicator */}
           <div className="w-12 h-1.5 bg-neutral-300 rounded-full mx-auto mb-2" />
 
@@ -335,7 +350,12 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               <h1 className="text-2xl sm:text-3xl font-extrabold text-black tracking-tight mt-1">{product.title}</h1>
             </div>
             <div className="text-right">
-              <span className="text-2xl sm:text-3xl font-black text-black tracking-tight">{displayPrice}</span>
+              <div className="flex items-baseline justify-end gap-2">
+                <span className="text-2xl sm:text-3xl font-black text-black tracking-tight">{displayPrice}</span>
+                {oldPriceNum > priceNum && oldPriceNum > 0 && (
+                  <span className="text-sm sm:text-base text-neutral-400 line-through">{formatPrice(oldPriceNum)}</span>
+                )}
+              </div>
               {discountPercent > 0 && (
                 <div className="mt-1">
                   <span className="bg-black text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full">-{discountPercent}%</span>

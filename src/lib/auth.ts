@@ -23,6 +23,41 @@ export function getToken(): string | null {
   return match ? match.split("=")[1] : null;
 }
 
+/**
+ * Decode JWT payload tanpa verifikasi signature — cukup untuk baca name/email.
+ * Jika token rusak, kembalikan null. API backend tetap menolak token palsu.
+ */
+export function decodeJwtToken(
+  token: string
+): { id?: string; name?: string; email?: string; role?: string } | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(base64));
+    return {
+      id: payload.sub,
+      name: payload.name,
+      email: payload.email,
+      role: payload.role,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Dapatkan slug user dari JWT token (tanpa API call).
+ * Dipakai untuk membangun link halaman (mis. wishlist) langsung tanpa
+ * nunggu `/api/auth/me` selesai — menghindari flash ke halaman login.
+ * Return null jika belum login / token rusak.
+ */
+export function getTokenSlug(): string | null {
+  const decoded = decodeJwtToken(getToken() ?? "");
+  if (!decoded?.name) return null;
+  return decoded.name.toLowerCase().replace(/\s+/g, "-");
+}
+
 /** Hapus client-side cookie */
 function removeTokenClient() {
   document.cookie = `${TOKEN_KEY}=; path=/; max-age=0; SameSite=Lax`;

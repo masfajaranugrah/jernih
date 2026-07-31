@@ -8,16 +8,20 @@ function getAuth(req: NextRequest): string | null {
   return req.cookies.get("mh_token")?.value ?? null;
 }
 
-/** GET /api/wishlist — daftar wishlist user login */
+/** GET /api/wishlist — daftar wishlist user login (dengan pagination) */
 export async function GET(req: NextRequest) {
   const token = getAuth(req);
   if (!token) {
     return NextResponse.json({ message: "Not authenticated" }, { status: 401 });
   }
 
+  const { searchParams } = new URL(req.url);
+  const page = searchParams.get("page") || "1";
+  const limit = searchParams.get("limit") || "20";
+
   let res: Response;
   try {
-    res = await fetch(`${BACKEND_URL}/wishlist`, {
+    res = await fetch(`${BACKEND_URL}/wishlist?page=${page}&limit=${limit}`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });

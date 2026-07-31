@@ -1,10 +1,39 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useParams } from "next/navigation";
 import { useState, useEffect } from "react";
-import { useAuth } from "@/lib/auth-context";
 import { getCartCount, CART_EVENT, WISHLIST_EVENT } from "@/lib/cart";
+import { getToken, getTokenSlug } from "@/lib/auth";
+import { useAuth } from "@/lib/auth-context";
+
+// ── Cache wishlist count di sessionStorage ──
+const WISHLIST_COUNT_KEY = "mh_wishlist_count_cache";
+const WISHLIST_COUNT_TTL = 30_000; // 30 detik
+
+function getCachedCount(): number {
+  try {
+    const raw = sessionStorage.getItem(WISHLIST_COUNT_KEY);
+    if (!raw) return 0;
+    const { count, timestamp } = JSON.parse(raw);
+    if (Date.now() - timestamp > WISHLIST_COUNT_TTL) {
+      sessionStorage.removeItem(WISHLIST_COUNT_KEY);
+      return 0;
+    }
+    return typeof count === "number" ? count : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function setCachedCount(count: number) {
+  try {
+    sessionStorage.setItem(
+      WISHLIST_COUNT_KEY,
+      JSON.stringify({ count, timestamp: Date.now() })
+    );
+  } catch {}
+}
 
 function StackIcon() {
   return (
@@ -48,10 +77,13 @@ function CloseIcon() {
   );
 }
 
-export default function MobileBottomNav() {
+export default function MobileBottomNav({ initialSlug }: { initialSlug?: string | null }) {
   const pathname = usePathname();
+  const params = useParams();
   const { user } = useAuth();
-  const userSlug = user?.slug ?? user?.name?.toLowerCase().replace(/\s+/g, "-") ?? "";
+  // Slug dari server (cookie) dipakai dulu agar href konsisten server↔client
+  // (hindari hydration error). user?.slug menyusul setelah auth selesai.
+  const nama = (params?.nama as string | undefined) ?? user?.slug ?? initialSlug ?? getTokenSlug();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
@@ -76,12 +108,21 @@ export default function MobileBottomNav() {
   useEffect(() => {
     let cancelled = false;
     async function fetchWishlist() {
+      if (!getToken()) return;
+
+      const cached = getCachedCount();
+      if (cached > 0) {
+        setWishlistCount(cached);
+        return;
+      }
+
       try {
-        const res = await fetch("/api/wishlist", { cache: "no-store" });
+        const res = await fetch("/api/wishlist/count", { cache: "no-store" });
         if (!res.ok) return;
         const data = await res.json();
-        if (!cancelled && Array.isArray(data)) {
-          setWishlistCount(data.length);
+        if (!cancelled && typeof data.count === "number") {
+          setWishlistCount(data.count);
+          setCachedCount(data.count);
         }
       } catch {}
     }
@@ -91,59 +132,59 @@ export default function MobileBottomNav() {
       cancelled = true;
       window.removeEventListener(WISHLIST_EVENT, fetchWishlist);
     };
-  }, [user]);
+  }, []);
 
   if (isDetailPage) {
     return null;
   }
 
-  const wishlistHref = user
-    ? `/dashboard/pelanggan/${userSlug}/wishlist`
+  const wishlistHref = nama
+    ? `/dashboard/pelanggan/${nama}/wishlist`
     : "/dashboard/pelanggan/login?from=wishlist";
 
-  const profileHref = user
-    ? `/dashboard/pelanggan/${userSlug}/profile`
+  const profileHref = nama
+    ? `/dashboard/pelanggan/${nama}/profile`
     : "/dashboard/pelanggan/login";
 
   const isWishlistActive = pathname.includes("wishlist");
   const isCartActive = pathname.startsWith("/keranjang");
-  const isProfileActive = pathname.includes("profile") || pathname.includes("dashboard/pelanggan");
+  const isProfileActive = pathname.includes("/profile");
 
-  // 4 circular menu items forming a wide radial arc above trigger button
-  const radialItems = [
+  // 4 items arranged in a clean vertical stack of horizontal pills (icon left, text right)
+  const verticalItems = [
     {
       href: "/",
       label: "Beranda",
       icon: "🏠",
       isActive: pathname === "/",
-      offset: { x: -75, y: -65 },
+      offsetY: -212,
     },
     {
       href: "/produk",
       label: "Produk",
       icon: "📦",
       isActive: pathname.startsWith("/produk"),
-      offset: { x: -35, y: -135 },
+      offsetY: -160,
     },
     {
       href: "/sewa",
       label: "Sewa",
       icon: "🛋️",
       isActive: pathname.startsWith("/sewa"),
-      offset: { x: 40, y: -135 },
+      offsetY: -108,
     },
     {
       href: "/jasa",
       label: "Jasa",
       icon: "🛠️",
       isActive: pathname.startsWith("/jasa"),
-      offset: { x: 85, y: -65 },
+      offsetY: -56,
     },
   ];
 
   return (
     <>
-      {/* Semi-transparent Backdrop when radial menu is open */}
+      {/* Semi-transparent Backdrop when menu is open */}
       {menuOpen && (
         <div
           className="md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-xs transition-opacity duration-300"
@@ -153,39 +194,30 @@ export default function MobileBottomNav() {
 
       {/* Floating Bottom Navbar Container */}
       <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 select-none">
-        {/* Left Trigger Button Wrapper with Arc/Radial Items */}
+        {/* Left Trigger Button Wrapper with Vertical Stack Items */}
         <div className="relative flex items-center justify-center">
-          {/* 4 Radial Circular Items in semi-circle arc */}
-          {radialItems.map((item, idx) => {
-            const transformStyle = menuOpen
-              ? `translate(${item.offset.x}px, ${item.offset.y}px) scale(1)`
-              : `translate(0px, 0px) scale(0)`;
-
+          {/* 4 Items arranged vertically (Icon Left, Text Right) */}
+          {verticalItems.map((item, idx) => {
             return (
               <Link
                 key={item.label}
                 href={item.href}
-                onClick={() => setMenuOpen(false)}
                 style={{
-                  transform: transformStyle,
+                  transform: menuOpen
+                    ? `translate(-50%, calc(-50% + ${item.offsetY}px)) scale(1)`
+                    : `translate(-50%, calc(-50% + 0px)) scale(0)`,
                   transitionDelay: menuOpen ? `${idx * 40}ms` : `${(3 - idx) * 30}ms`,
                 }}
-                className={`absolute z-50 flex flex-col items-center justify-center transition-all duration-300 ease-out ${
+                className={`absolute left-1/2 top-1/2 z-50 flex items-center justify-center gap-2.5 px-4 py-2.5 w-36 sm:w-40 rounded-full shadow-2xl transition-all duration-300 ease-out whitespace-nowrap cursor-pointer ${
                   menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+                } ${
+                  item.isActive
+                    ? "bg-white text-black border-2 border-black shadow-black/30 font-bold"
+                    : "bg-black/95 backdrop-blur-md text-white border-2 border-transparent shadow-black/50 hover:bg-neutral-900 hover:border-white/20"
                 }`}
               >
-                <div
-                  className={`w-12 h-12 sm:w-13 sm:h-13 rounded-full flex flex-col items-center justify-center shadow-xl transition-transform hover:scale-110 active:scale-95 cursor-pointer ${
-                    item.isActive
-                      ? "bg-white text-black border-2 border-black shadow-black/30"
-                      : "bg-black text-white border border-white/20 shadow-black/50 hover:bg-neutral-900"
-                  }`}
-                >
-                  <span className="text-lg leading-none">{item.icon}</span>
-                </div>
-                <span className="mt-1 bg-black/90 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-white/20 shadow-md whitespace-nowrap">
-                  {item.label}
-                </span>
+                <span className="text-base sm:text-lg shrink-0 leading-none">{item.icon}</span>
+                <span className="text-xs font-bold tracking-wide">{item.label}</span>
               </Link>
             );
           })}

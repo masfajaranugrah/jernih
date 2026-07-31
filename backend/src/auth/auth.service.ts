@@ -51,7 +51,7 @@ export class AuthService {
       },
     });
 
-    const token = await this.signToken(user.id, user.email, user.role, user.tokenVersion);
+    const token = await this.signToken(user.id, user.name, user.email, user.role, user.tokenVersion);
 
     return { user, access_token: token };
   }
@@ -76,7 +76,7 @@ export class AuthService {
       throw new UnauthorizedException('Email atau password salah');
     }
 
-    const token = await this.signToken(user.id, user.email, user.role, user.tokenVersion);
+    const token = await this.signToken(user.id, user.name, user.email, user.role, user.tokenVersion);
 
     const { password: _, ...userWithoutPassword } = user;
 
@@ -108,9 +108,10 @@ export class AuthService {
   }
 
   // ── Helper: sign JWT ────────────────────────────────────────────────────────
-  private async signToken(userId: string, email: string, role: string, tokenVersion: number): Promise<string> {
+  private async signToken(userId: string, name: string, email: string, role: string, tokenVersion: number): Promise<string> {
     const payload: JwtPayload = {
       sub: userId,
+      name,
       email,
       role,
       tokenVersion,
@@ -144,7 +145,7 @@ export class AuthService {
 
     if (!user) throw new UnauthorizedException('User tidak ditemukan');
 
-    const token = await this.signToken(user.id, user.email, user.role, user.tokenVersion);
+    const token = await this.signToken(user.id, user.name, user.email, user.role, user.tokenVersion);
     const { tokenVersion: _, ...userWithoutVersion } = user;
     return { user: userWithoutVersion, access_token: token };
   }
