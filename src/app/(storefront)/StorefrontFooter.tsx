@@ -43,72 +43,109 @@ const shippingMethods = [
   { src: "/pyment/Anteraja.png.webp", label: "Anteraja" },
 ];
 
+const socialLinks = [
+  { src: "/img/sosmed/facebook-color-svgrepo-com.svg", alt: "Facebook" },
+  { src: "/img/sosmed/instagram-1-svgrepo-com.svg", alt: "Instagram" },
+  { src: "/img/sosmed/tiktok-logo-logo-svgrepo-com.svg", alt: "TikTok" },
+];
+
 export default function StorefrontFooter() {
   return (
     <footer className="w-full bg-white">
-      {/* ── About ── */}
+      {/* ── Company Profile ── */}
       <section className="border-b border-[#e2e8f0] bg-white">
         <div className="mx-auto max-w-[1280px] px-6 py-14 md:px-12">
-          <div className="mx-auto max-w-4xl text-center">
-            <h2 className="text-xl font-bold text-black md:text-2xl">Jernih Kreatif</h2>
-            <p className="mt-1 text-sm text-[#64748b]">Solusi Belanja, Sewa, dan Jasa dalam Satu Tempat</p>
-            <div className="mx-auto mt-6 max-w-3xl space-y-3 text-left text-xs leading-relaxed text-[#475569]">
-              <p>Selamat datang di Jernih Kreatif, platform marketplace yang menghadirkan pengalaman berbelanja, menyewa, dan mencari jasa dengan mudah, aman, serta harga yang terjangkau.</p>
-              <p>Di Jernih Kreatif, Anda dapat menemukan beragam produk berkualitas untuk memenuhi kebutuhan sehari hari, perlengkapan rumah tangga, elektronik, gadget, komputer, fashion, hobi, perlengkapan usaha, hingga berbagai kategori produk lainnya. Selain itu, kami juga menghadirkan layanan sewa serta berbagai jasa profesional yang siap membantu kebutuhan pribadi maupun bisnis Anda.</p>
-              <p>Tak hanya menjadi tempat bertransaksi, Jernih Kreatif juga menjadi wadah bagi UMKM, pelaku usaha, distributor, maupun individu untuk memasarkan produk dan layanan kepada lebih banyak pelanggan di seluruh Indonesia.</p>
+          <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
+            <div>
+              <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#2563eb]">Tentang Jernih Kreatif</p>
+              <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-black md:text-3xl">
+                Solusi belanja, sewa, dan jasa dalam satu platform.
+              </h2>
+              <div className="mt-5 space-y-3 text-sm leading-7 text-[#475569]">
+                <p>
+                  Jernih Kreatif adalah platform marketplace yang membantu pelanggan menemukan produk, layanan sewa, dan jasa profesional dengan proses yang mudah, aman, dan transparan.
+                </p>
+                <p>
+                  Melalui satu ekosistem digital, pelanggan dapat mencari kebutuhan rumah tangga, elektronik, gadget, komputer, fashion, hobi, perlengkapan usaha, layanan sewa, hingga jasa kreatif dan teknis.
+                </p>
+                <p>
+                  Jernih Kreatif juga menjadi wadah bagi UMKM, pelaku usaha, distributor, penyedia jasa, dan individu untuk memasarkan produk maupun layanan kepada pelanggan di Indonesia.
+                </p>
+              </div>
+              <p className="mt-5 text-sm font-bold text-black">
+                Semua kebutuhan Anda, dalam satu platform terpercaya.
+              </p>
             </div>
-            <p className="mt-4 text-xs font-semibold text-black">Semua kebutuhan Anda, dalam satu platform terpercaya.</p>
+
+            <div className="rounded-2xl border border-[#e2e8f0] bg-[#f8fafc] p-6">
+              <h3 className="text-sm font-extrabold uppercase tracking-[0.16em] text-black">Ruang Lingkup Platform</h3>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                {[
+                  "Marketplace produk dari berbagai kategori.",
+                  "Layanan sewa untuk kebutuhan personal, event, dan usaha.",
+                  "Jasa profesional untuk kebutuhan kreatif, teknis, dan bisnis.",
+                  "Peluang pemasaran digital untuk UMKM dan pelaku usaha lokal.",
+                ].map((item) => (
+                  <div key={item} className="flex items-start gap-3 rounded-xl bg-white p-3 text-sm font-semibold text-[#334155]">
+                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#2563eb]" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── Mengapa ── */}
+      {/* ── Value Proposition ── */}
       <section className="border-b border-[#e2e8f0] bg-white">
         <div className="mx-auto max-w-[1280px] px-6 py-14 md:px-12">
-          <div className="text-center">
-            <h2 className="text-lg font-bold text-black md:text-xl">Mengapa Memilih Jernih Kreatif?</h2>
-            <p className="mt-1 text-xs text-[#64748b]">Kenapa Harus Jernih Kreatif?</p>
+          <div className="max-w-2xl">
+            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#2563eb]">Mengapa Memilih Kami</p>
+            <h2 className="mt-2 text-xl font-extrabold text-black md:text-2xl">Dibangun untuk transaksi yang praktis, jelas, dan mendukung pertumbuhan usaha.</h2>
           </div>
-          <div className="mx-auto mt-8 grid max-w-5xl gap-x-8 gap-y-5 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[
-              { icon: "💰", title: "Harga Terjangkau", desc: "Kami menghadirkan berbagai produk dengan harga yang kompetitif sehingga Anda dapat berbelanja lebih hemat tanpa mengorbankan kualitas." },
-              { icon: "✅", title: "Produk Berkualitas", desc: "Setiap penjual didorong untuk menyediakan produk terbaik dengan informasi yang jelas dan transparan agar pelanggan dapat berbelanja dengan nyaman dan percaya diri." },
-              { icon: "🚚", title: "Belanja Mudah & Praktis", desc: "Nikmati proses belanja yang sederhana, pencarian produk yang cepat, serta sistem transaksi yang aman sehingga pengalaman berbelanja menjadi lebih nyaman." },
-              { icon: "🛠️", title: "Sewa & Jasa Satu Platform", desc: "Tidak hanya menjual produk, Jernih Kreatif juga menyediakan berbagai layanan sewa dan jasa profesional. Mulai dari kebutuhan event, peralatan, hingga jasa kreatif dan teknis." },
-              { icon: "🛍️", title: "Kesempatan Jadi Penjual", desc: "Ingin mengembangkan bisnis? Buka toko Anda di Jernih Kreatif dan pasarkan produk maupun jasa kepada ribuan calon pelanggan dengan platform yang mudah digunakan." },
-              { icon: "📈", title: "Dukung UMKM", desc: "Jernih Kreatif berkomitmen membantu UMKM, pelaku usaha lokal, dan kreator Indonesia berkembang melalui platform digital yang mudah diakses, terpercaya, dan terus bertumbuh." },
+              { title: "Harga Kompetitif", desc: "Pelanggan dapat membandingkan pilihan produk dan layanan dengan harga yang lebih terjangkau tanpa mengabaikan kualitas." },
+              { title: "Informasi Produk Jelas", desc: "Setiap penjual didorong menampilkan informasi produk, layanan, harga, dan ketentuan secara transparan agar pelanggan dapat mengambil keputusan dengan percaya diri." },
+              { title: "Belanja Lebih Praktis", desc: "Alur pencarian, pemesanan, dan transaksi dibuat sederhana agar kebutuhan pelanggan dapat diproses lebih cepat dan nyaman." },
+              { title: "Sewa & Jasa Terintegrasi", desc: "Tidak hanya produk, Jernih Kreatif juga menyediakan layanan sewa dan jasa profesional untuk kebutuhan pribadi maupun bisnis." },
+              { title: "Kesempatan Menjadi Penjual", desc: "Pelaku usaha dapat membuka toko, menawarkan jasa, atau memasarkan layanan sewa melalui platform yang mudah digunakan." },
+              { title: "Dukungan untuk UMKM", desc: "Jernih Kreatif berkomitmen membantu UMKM, usaha lokal, dan kreator Indonesia memperluas jangkauan pasar melalui kanal digital." },
             ].map((item) => (
-              <div key={item.title} className="flex items-start gap-3">
-                <span className="mt-0.5 shrink-0 text-base">{item.icon}</span>
-                <div>
-                  <p className="text-xs font-bold text-black">{item.title}</p>
-                  <p className="mt-0.5 text-xs leading-relaxed text-[#475569]">{item.desc}</p>
-                </div>
+              <div key={item.title} className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
+                <p className="text-sm font-extrabold text-black">{item.title}</p>
+                <p className="mt-2 text-sm leading-6 text-[#475569]">{item.desc}</p>
               </div>
             ))}
           </div>
-          <div className="mx-auto mt-10 max-w-3xl border-t border-[#e2e8f0] pt-8 text-center">
-            <h3 className="text-base font-bold text-black">Mulai Bersama Jernih Kreatif</h3>
-            <p className="mx-auto mt-2 max-w-2xl text-xs leading-relaxed text-[#475569]">Baik Anda ingin berbelanja, menyewa, menggunakan jasa profesional, maupun membuka toko dan menjual produk, Jernih Kreatif adalah solusi yang tepat.</p>
-            <p className="mt-2 text-xs leading-relaxed text-[#475569]">Bergabunglah bersama kami dan rasakan pengalaman marketplace yang lebih lengkap, praktis, dan menguntungkan.</p>
-            <p className="mt-4 text-xs font-bold text-black">Jernih Kreatif Belanja Mudah, Harga Bersahabat, Peluang Usaha Tanpa Batas.</p>
+          <div className="mt-8 rounded-2xl bg-black px-6 py-6 text-white md:flex md:items-center md:justify-between md:gap-6">
+            <div>
+              <h3 className="text-base font-extrabold">Mulai bersama Jernih Kreatif</h3>
+              <p className="mt-1 text-sm leading-6 text-white/75">Belanja mudah, harga bersahabat, dan peluang usaha tanpa batas.</p>
+            </div>
+            <Link href="/register-mitra" className="mt-4 inline-flex rounded-xl bg-white px-5 py-2.5 text-sm font-extrabold text-black transition hover:bg-[#e2e8f0] md:mt-0">
+              Daftar Mitra
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* ── Trust ── */}
+      {/* ── Trust & Legal ── */}
       <section className="border-b border-[#e2e8f0] bg-white">
         <div className="mx-auto max-w-[1280px] px-6 py-12 md:px-12">
+          <div className="mb-6 max-w-2xl">
+            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#2563eb]">Keamanan & Transparansi</p>
+            <h2 className="mt-2 text-xl font-extrabold text-black md:text-2xl">Prinsip layanan untuk pengalaman transaksi yang lebih aman.</h2>
+          </div>
           <div className="grid gap-4 md:grid-cols-3">
             <div className="flex items-start gap-4 rounded-lg border border-[#e2e8f0] bg-white p-4">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1e3a8a]/10 text-black">
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0 1 12 2.944a11.955 11.955 0 0 1-8.618 3.04A12.02 12.02 0 0 0 3 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-black">Transparan</p>
-                <p className="mt-1.5 text-[10px] leading-relaxed text-[#475569]">Temukan Produk dari Ribuan Toko / Online Shop terpercaya di Indonesia, dan baca review nya di Jernih Kreatif</p>
-                <p className="mt-1 text-[10px] leading-relaxed text-[#475569]">Pembayaran Anda baru diteruskan ke penjual setelah barang Anda terima</p>
-                <p className="mt-1 text-[10px] leading-relaxed text-[#475569]">Belanja Online Aman, Bebas Penipuan di Jernih Kreatif</p>
+                <p className="text-xs font-bold uppercase tracking-[0.15em] text-black">Transparan</p>
+                <p className="mt-1.5 text-xs leading-relaxed text-[#475569]">Informasi toko, produk, harga, ulasan, dan ketentuan layanan disajikan secara jelas agar pelanggan dapat membandingkan pilihan sebelum bertransaksi.</p>
               </div>
             </div>
             <div className="flex items-start gap-4 rounded-lg border border-[#e2e8f0] bg-white p-4">
@@ -116,9 +153,8 @@ export default function StorefrontFooter() {
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 15v2m-6 4h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2zm10-10V7a4 4 0 0 0-8 0v4h8z"/></svg>
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-black">Aman</p>
-                <p className="mt-1.5 text-[10px] leading-relaxed text-[#475569]">Bandingkan review untuk berbagai online shop terpercaya di Indonesia</p>
-                <p className="mt-1 text-[10px] leading-relaxed text-[#475569]">Belanja produk apa saja di Jernih Kreatif, gratis tanpa biaya tambahan</p>
+                <p className="text-xs font-bold uppercase tracking-[0.15em] text-black">Aman</p>
+                <p className="mt-1.5 text-xs leading-relaxed text-[#475569]">Sistem transaksi dirancang untuk membantu mengurangi risiko penipuan, menjaga alur pembayaran, dan memberi pelanggan pengalaman belanja yang lebih terlindungi.</p>
               </div>
             </div>
             <div className="flex items-start gap-4 rounded-lg border border-[#e2e8f0] bg-white p-4">
@@ -126,8 +162,8 @@ export default function StorefrontFooter() {
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3z"/></svg>
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-black">Fasilitas Escrow Gratis</p>
-                <p className="mt-1.5 text-[10px] leading-relaxed text-[#475569]">Fasilitas Escrow (Rekening Bersama) Jernih Kreatif tidak dikenakan biaya tambahan</p>
+                <p className="text-xs font-bold uppercase tracking-[0.15em] text-black">Rekening Bersama</p>
+                <p className="mt-1.5 text-xs leading-relaxed text-[#475569]">Dana pelanggan dapat dikelola melalui mekanisme rekening bersama sesuai ketentuan platform, sehingga pembayaran diteruskan setelah transaksi memenuhi ketentuan yang berlaku.</p>
               </div>
             </div>
           </div>
@@ -162,10 +198,23 @@ export default function StorefrontFooter() {
                   {item.label}
                 </Link>
               ))}
-              <div className="flex gap-4 pt-2">
-                <Image src="/img/sosmed/facebook-color-svgrepo-com.svg" alt="Facebook" width={28} height={28} className="h-7 w-7 object-contain transition-opacity hover:opacity-70" unoptimized />
-                <Image src="/img/sosmed/instagram-1-svgrepo-com.svg" alt="Instagram" width={28} height={28} className="h-7 w-7 object-contain transition-opacity hover:opacity-70" unoptimized />
-                <Image src="/img/sosmed/tiktok-logo-logo-svgrepo-com.svg" alt="TikTok" width={28} height={28} className="h-7 w-7 object-contain transition-opacity hover:opacity-70" unoptimized />
+              <div className="flex gap-3 pt-2">
+                {socialLinks.map((item) => (
+                  <span
+                    key={item.alt}
+                    className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-[#e2e8f0] bg-[#f8fafc] transition-colors hover:bg-[#e2e8f0]"
+                    title={item.alt}
+                  >
+                    <Image
+                      src={item.src}
+                      alt={item.alt}
+                      width={22}
+                      height={22}
+                      className="h-6 w-6 object-contain"
+                      unoptimized
+                    />
+                  </span>
+                ))}
               </div>
             </nav>
           </div>

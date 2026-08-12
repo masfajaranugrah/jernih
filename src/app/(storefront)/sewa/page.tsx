@@ -1,5 +1,6 @@
 import { fetchRentalItems } from "@/lib/rental-actions";
 import SewaPageClient from "./SewaPageClient";
+import StorefrontFooter from "@/app/(storefront)/StorefrontFooter";
 
 export const metadata = {
   title: "Katalog Sewa - Jernih Creatife",
@@ -26,10 +27,13 @@ export default async function SewaPage({ searchParams }: PageProps) {
   ).sort();
 
   return (
-    <SewaPageClient
-      items={items}
-      categories={categories}
-      resolvedSearch={resolvedSearch}
-    />
+    <>
+      <SewaPageClient
+        items={items}
+        categories={categories}
+        resolvedSearch={resolvedSearch}
+      />
+      <StorefrontFooter />
+    </>
   );
 }

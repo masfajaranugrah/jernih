@@ -70,13 +70,12 @@ function ProductCard({
   onToggleFavorite: (id: string, e: React.MouseEvent) => void;
 }) {
   const badgeText = getBadgeText(product, index);
-  const categoryLabel = product.category?.name || "PRODUK";
   const ratingValue = (product.rating && product.rating > 0) ? product.rating.toFixed(1) : (4.5 + ((index || 0) % 5) * 0.1).toFixed(1);
 
   return (
-    <div className="group relative flex h-full flex-col justify-between rounded-[28px] bg-white p-3.5 sm:p-4 shadow-xs border border-neutral-100">
-      {/* Top Image Box */}
-      <Link href={`/produk/${product.slug}`} className="block relative aspect-square w-full overflow-hidden rounded-[22px] bg-[#f2f4f7] p-3">
+    <div className="group relative flex flex-col rounded-[28px] border border-neutral-100 bg-white p-3.5 shadow-xs sm:rounded-[32px] sm:p-4 hover:shadow-md transition-all h-auto">
+      {/* Full-bleed product image */}
+      <Link href={`/produk/${product.slug}`} className="relative -mx-3.5 -mt-3.5 block aspect-[4/3] w-[calc(100%+1.75rem)] shrink-0 overflow-hidden rounded-t-[27px] bg-[#f2f4f7] sm:-mx-4 sm:-mt-4 sm:w-[calc(100%+2rem)] sm:rounded-t-[31px]">
         {badgeText && (
           <div className="absolute top-2.5 left-2.5 z-10 rounded-full bg-black px-3 py-1 text-[10px] font-extrabold text-white shadow-md uppercase tracking-wider">
             {badgeText}
@@ -97,7 +96,7 @@ function ProductCard({
           <img
             src={product.images[0]}
             alt={product.name}
-            className="w-full h-full object-contain p-2"
+            className="h-full w-full object-cover"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-neutral-300">
@@ -107,32 +106,33 @@ function ProductCard({
       </Link>
 
       {/* Info Section Below Image */}
-      <div className="mt-3 flex flex-col px-1">
-        <div className="flex items-center justify-between text-xs font-semibold text-neutral-500">
-          <span className="uppercase tracking-wider text-[11px] font-extrabold text-neutral-400 truncate max-w-[65%]">
-            {categoryLabel}
-          </span>
-          <div className="flex items-center gap-1 font-bold text-neutral-800 bg-neutral-100/80 px-2 py-0.5 rounded-md text-[11px]">
-            <StarIcon />
-            <span>{ratingValue}</span>
-          </div>
-        </div>
-
-        <Link href={`/produk/${product.slug}`} className="mt-1">
-          <h3 className="line-clamp-1 font-bold text-sm sm:text-base text-neutral-900 group-hover:text-blue-600 transition-colors">
+      <div className="mt-2.5 flex flex-col items-start px-0.5">
+        <Link href={`/produk/${product.slug}`}>
+          <h3 className="font-bold text-sm sm:text-base text-neutral-900 leading-snug group-hover:text-blue-600 transition-colors">
             {product.name}
           </h3>
         </Link>
 
-        <div className="mt-1.5 flex items-baseline gap-2">
-          <span className="font-extrabold text-sm sm:text-base text-neutral-900">
-            {formatRupiah(product.price)}
-          </span>
-          {product.oldPrice && Number(product.oldPrice) > Number(product.price) && (
-            <span className="text-xs text-neutral-400 line-through">
-              {formatRupiah(product.oldPrice)}
+        <div className="mt-2 pt-1 flex flex-col gap-1">
+          <div className="flex items-center gap-1 text-[11px] font-bold text-neutral-700 sm:text-xs">
+            <StarIcon />
+            <span>{ratingValue}</span>
+            <span className="font-medium text-neutral-400">.</span>
+            <span className="font-medium text-neutral-400">
+              {product.totalSold.toLocaleString("id-ID")} terjual
             </span>
-          )}
+          </div>
+
+          <div className="mt-1 flex flex-col items-start">
+            <span className="font-extrabold text-sm sm:text-base text-neutral-900">
+              {formatRupiah(product.price)}
+            </span>
+            {product.oldPrice && Number(product.oldPrice) > Number(product.price) && (
+              <span className="text-xs text-neutral-400 line-through">
+                {formatRupiah(product.oldPrice)}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -632,7 +632,7 @@ export default function ProdukPageClient({
                     <p className="text-xs font-extrabold uppercase tracking-wider text-neutral-400 mb-4 text-center">
                       Referensi produk lain yang mungkin Anda cari:
                     </p>
-                    <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-4 items-start">
                       {recommendedProducts.map((prod, idx) => (
                         <ProductCard
                           key={prod.id}
@@ -659,7 +659,7 @@ export default function ProdukPageClient({
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-2 gap-3.5 sm:gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3.5 sm:gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 items-start">
                   {filtered.map((product: ApiProduct, index: number) => (
                     <ProductCard
                       key={product.id}

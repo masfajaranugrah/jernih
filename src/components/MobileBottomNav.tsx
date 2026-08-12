@@ -35,44 +35,136 @@ function setCachedCount(count: number) {
   } catch {}
 }
 
-function StackIcon() {
+/* ───────── Modern SVG Icons matching screenshot ───────── */
+
+/** Pentagon Smile Home Icon */
+function PentagonHomeIcon({ className = "w-6 h-6" }: { className?: string }) {
   return (
-    <svg className="w-6 h-6 fill-white shrink-0" viewBox="0 0 24 24" aria-hidden="true">
-      <rect x="5" y="4" width="14" height="3.5" rx="1.5" />
-      <rect x="5" y="10.25" width="14" height="3.5" rx="1.5" />
-      <rect x="5" y="16.5" width="14" height="3.5" rx="1.5" />
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 3.2L20.2 9.4C20.7 9.8 21 10.4 20.9 11L19.4 19.5C19.2 20.4 18.4 21 17.5 21H6.5C5.6 21 4.8 20.4 4.6 19.5L3.1 11C3 10.4 3.3 9.8 3.8 9.4L12 3.2Z" />
+      <path d="M9.5 14.5C10.5 15.8 13.5 15.8 14.5 14.5" />
     </svg>
   );
 }
 
-function HeartIcon() {
+/** Heart Wishlist Icon */
+function HeartOutlineIcon({ className = "w-6 h-6" }: { className?: string }) {
   return (
-    <svg className="w-6 h-6 fill-black shrink-0" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M19.5 12.572L12 20L4.5 12.572C2.5 10.572 2.5 7.372 4.5 5.372C6.5 3.372 9.7 3.372 11.7 5.372L12 5.672L12.3 5.372C14.3 3.372 17.5 3.372 19.5 5.372C21.5 7.372 21.5 10.572 19.5 12.572Z" />
     </svg>
   );
 }
 
-function ShoppingBagIcon() {
+/** Package / Orders Box Icon */
+function PackageBoxIcon({ className = "w-6 h-6" }: { className?: string }) {
   return (
-    <svg className="w-6 h-6 fill-black shrink-0" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z" />
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 3L2.5 7.5V16.5L12 21L21.5 16.5V7.5L12 3Z" />
+      <path d="M2.5 7.5L12 12L21.5 7.5" />
+      <path d="M12 12V21" />
+      <path d="M7.5 5.2L16.8 9.5" />
     </svg>
   );
 }
 
-function GearIcon() {
+/** Shopping Basket Cart Icon */
+function ShoppingBasketIcon({ className = "w-6 h-6" }: { className?: string }) {
   return (
-    <svg className="w-6 h-6 fill-black shrink-0" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M8 9C8 6.8 9.8 5 12 5C14.2 5 16 6.8 16 9" />
+      <path d="M3 9H21" />
+      <path d="M4.5 9L5.8 18.2C6 19.6 7.2 20.5 8.6 20.5H15.4C16.8 20.5 18 19.6 18.2 18.2L19.5 9" />
+      <path d="M9.5 13V17" />
+      <path d="M12 13V17" />
+      <path d="M14.5 13V17" />
     </svg>
   );
 }
 
-function CloseIcon() {
+/** Wrench / Service Icon */
+function WrenchIcon({ className = "w-6 h-6" }: { className?: string }) {
   return (
-    <svg className="w-5 h-5 fill-white shrink-0" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+    </svg>
+  );
+}
+
+/** Calendar / Rental Icon */
+function CalendarRentIcon({ className = "w-6 h-6" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+  );
+}
+
+/** User / Profile Icon */
+function UserIcon({ className = "w-6 h-6" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
     </svg>
   );
 }
@@ -81,14 +173,13 @@ export default function MobileBottomNav({ initialSlug }: { initialSlug?: string 
   const pathname = usePathname();
   const params = useParams();
   const { user } = useAuth();
-  // Slug dari server (cookie) dipakai dulu agar href konsisten server↔client
-  // (hindari hydration error). user?.slug menyusul setelah auth selesai.
+
   const nama = (params?.nama as string | undefined) ?? user?.slug ?? initialSlug ?? getTokenSlug();
 
-  const [menuOpen, setMenuOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
 
+  // Sembunyikan navbar di halaman detail produk/sewa/jasa
   const isDetailPage =
     (pathname.startsWith("/produk/") && pathname !== "/produk") ||
     (pathname.startsWith("/sewa/") && pathname !== "/sewa") ||
@@ -146,145 +237,111 @@ export default function MobileBottomNav({ initialSlug }: { initialSlug?: string 
     ? `/dashboard/pelanggan/${nama}/profile`
     : "/dashboard/pelanggan/login";
 
+  const isHomeActive = pathname === "/";
+  const isProdukActive = pathname === "/produk" || pathname.startsWith("/produk/");
+  const isJasaActive = pathname === "/jasa" || pathname.startsWith("/jasa/");
+  const isSewaActive = pathname === "/sewa" || pathname.startsWith("/sewa/");
   const isWishlistActive = pathname.includes("wishlist");
   const isCartActive = pathname.startsWith("/keranjang");
-  const isProfileActive = pathname.includes("/profile");
+  const isProfileActive = pathname.startsWith("/dashboard/pelanggan") && !isWishlistActive;
 
-  // 4 items arranged in a clean vertical stack of horizontal pills (icon left, text right)
-  const verticalItems = [
+  const navItems = [
     {
+      key: "home",
       href: "/",
-      label: "Beranda",
-      icon: "🏠",
-      isActive: pathname === "/",
-      offsetY: -212,
+      label: "Home",
+      icon: <PentagonHomeIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5 shrink-0" />,
+      isActive: isHomeActive,
+      badgeCount: 0,
     },
     {
+      key: "produk",
       href: "/produk",
       label: "Produk",
-      icon: "📦",
-      isActive: pathname.startsWith("/produk"),
-      offsetY: -160,
+      icon: <PackageBoxIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5 shrink-0" />,
+      isActive: isProdukActive,
+      badgeCount: 0,
     },
     {
-      href: "/sewa",
-      label: "Sewa",
-      icon: "🛋️",
-      isActive: pathname.startsWith("/sewa"),
-      offsetY: -108,
-    },
-    {
+      key: "jasa",
       href: "/jasa",
       label: "Jasa",
-      icon: "🛠️",
-      isActive: pathname.startsWith("/jasa"),
-      offsetY: -56,
+      icon: <WrenchIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5 shrink-0" />,
+      isActive: isJasaActive,
+      badgeCount: 0,
+    },
+    {
+      key: "sewa",
+      href: "/sewa",
+      label: "Sewa",
+      icon: <CalendarRentIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5 shrink-0" />,
+      isActive: isSewaActive,
+      badgeCount: 0,
+    },
+    {
+      key: "wishlist",
+      href: wishlistHref,
+      label: "Wishlist",
+      icon: <HeartOutlineIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5 shrink-0" />,
+      isActive: isWishlistActive,
+      badgeCount: wishlistCount,
+    },
+    {
+      key: "cart",
+      href: "/keranjang",
+      label: "Cart",
+      icon: <ShoppingBasketIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5 shrink-0" />,
+      isActive: isCartActive,
+      badgeCount: cartCount,
+    },
+    {
+      key: "profile",
+      href: profileHref,
+      label: "Profile",
+      icon: <UserIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5 shrink-0" />,
+      isActive: isProfileActive,
+      badgeCount: 0,
     },
   ];
 
   return (
-    <>
-      {/* Semi-transparent Backdrop when menu is open */}
-      {menuOpen && (
-        <div
-          className="md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-xs transition-opacity duration-300"
-          onClick={() => setMenuOpen(false)}
-        />
-      )}
+    <div className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-50 select-none w-[96vw] max-w-lg px-1 flex justify-center">
+      {/* Outer Floating Pill Bar Container */}
+      <nav className="w-full bg-white rounded-full px-2 py-1.5 shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100 flex items-center justify-between gap-1 sm:gap-2">
+        {navItems.map((item) => {
+          const active = item.isActive;
+          return (
+            <Link
+              key={item.key}
+              href={item.href}
+              aria-label={item.label}
+              className={`relative flex items-center transition-all duration-300 ease-out cursor-pointer rounded-full ${
+                active
+                  ? "bg-[#5E3CF6] text-white px-3 py-1.5 sm:px-4 sm:py-2 font-semibold text-xs sm:text-sm shadow-md shadow-[#5E3CF6]/30 gap-1.5 sm:gap-2"
+                  : "text-[#1C1C1C] hover:text-black hover:bg-slate-100 p-2 sm:p-2.5"
+              }`}
+            >
+              <div className="relative flex items-center justify-center shrink-0">
+                {item.icon}
 
-      {/* Floating Bottom Navbar Container */}
-      <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 select-none">
-        {/* Left Trigger Button Wrapper with Vertical Stack Items */}
-        <div className="relative flex items-center justify-center">
-          {/* 4 Items arranged vertically (Icon Left, Text Right) */}
-          {verticalItems.map((item, idx) => {
-            return (
-              <Link
-                key={item.label}
-                href={item.href}
-                style={{
-                  transform: menuOpen
-                    ? `translate(-50%, calc(-50% + ${item.offsetY}px)) scale(1)`
-                    : `translate(-50%, calc(-50% + 0px)) scale(0)`,
-                  transitionDelay: menuOpen ? `${idx * 40}ms` : `${(3 - idx) * 30}ms`,
-                }}
-                className={`absolute left-1/2 top-1/2 z-50 flex items-center justify-center gap-2.5 px-4 py-2.5 w-36 sm:w-40 rounded-full shadow-2xl transition-all duration-300 ease-out whitespace-nowrap cursor-pointer ${
-                  menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-                } ${
-                  item.isActive
-                    ? "bg-white text-black border-2 border-black shadow-black/30 font-bold"
-                    : "bg-black/95 backdrop-blur-md text-white border-2 border-transparent shadow-black/50 hover:bg-neutral-900 hover:border-white/20"
-                }`}
-              >
-                <span className="text-base sm:text-lg shrink-0 leading-none">{item.icon}</span>
-                <span className="text-xs font-bold tracking-wide">{item.label}</span>
-              </Link>
-            );
-          })}
+                {/* Badge untuk Cart/Wishlist */}
+                {item.badgeCount > 0 && (
+                  <span className="absolute -top-1.5 -right-2 bg-[#FF3B30] text-white text-[9px] font-extrabold h-4 min-w-[16px] px-1 rounded-full flex items-center justify-center border-2 border-white shadow-xs leading-none">
+                    {item.badgeCount > 99 ? "99+" : item.badgeCount}
+                  </span>
+                )}
+              </div>
 
-          {/* Main Trigger Button */}
-          <button
-            onClick={() => setMenuOpen((prev) => !prev)}
-            aria-label="Menu Navigasi"
-            className={`w-13 h-13 sm:w-14 sm:h-14 rounded-full text-white flex items-center justify-center shadow-2xl transition-all duration-300 shrink-0 cursor-pointer ${
-              menuOpen
-                ? "bg-black border-2 border-blue-500 ring-4 ring-blue-500/20 scale-105"
-                : "bg-black border border-black hover:scale-105 active:scale-95 shadow-black/40"
-            }`}
-          >
-            {menuOpen ? <CloseIcon /> : <StackIcon />}
-          </button>
-        </div>
-
-        {/* Right Element: White Pill Container */}
-        <nav className="bg-white rounded-full px-6 py-3.5 shadow-2xl shadow-black/20 border border-black/10 flex items-center gap-7 sm:gap-9 text-black">
-          {/* Wishlist Link (Heart) */}
-          <Link
-            href={wishlistHref}
-            aria-label="Wishlist"
-            className="relative flex items-center justify-center transition-transform hover:scale-110 active:scale-95"
-          >
-            <HeartIcon />
-            {wishlistCount > 0 && (
-              <span className="absolute -top-1.5 -right-2.5 bg-black text-white text-[10px] font-extrabold h-4.5 min-w-[18px] px-1 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
-                {wishlistCount > 99 ? "99+" : wishlistCount}
-              </span>
-            )}
-            {isWishlistActive && (
-              <span className="absolute -bottom-1.5 w-1 h-1 bg-black rounded-full" />
-            )}
-          </Link>
-
-          {/* Cart Link (Shopping Bag) */}
-          <Link
-            href="/keranjang"
-            aria-label="Keranjang Belanja"
-            className="relative flex items-center justify-center transition-transform hover:scale-110 active:scale-95"
-          >
-            <ShoppingBagIcon />
-            {cartCount > 0 && (
-              <span className="absolute -top-1.5 -right-2.5 bg-black text-white text-[10px] font-extrabold h-4.5 min-w-[18px] px-1 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
-                {cartCount > 99 ? "99+" : cartCount}
-              </span>
-            )}
-            {isCartActive && (
-              <span className="absolute -bottom-1.5 w-1 h-1 bg-black rounded-full" />
-            )}
-          </Link>
-
-          {/* Settings / Profile Link (Gear) */}
-          <Link
-            href={profileHref}
-            aria-label="Pengaturan / Profil"
-            className="relative flex items-center justify-center transition-transform hover:scale-110 active:scale-95"
-          >
-            <GearIcon />
-            {isProfileActive && (
-              <span className="absolute -bottom-1.5 w-1 h-1 bg-black rounded-full" />
-            )}
-          </Link>
-        </nav>
-      </div>
-    </>
+              {/* Text label jika item sedang aktif */}
+              {active && (
+                <span className="text-xs sm:text-sm font-semibold tracking-wide whitespace-nowrap pl-0.5">
+                  {item.label}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+    </div>
   );
 }

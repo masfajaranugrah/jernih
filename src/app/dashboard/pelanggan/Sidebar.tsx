@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import MobileBottomNav from "@/components/MobileBottomNav";
 
 export default function SidebarPelanggan({ nama }: { nama: string }) {
   const pathname = usePathname();
@@ -87,8 +86,6 @@ export default function SidebarPelanggan({ nama }: { nama: string }) {
         </div>
       </aside>
 
-      {/* Mobile bottom nav — unified MobileBottomNav floating bar */}
-      <MobileBottomNav />
-    </>
+      </>
   );
 }

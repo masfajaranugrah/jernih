@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import SidebarPelanggan from "../Sidebar";
 import AuthCheck from "./AuthCheck";
 import { AuthProvider } from "@/lib/auth-context";
+import MobileBottomNav from "@/components/MobileBottomNav";
 
 export default async function DashboardPelangganLayout({
   children,
@@ -36,6 +37,7 @@ export default async function DashboardPelangganLayout({
               {children}
             </div>
           </main>
+          <MobileBottomNav initialSlug={nama} />
         </div>
       </AuthCheck>
     </AuthProvider>

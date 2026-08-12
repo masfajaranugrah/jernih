@@ -52,19 +52,18 @@ export function PromoSkeleton() {
   );
 }
 
-/** Skeleton hero bento grid — match layout asli (main tile row-span-2 di desktop) */
+/** Skeleton hero grid — match layout 8:4 desktop */
 export function HeroSkeleton() {
   return (
-    <section className="w-full px-4 py-6 md:px-8">
-      <div className="grid grid-cols-12 gap-4 md:gap-5 [grid-auto-rows:minmax(280px,auto)] max-lg:grid-rows-none">
-        {/* Main tile — 8 kolom, 2 baris (sama persis dengan HeroContent) */}
-        <div className="col-span-12 min-h-[380px] animate-pulse rounded-3xl bg-[#e1e3e4] lg:col-span-8 lg:row-span-2" />
-        {/* Banner kanan atas — 4 kolom */}
-        <div className="col-span-12 min-h-[240px] animate-pulse rounded-3xl bg-[#e1e3e4] lg:col-span-4" />
-        {/* Banner kiri bawah — 2 kolom */}
-        <div className="col-span-6 min-h-[220px] animate-pulse rounded-3xl bg-[#e1e3e4] lg:col-span-2" />
-        {/* Banner kanan bawah — 2 kolom */}
-        <div className="col-span-6 min-h-[220px] animate-pulse rounded-3xl bg-[#e1e3e4] lg:col-span-2" />
+    <section className="mx-auto w-full max-w-[1260px] px-4 py-4 md:px-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-4">
+        {/* Main tile — 8 kolom */}
+        <div className="lg:col-span-8 h-[240px] sm:h-[340px] md:h-[380px] lg:h-[400px] animate-pulse rounded-2xl sm:rounded-3xl bg-[#e1e3e4]" />
+        {/* Side cards stacked — 4 kolom */}
+        <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-3.5 sm:gap-4 lg:h-[400px]">
+          <div className="h-[175px] sm:h-[190px] lg:h-[192px] flex-1 animate-pulse rounded-2xl sm:rounded-3xl bg-[#e1e3e4]" />
+          <div className="h-[175px] sm:h-[190px] lg:h-[192px] flex-1 animate-pulse rounded-2xl sm:rounded-3xl bg-[#e1e3e4]" />
+        </div>
       </div>
     </section>
   );

@@ -13,6 +13,7 @@ import {
   CART_EVENT,
 } from "@/lib/cart";
 import { useAuth } from "@/lib/auth-context";
+import { PAYMENT_METHODS, calculateFee, loadSnapScript, payWithSnap, type PaymentMethodId } from "@/lib/midtrans";
 
 function formatPrice(n: number) {
   return `Rp${n.toLocaleString("id-ID")}`;
@@ -30,6 +31,23 @@ type Address = {
   isDefault: boolean;
 };
 
+type CreatedOrder = {
+  id: string;
+  orderNumber: string | null;
+  total: string;
+  subtotal: string;
+  discountAmount: string;
+  items: Array<{
+    id: string;
+    name: string;
+    price: string;
+    quantity: number;
+    subtotal: string;
+    product?: { images?: string[] } | null;
+    service?: { images?: string[] } | null;
+  }>;
+};
+
 export default function KeranjangPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -38,6 +56,13 @@ export default function KeranjangPage() {
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Step alur: 'cart' (ringkasan) | 'payment' (detail + pilih metode bayar)
+  const [step, setStep] = useState<"cart" | "payment">("cart");
+  const [createdOrder, setCreatedOrder] = useState<CreatedOrder | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodId | null>(null);
+  const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
 
   // Voucher
   const [voucherCode, setVoucherCode] = useState("");
@@ -150,16 +175,193 @@ export default function KeranjangPage() {
         );
       }
 
-      // Sukses — kosongkan keranjang & arahkan ke halaman pesanan dashboard
+      // Sukses — kosongkan keranjang & tampilkan step pembayaran
       clearCart();
-      const slug = user?.slug ?? user?.name?.toLowerCase().replace(/\s+/g, '-') ?? '';
-      router.push(`/dashboard/pelanggan/${slug}/orders`);
+      setCreatedOrder(data);
+      setStep("payment");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Terjadi kesalahan");
       setSubmitting(false);
     }
   }
 
+  /** Buka Snap payment untuk metode terpilih */
+  async function handlePay() {
+    if (!createdOrder || !selectedMethod) return;
+    setPayError(null);
+    setPaying(true);
+    try {
+      const res = await fetch(`/api/orders/${createdOrder.id}/payment-intent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentMethod: selectedMethod }),
+      });
+      if (res.status === 401) {
+        router.push("/dashboard/pelanggan/login?from=/keranjang");
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(
+          Array.isArray(data.message) ? data.message.join(", ") : data.message ?? "Gagal membuat pembayaran"
+        );
+      }
+
+      await loadSnapScript();
+      const ordersUrl = `/dashboard/pelanggan/${user?.slug ?? user?.name?.toLowerCase().replace(/\s+/g, "-") ?? ""}/orders`;
+      payWithSnap(data.token, {
+        onSuccess: () => router.push(ordersUrl),
+        onPending: () => router.push(ordersUrl),
+        onError: () => setPayError("Pembayaran gagal atau dibatalkan. Silakan coba lagi."),
+      });
+      // onClose (user menutup popup) → biarkan tetap di halaman agar bisa pilih metode lain
+      setPaying(false);
+    } catch (e: unknown) {
+      setPayError(e instanceof Error ? e.message : "Terjadi kesalahan saat memproses pembayaran");
+      setPaying(false);
+    }
+  }
+
+  // ── Step pembayaran: detail pesanan (atas) + pilihan metode (bawah) ──
+  if (step === "payment" && createdOrder) {
+    const orderTotal = Number(createdOrder.total) || 0;
+    const orderSubtotal = Number(createdOrder.subtotal) || 0;
+    const orderDiscount = Number(createdOrder.discountAmount) || 0;
+    const displayNumber = createdOrder.orderNumber ?? createdOrder.id.slice(0, 8).toUpperCase();
+
+    // Fee admin utk metode yg dipilih (0 jika belum pilih)
+    const selectedFee = selectedMethod ? calculateFee(selectedMethod, orderTotal) : 0;
+    const amountToPay = orderTotal + selectedFee;
+
+    const bankMethods = PAYMENT_METHODS.filter((m) => m.group === "Bank Transfer");
+    const walletMethods = PAYMENT_METHODS.filter((m) => m.group === "E-Wallet / QRIS");
+
+    return (
+      <div className="min-h-screen bg-[#f8f9fb] text-neutral-900">
+        <main className="mx-auto max-w-2xl px-4 py-8 md:px-6">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setStep("cart")}
+              className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-600 hover:bg-neutral-100 transition"
+              aria-label="Kembali"
+            >
+              <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+              </svg>
+            </button>
+            <h1 className="text-xl font-black text-neutral-900">Pilih Metode Pembayaran</h1>
+          </div>
+
+          {/* ── Detail Pesanan (atas) ── */}
+          <div className="mt-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div>
+                <p className="text-xs text-gray-500">Nomor Pesanan</p>
+                <p className="text-sm font-black text-gray-950">#{displayNumber}</p>
+              </div>
+              <span className="rounded-full bg-[#064e3b]/10 px-3 py-1 text-xs font-bold text-[#064e3b]">
+                Menunggu Pembayaran
+              </span>
+            </div>
+
+            <div className="divide-y divide-gray-100">
+              {createdOrder.items.map((item) => (
+                <div key={item.id} className="flex items-center gap-3 py-3">
+                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-gray-50">
+                    {item.product?.images?.[0] || item.service?.images?.[0] ? (
+                      <img
+                        src={(item.product?.images?.[0] ?? item.service?.images?.[0])!}
+                        alt={item.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-lg text-gray-300">📦</div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-gray-950">{item.name}</p>
+                    <p className="text-xs text-gray-500">{item.quantity} x {formatPrice(Number(item.price))}</p>
+                  </div>
+                  <p className="text-sm font-semibold text-gray-950">{formatPrice(Number(item.subtotal))}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-1.5 border-t border-gray-100 pt-3 text-sm">
+              <div className="flex justify-between text-gray-500">
+                <span>Subtotal</span>
+                <span className="font-bold text-gray-950">{formatPrice(orderSubtotal)}</span>
+              </div>
+              {orderDiscount > 0 && (
+                <div className="flex justify-between text-gray-500">
+                  <span>Potongan voucher</span>
+                  <span className="font-bold text-green-700">-{formatPrice(orderDiscount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between border-t border-gray-100 pt-2 font-bold text-gray-950">
+                <span>Total Bayar</span>
+                <span className="text-lg font-black">{formatPrice(amountToPay)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Pilihan Metode Bayar (bawah) ── */}
+          <div className="mt-5 space-y-5">
+            <div>
+              <h2 className="mb-2 text-xs font-black uppercase tracking-wider text-gray-500">Bank Transfer</h2>
+              <div className="space-y-2">
+                {bankMethods.map((m) => (
+                  <PaymentOption
+                    key={m.id}
+                    label={m.label}
+                    desc={m.desc}
+                    active={selectedMethod === m.id}
+                    onClick={() => setSelectedMethod(m.id)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h2 className="mb-2 text-xs font-black uppercase tracking-wider text-gray-500">E-Wallet / QRIS</h2>
+              <div className="space-y-2">
+                {walletMethods.map((m) => (
+                  <PaymentOption
+                    key={m.id}
+                    label={m.label}
+                    desc={m.desc}
+                    active={selectedMethod === m.id}
+                    onClick={() => setSelectedMethod(m.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {payError && (
+            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
+              {payError}
+            </div>
+          )}
+
+          <button
+            onClick={handlePay}
+            disabled={!selectedMethod || paying}
+            className="mt-5 flex h-12 w-full items-center justify-center rounded-xl bg-black text-sm font-black text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {paying ? "Memproses..." : selectedMethod ? "Bayar Sekarang" : "Pilih Metode Pembayaran"}
+          </button>
+          <p className="mt-2 text-center text-[11px] text-gray-400">
+            Anda akan diarahkan ke halaman pembayaran yang aman untuk menyelesaikan transaksi.
+          </p>
+        </main>
+      </div>
+    );
+  }
+
+  // ── Step cart: ringkasan belanja (default) ──
   return (
     <div className="min-h-screen bg-[#f8f9fb] text-neutral-900">
       <main className="mx-auto max-w-5xl px-4 py-8 md:px-6">
@@ -349,7 +551,7 @@ export default function KeranjangPage() {
                   {submitting ? "Memproses..." : "Buat Pesanan"}
                 </button>
                 <p className="mt-2 text-center text-[11px] text-gray-400">
-                  Pesanan akan tampil di dashboard Anda di bagian Orders.
+                  Setelah pesanan dibuat, Anda akan memilih metode pembayaran.
                 </p>
               </div>
             </aside>
@@ -357,5 +559,40 @@ export default function KeranjangPage() {
         )}
       </main>
     </div>
+  );
+}
+
+/** Opsi metode pembayaran yang bisa dipilih */
+function PaymentOption({
+  label,
+  desc,
+  active,
+  onClick,
+}: {
+  label: string;
+  desc: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full items-center gap-3 rounded-xl border bg-white p-4 text-left transition ${
+        active ? "border-black ring-1 ring-black" : "border-gray-200 hover:border-gray-300"
+      }`}
+    >
+      <span
+        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition ${
+          active ? "border-black" : "border-gray-300"
+        }`}
+      >
+        {active && <span className="h-2.5 w-2.5 rounded-full bg-black" />}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-bold text-gray-950">{label}</span>
+        <span className="block text-xs text-gray-500">{desc}</span>
+      </span>
+    </button>
   );
 }

@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import Navbar from "@/app/(storefront)/Navbar";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import StorefrontProviders from "./StorefrontProviders";
 import MaintenancePage from "@/app/maintenance/page";
 
@@ -65,9 +66,10 @@ export default async function StorefrontLayout({
   return (
     <StorefrontProviders>
       <Navbar initialSlug={initialSlug} />
-      <div className="min-h-screen bg-[#e3e5e0] text-black">
+      <div className="min-h-screen bg-[#e3e5e0] text-black pb-24 md:pb-0">
         {children}
       </div>
+      <MobileBottomNav initialSlug={initialSlug} />
     </StorefrontProviders>
   );
 }

@@ -1,5 +1,6 @@
 import { fetchServices } from "@/lib/service-actions";
 import JasaPageClient from "./JasaPageClient";
+import StorefrontFooter from "@/app/(storefront)/StorefrontFooter";
 
 export const metadata = {
   title: "Layanan Profesional - Jernih Creatife",
@@ -22,10 +23,13 @@ export default async function JasaPage({ searchParams }: PageProps) {
   ).sort();
 
   return (
-    <JasaPageClient
-      services={services}
-      categories={categories}
-      resolvedSearch={resolvedSearch}
-    />
+    <>
+      <JasaPageClient
+        services={services}
+        categories={categories}
+        resolvedSearch={resolvedSearch}
+      />
+      <StorefrontFooter />
+    </>
   );
 }

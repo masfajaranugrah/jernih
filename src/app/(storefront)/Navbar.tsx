@@ -5,15 +5,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import SearchOverlay from "@/app/(storefront)/SearchOverlay";
 import { getCartCount, CART_EVENT, WISHLIST_EVENT } from "@/lib/cart";
-import { getTokenSlug } from "@/lib/auth";
+import { getToken, getTokenSlug } from "@/lib/auth";
 import { useAuth } from "@/lib/auth-context";
-import MobileBottomNav from "@/components/MobileBottomNav";
 
 const navLinks = [
   { label: "Beranda", href: "/", icon: "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" },
-  { label: "Produk", href: "/produk", icon: "M19 6h-2c0-2.76-2.24-5-5-5S7 3.24 7 6H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-7-3c1.66 0 3 1.34 3 3H9c0-1.66 1.34-3 3-3zm7 17H5V8h14v12z" },
-  { label: "Sewa", href: "/sewa", icon: "M12.65 10C11.83 7.67 9.59 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.59 0 4.83-1.67 5.65-4H17v3h3v-3h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z" },
+  { label: "Barang", href: "/produk", icon: "M19 6h-2c0-2.76-2.24-5-5-5S7 3.24 7 6H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-7-3c1.66 0 3 1.34 3 3H9c0-1.66 1.34-3 3-3zm7 17H5V8h14v12z" },
   { label: "Jasa", href: "/jasa", icon: "M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.3C.5 6.7.9 9.8 2.9 11.8c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.6z" },
+  { label: "Sewa", href: "/sewa", icon: "M12.65 10C11.83 7.67 9.59 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.59 0 4.83-1.67 5.65-4H17v3h3v-3h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z" },
 ];
 
 /* ───────── Icon components ───────── */
@@ -126,6 +125,11 @@ export default function Navbar({ initialSlug }: { initialSlug?: string | null })
   useEffect(() => {
     let cancelled = false;
     async function fetchWishlistCount() {
+      // Jangan panggil endpoint wishlist (butuh auth) jika belum login → hindari 401
+      if (!getToken()) {
+        if (!cancelled) setWishlistCount(0);
+        return;
+      }
       try {
         const res = await fetch("/api/wishlist/count", { cache: "no-store" });
         if (!res.ok) {
@@ -195,19 +199,32 @@ export default function Navbar({ initialSlug }: { initialSlug?: string | null })
 
           {/* ── Tablet & Desktop nav links (tengah) ── */}
           <div className="hidden justify-center gap-0.5 md:flex lg:gap-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`rounded-xl px-3 py-2 text-sm font-semibold tracking-wide transition-all hover:bg-neutral-100 hover:text-black lg:px-4 ${
-                  isActive(link.href)
-                    ? "bg-black text-white"
-                    : "text-neutral-700"
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
+          {/* Beranda */}
+          <Link
+            href="/"
+            className={`rounded-xl px-3 py-2 text-sm font-semibold tracking-wide transition-all hover:bg-neutral-100 hover:text-black lg:px-4 ${
+              isActive("/")
+                ? "bg-black text-white"
+                : "text-neutral-700"
+            }`}
+          >
+            Beranda
+          </Link>
+
+          {/* Barang, Jasa, Sewa — dari navLinks (urutan: Barang, Jasa, Sewa) */}
+          {navLinks.slice(1).map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`rounded-xl px-3 py-2 text-sm font-semibold tracking-wide transition-all hover:bg-neutral-100 hover:text-black lg:px-4 ${
+                isActive(link.href)
+                  ? "bg-black text-white"
+                  : "text-neutral-700"
+              }`}
+            >
+              {link.label}
+            </Link>
+          ))}
           </div>
 
           {/* ── Desktop right section (kanan) ── */}
@@ -215,11 +232,6 @@ export default function Navbar({ initialSlug }: { initialSlug?: string | null })
             <button aria-label="Cari" onClick={() => setSearchOpen(true)} className={DESKTOP_ICON_BTN}>
               <SearchIcon />
             </button>
-            <Link aria-label="Wishlist" href={wishlistHref} className={DESKTOP_ICON_BTN}>
-              <IconWithBadge count={wishlistCount}>
-                <HeartIcon />
-              </IconWithBadge>
-            </Link>
             <Link aria-label="Keranjang" href="/keranjang" className={DESKTOP_ICON_BTN}>
               <IconWithBadge count={cartCount}>
                 <CartIcon />
@@ -435,8 +447,6 @@ export default function Navbar({ initialSlug }: { initialSlug?: string | null })
       </div>
 
       <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
-
-      <MobileBottomNav initialSlug={initialSlug} />
     </>
   );
 }

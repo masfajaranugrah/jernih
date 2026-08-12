@@ -68,7 +68,7 @@ function ProductCard({
   return (
     <Link
       href={`/produk/${product.slug}`}
-      className="group relative flex h-full w-[210px] sm:w-[240px] flex-shrink-0 flex-col justify-between rounded-[28px] sm:rounded-[32px] bg-white p-3.5 sm:p-4 shadow-sm border border-neutral-100"
+      className="group relative flex h-auto w-[210px] flex-shrink-0 flex-col rounded-[28px] border border-neutral-100 bg-white p-3.5 shadow-sm sm:w-[240px] sm:rounded-[32px] sm:p-4 hover:shadow-md transition-all"
     >
       {/* Top Left Black Capsule Pill Badge (Promo, -5%, New, Hot) */}
       {badgeText && (
@@ -77,8 +77,8 @@ function ProductCard({
         </div>
       )}
 
-      {/* Image — satu kartu utuh tanpa box sendiri */}
-      <div className="relative aspect-square w-full flex items-center justify-center p-3 sm:p-4">
+      {/* Product image fills its full image area. */}
+      <div className="relative -mx-3.5 -mt-3.5 aspect-[4/3] w-[calc(100%+1.75rem)] shrink-0 overflow-hidden rounded-t-[27px] sm:-mx-4 sm:-mt-4 sm:w-[calc(100%+2rem)] sm:rounded-t-[31px]">
 
         {/* Top Right Black Circle Button with Diagonal Arrow ↗ matching screenshot */}
         <div className="absolute top-2.5 right-2.5 z-10 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black text-white flex items-center justify-center shadow-md">
@@ -87,35 +87,44 @@ function ProductCard({
           </svg>
         </div>
 
-        {/* Product Image — tanpa hover zoom */}
+        {/* Product Image */}
         <Image
           src={product.images && product.images[0] ? product.images[0] : "/placeholder.png"}
           alt={product.name}
           fill
           sizes="240px"
-          className="object-contain p-2"
+          className="object-cover"
         />
       </div>
 
       {/* Info Section - Nama penuh (kecil), rating, lalu harga */}
-      <div className="mt-3 flex flex-col items-start text-left px-1">
-        <h3 className="font-semibold text-xs sm:text-sm leading-snug text-black">
+      <div className="mt-2.5 flex flex-col items-start text-left px-0.5">
+        <h3 className="font-semibold text-xs sm:text-sm leading-snug text-black line-clamp-2">
           {product.name}
         </h3>
-        <div className="mt-1 flex items-center gap-1">
-          <svg className="w-3.5 h-3.5 fill-[#f59e0b] shrink-0" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-          </svg>
-          <span className="text-[11px] sm:text-xs font-bold text-neutral-700">
-            {product.rating ? Number(product.rating).toFixed(1) : "0.0"}
+        {/* Baris rating + total terjual */}
+        <div className="mt-1.5 flex w-full items-center gap-1">
+          <div className="flex items-center gap-1">
+            <svg className="w-3.5 h-3.5 fill-[#f59e0b] shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
+            <span className="text-[11px] sm:text-xs font-bold text-neutral-700">
+              {product.rating ? Number(product.rating).toFixed(1) : "0.0"}
+            </span>
+          </div>
+          <span className="text-[11px] sm:text-xs font-medium text-neutral-400">.</span>
+          <span className="text-[11px] sm:text-xs font-medium text-neutral-400">
+            {product.totalSold.toLocaleString("id-ID")} terjual
           </span>
         </div>
-        <div className="mt-1 flex items-baseline gap-2">
+
+        {/* Harga tersusun vertikal: harga jual di atas, harga coret di bawah */}
+        <div className="mt-1.5 flex flex-col items-start">
           <span className="font-bold text-sm sm:text-base text-neutral-900">
             {formatRupiah(product.price)}
           </span>
           {product.oldPrice && Number(product.oldPrice) > Number(product.price) && (
-            <span className="text-xs sm:text-sm text-neutral-400 line-through">
+            <span className="text-xs sm:text-[13px] text-neutral-400 line-through">
               {formatRupiah(product.oldPrice)}
             </span>
           )}
@@ -127,8 +136,8 @@ function ProductCard({
 
 function SkeletonCard() {
   return (
-    <div className="flex h-full w-[210px] sm:w-[240px] flex-shrink-0 flex-col justify-between rounded-[28px] sm:rounded-[32px] bg-white p-3.5 sm:p-4 shadow-xs border border-neutral-100 animate-pulse">
-      <div className="aspect-square w-full bg-[#f3f4f1]" />
+    <div className="flex h-auto w-[210px] flex-shrink-0 flex-col rounded-[28px] border border-neutral-100 bg-white p-3.5 shadow-xs animate-pulse sm:w-[240px] sm:rounded-[32px] sm:p-4">
+      <div className="-mx-3.5 -mt-3.5 aspect-[4/3] w-[calc(100%+1.75rem)] rounded-t-[27px] bg-[#f3f4f1] sm:-mx-4 sm:-mt-4 sm:w-[calc(100%+2rem)] sm:rounded-t-[31px]" />
       <div className="mt-3 space-y-2 flex flex-col items-start px-1">
         <div className="h-4 w-3/4 rounded-full bg-neutral-200" />
         <div className="h-4 w-1/2 rounded-full bg-neutral-200" />
@@ -174,7 +183,7 @@ export default function ProductSectionClient() {
     <div className="space-y-5">
       {/* Horizontal Scroll / Grid Cards matching screenshot */}
       <div className="overflow-x-auto pb-4 scrollbar-hide pt-1">
-        <div className="flex gap-4 sm:gap-6">
+        <div className="flex gap-4 sm:gap-6 items-start">
           {products.map((product, idx) => (
             <ProductCard
               key={product.id}

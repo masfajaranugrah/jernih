@@ -20,6 +20,7 @@ import { UploadModule } from './upload/upload.module';
 import { SettingsModule } from './settings/settings.module';
 import { CategoriesModule } from './categories/categories.module';
 import { WishlistModule } from './wishlist/wishlist.module';
+import { MidtransModule } from './midtrans/midtrans.module';
 import { CsrfOriginMiddleware } from './common/middleware/csrf-origin.middleware';
 
 @Module({
@@ -48,6 +49,7 @@ import { CsrfOriginMiddleware } from './common/middleware/csrf-origin.middleware
     SettingsModule,
     CategoriesModule,
     WishlistModule,
+    MidtransModule,
   ],
   providers: [
     {

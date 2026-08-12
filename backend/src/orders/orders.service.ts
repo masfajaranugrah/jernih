@@ -2,10 +2,15 @@ import { Injectable, NotFoundException, BadRequestException, ForbiddenException 
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { MidtransService } from '../midtrans/midtrans.service';
+import { getChannel, calculateFee } from '../midtrans/payment-methods';
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private midtrans: MidtransService,
+  ) {}
 
   async create(userId: string, dto: CreateOrderDto) {
     // Gunakan transaction untuk atomicity — stock, voucher, dan order all-or-nothing
@@ -275,5 +280,46 @@ export class OrdersService {
         paidAt: new Date(),
       },
     });
+  }
+
+  /** Buat payment-intent Midtrans untuk order (hanya pemilik & status PENDING) */
+  async createPaymentIntent(id: string, userId: string, paymentMethodId: string) {
+    const channel = getChannel(paymentMethodId);
+    if (!channel) {
+      throw new BadRequestException('Metode pembayaran tidak valid');
+    }
+
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+      include: { items: true, user: { select: { email: true, name: true, phone: true } } },
+    });
+    if (!order) throw new NotFoundException('Order tidak ditemukan');
+    if (order.userId !== userId) {
+      throw new ForbiddenException('Anda tidak memiliki akses ke order ini');
+    }
+    if (order.status !== 'PENDING') {
+      throw new BadRequestException('Order sudah tidak dalam status menunggu pembayaran');
+    }
+
+    // Hitung biaya admin Midtrans utk metode ini, tambahkan ke gross_amount
+    const subtotal = Number(order.subtotal);
+    const fee = calculateFee(paymentMethodId, subtotal);
+    const totalAmount = Number(order.total) + fee;
+
+    // Snap membutuhkan order_id unik — gunakan orderNumber (sudah unik)
+    const { token, redirect_url } = await this.midtrans.createSnapToken(order, channel, fee);
+
+    // Simpan snapToken + metode bayar + fee ke order utk resume bayar & tampilan detail
+    await this.prisma.order.update({
+      where: { id },
+      data: {
+        paymentMethod: paymentMethodId,
+        snapToken: token,
+        paymentFee: fee,
+        midtransTransactionId: order.orderNumber ?? order.id.slice(0, 9).toUpperCase(),
+      },
+    });
+
+    return { token, redirect_url, fee, totalAmount };
   }
 }

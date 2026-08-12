@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
+import { usePathname } from "next/navigation";
 
 type Address = {
   id: string;
@@ -40,6 +42,8 @@ const inputCls =
   "w-full rounded-lg border border-[#bfc9c3] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#003527] focus:ring-1 focus:ring-[#003527]";
 
 export default function AddressesContent() {
+  const pathname = usePathname();
+  const nama = pathname.split("/")[3] || "user";
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -167,15 +171,23 @@ export default function AddressesContent() {
       {/* Heading */}
       <div className="mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1
-            className="text-[#191c1d] font-semibold tracking-tight mb-1"
-            style={{ fontSize: "36px", lineHeight: "1.2", letterSpacing: "-0.02em" }}
-          >
-            Buku Alamat
-          </h1>
-          <p className="text-[#707974] text-base">
-            Kelola alamat pengiriman Anda untuk checkout yang lebih cepat.
-          </p>
+          <div className="mb-1 flex items-center gap-4">
+            <div className="md:hidden">
+              <Link
+                href={`/dashboard/pelanggan/${nama}/profile`}
+                aria-label="Kembali"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#191c1d] shadow-[0px_4px_20px_rgba(0,0,0,0.06)] border border-[#e1e3e4] transition-colors hover:bg-[#f3f4f5] active:scale-95"
+              >
+                <span className="material-symbols-outlined">arrow_back</span>
+              </Link>
+            </div>
+            <h1
+              className="text-[#191c1d] font-semibold tracking-tight text-2xl md:text-[36px]"
+              style={{ lineHeight: "1.2", letterSpacing: "-0.02em" }}
+            >
+              Buku Alamat
+            </h1>
+          </div>
         </div>
         <button
           onClick={openAdd}

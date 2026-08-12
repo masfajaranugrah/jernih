@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { ApiService } from "@/lib/service-actions";
 
 function formatRupiah(val: string | number) {
@@ -114,6 +115,7 @@ function ShareModal({ open, onClose, title }: { open: boolean; onClose: () => vo
 }
 
 export default function JasaDetailClient({ service }: { service: ApiService }) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabId>("deskripsi");
   const [activeImg, setActiveImg] = useState(0);
   const [activePkg, setActivePkg] = useState(0);
@@ -139,16 +141,25 @@ export default function JasaDetailClient({ service }: { service: ApiService }) {
         .active-tab { border-bottom: 2px solid #003c90; color: #003c90; }
       `}</style>
 
-      <main className="max-w-[1280px] mx-auto px-4 md:px-10 py-8 md:py-12">
+      {/* Breadcrumb & Back Header */}
+      <div className="bg-white border-b border-[#c3c6d5]/80 sticky top-0 z-30 shadow-2xs">
+        <div className="mx-auto max-w-6xl px-4 py-2.5 sm:px-6 flex items-center justify-between">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#737784] hover:text-[#0b1c30] transition cursor-pointer"
+          >
+            <svg className="w-4 h-4 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            <span>Kembali</span>
+          </button>
+          <div className="text-xs text-[#737784] font-medium truncate max-w-[200px] sm:max-w-xs">
+            <Link href="/" className="hover:underline">Home</Link> / <Link href="/jasa" className="hover:underline">Jasa</Link> / <span className="text-[#0b1c30] font-semibold">{service.category?.name ?? "Layanan"}</span>
+          </div>
+        </div>
+      </div>
 
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm text-[#737784] mb-8">
-          <Link href="/" className="hover:text-[#003c90] transition-colors">Home</Link>
-          <span className="material-symbols-outlined text-sm">chevron_right</span>
-          <Link href="/jasa" className="hover:text-[#003c90] transition-colors">Jasa</Link>
-          <span className="material-symbols-outlined text-sm">chevron_right</span>
-          <span className="text-[#0b1c30] font-medium line-clamp-1">{service.name}</span>
-        </nav>
+      <main className="max-w-[1280px] mx-auto px-4 md:px-10 py-8 md:py-12">
 
         {/* Two-Column Layout ala Fastwork */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

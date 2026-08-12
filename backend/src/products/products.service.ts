@@ -81,6 +81,7 @@ export class ProductsService {
         price: true,
         oldPrice: true,
         rating: true,
+        totalSold: true,
         images: true,
         category: { select: { id: true, name: true, slug: true } },
       };

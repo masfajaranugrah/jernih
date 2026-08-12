@@ -1,5 +1,6 @@
 import { fetchProducts } from "@/lib/api";
 import ProdukPageClient from "./ProdukPageClient";
+import StorefrontFooter from "@/app/(storefront)/StorefrontFooter";
 
 export const metadata = {
   title: "Koleksi Produk Pilihan - Jernih Creatife",
@@ -28,10 +29,13 @@ export default async function ProdukPage({ searchParams }: PageProps) {
   ).sort();
 
   return (
-    <ProdukPageClient
-      products={products}
-      categories={categories}
-      resolvedSearch={searchVal}
-    />
+    <>
+      <ProdukPageClient
+        products={products}
+        categories={categories}
+        resolvedSearch={searchVal}
+      />
+      <StorefrontFooter />
+    </>
   );
 }

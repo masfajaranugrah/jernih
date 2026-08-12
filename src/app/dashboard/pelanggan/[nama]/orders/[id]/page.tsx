@@ -3,6 +3,7 @@
 import { useEffect, useState, use, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { compressImage } from "@/lib/imageCompress";
+import { loadSnapScript, payWithSnap } from "@/lib/midtrans";
 
 type OrderItem = {
   id: string;
@@ -36,6 +37,7 @@ type OrderDetail = {
   notes: string | null;
   paymentMethod: string | null;
   paymentProof: string | null;
+  snapToken: string | null;
   paidAt: string | null;
   createdAt: string;
   shippingCourier: string | null;
@@ -181,6 +183,28 @@ export default function OrderDetailPage({
 
     // 3. Redirect ke halaman chat
     router.push(`/dashboard/pelanggan/${nama}/chat`);
+  }
+
+  const [resumingPay, setResumingPay] = useState(false);
+  const [resumePayError, setResumePayError] = useState("");
+
+  /** Buka ulang Snap payment dengan token yang tersimpan di order */
+  async function handleResumePay() {
+    if (!order?.snapToken) return;
+    setResumePayError("");
+    setResumingPay(true);
+    try {
+      await loadSnapScript();
+      payWithSnap(order.snapToken, {
+        onSuccess: () => router.push(`/dashboard/pelanggan/${nama}/orders/${order.id}`),
+        onPending: () => router.push(`/dashboard/pelanggan/${nama}/orders/${order.id}`),
+        onError: () => setResumePayError("Pembayaran gagal atau dibatalkan."),
+      });
+    } catch (e: any) {
+      setResumePayError(e?.message ?? "Gagal membuka pembayaran");
+    } finally {
+      setResumingPay(false);
+    }
   }
 
   if (loading) {
@@ -347,6 +371,25 @@ export default function OrderDetailPage({
       {/* Payment section */}
       {isPending && (
         <>
+          {order.snapToken && (
+            <div className="rounded-xl border border-[#e2e8f0] bg-white p-5 shadow-sm">
+              <h2 className="mb-1 text-sm font-bold text-[#191c1d]">Pembayaran Midtrans</h2>
+              <p className="mb-3 text-xs text-[#475569]">
+                Lanjutkan pembayaran online melalui Midtrans untuk pesanan ini.
+              </p>
+              {resumePayError && (
+                <p className="mb-2 text-xs font-semibold text-[#dc2626]">{resumePayError}</p>
+              )}
+              <button
+                onClick={handleResumePay}
+                disabled={resumingPay}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#064e3b] px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#043b2d] disabled:opacity-50"
+              >
+                {resumingPay ? "Memproses..." : "Bayar Sekarang"}
+              </button>
+            </div>
+          )}
+
           {/* Bank accounts */}
           <div className="rounded-xl border border-[#e2e8f0] bg-white p-5 shadow-sm">
             <h2 className="mb-3 text-sm font-bold text-[#191c1d]">Pembayaran Transfer Bank</h2>
