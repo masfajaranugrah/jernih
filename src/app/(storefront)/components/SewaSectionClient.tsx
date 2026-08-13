@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import type { ApiRentalItem } from "@/lib/rental-actions";
 import { formatRupiah } from "@/lib/api";
+import { resolveImageUrl } from "@/lib/image-url";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
 
@@ -72,7 +73,7 @@ function RentalCard({
 
         {/* Rental Image */}
         <Image
-          src={item.images && item.images[0] ? item.images[0] : "/placeholder.png"}
+          src={resolveImageUrl(item.images && item.images[0] ? item.images[0] : null)}
           alt={item.name}
           fill
           sizes="240px"

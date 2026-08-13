@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ApiRentalItem } from "@/lib/rental-actions";
+import { resolveImageUrl } from "@/lib/image-url";
 
 
 function truncate(text: string, max = 60): string {
@@ -85,7 +86,7 @@ function RentalCard({ item, index }: { item: ApiRentalItem; index?: number }) {
 
         {item.images?.[0] ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.images[0]} alt={item.name} className="h-full w-full object-cover" />
+          <img src={resolveImageUrl(item.images[0])} alt={item.name} className="h-full w-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-neutral-300">
             <span className="text-4xl">Sewa</span>
@@ -383,7 +384,7 @@ export default function SewaPageClient({ items, categories, resolvedSearch }: Pr
                           <div className="w-9 h-9 rounded-lg bg-neutral-100 shrink-0 overflow-hidden flex items-center justify-center">
                             {item.images?.[0] ? (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img src={item.images[0]} alt={item.name} className="w-full h-full object-cover" />
+                              <img src={resolveImageUrl(item.images[0])} alt={item.name} className="w-full h-full object-cover" />
                             ) : (
                               <span className="text-[10px] font-bold text-neutral-400">Sewa</span>
                             )}

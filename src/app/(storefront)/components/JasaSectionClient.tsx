@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import type { ApiService } from "@/lib/service-actions";
 import { formatRupiah } from "@/lib/api";
+import { resolveImageUrl } from "@/lib/image-url";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
 
@@ -74,7 +75,7 @@ function ServiceCard({
 
         {/* Service Image */}
         <Image
-          src={service.images && service.images[0] ? service.images[0] : "/placeholder.png"}
+          src={resolveImageUrl(service.images && service.images[0] ? service.images[0] : null)}
           alt={service.name}
           fill
           sizes="240px"

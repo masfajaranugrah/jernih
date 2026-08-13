@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { deleteRentalItem, type ApiRentalItem } from "@/lib/rental-actions";
 import { useToast } from "@/app/dashboard-admin/components/Toast";
+import { resolveImageUrl } from "@/lib/image-url";
 
 function formatRupiah(val: string | number) {
   return "Rp " + parseFloat(String(val)).toLocaleString("id-ID");
@@ -92,7 +93,7 @@ export default function RentalsAdminClient({ items }: { items: ApiRentalItem[] }
                       <div className="flex items-center gap-3">
                         {item.images[0] ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={item.images[0]} alt={item.name}
+                          <img src={resolveImageUrl(item.images[0])} alt={item.name}
                             className="w-10 h-10 rounded-lg object-cover bg-[#edeeef] flex-shrink-0" />
                         ) : (
                           <div className="w-10 h-10 rounded-lg bg-[#edeeef] flex items-center justify-center flex-shrink-0">

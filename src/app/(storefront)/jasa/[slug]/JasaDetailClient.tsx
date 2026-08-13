@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ApiService } from "@/lib/service-actions";
+import { resolveImageUrl } from "@/lib/image-url";
 
 function formatRupiah(val: string | number) {
   return "Rp " + parseFloat(String(val)).toLocaleString("id-ID");
@@ -121,7 +122,7 @@ export default function JasaDetailClient({ service }: { service: ApiService }) {
   const [activePkg, setActivePkg] = useState(0);
   const [shareOpen, setShareOpen] = useState(false);
 
-  const images = service.images ?? [];
+  const images = (service.images ?? []).map(resolveImageUrl);
   const packages = parsePackages(service.description);
   const description = cleanDescription(service.description);
   const methodologyText = parseMethodology(service.description);
@@ -161,68 +162,64 @@ export default function JasaDetailClient({ service }: { service: ApiService }) {
 
       <main className="max-w-[1280px] mx-auto px-4 md:px-10 py-8 md:py-12">
 
-        {/* Two-Column Layout ala Fastwork */}
+        {/* Hero Section */}
+        <div className="relative w-full h-[400px] md:h-[500px] rounded-2xl overflow-hidden mb-8 shadow-md group">
+          {images.length > 0 ? (
+            <img src={images[activeImg]} alt={service.name} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-[#e5eeff]">
+              <span className="material-symbols-outlined text-7xl text-[#737784]">design_services</span>
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0b1c30]/90 via-[#0b1c30]/40 to-transparent flex flex-col justify-end p-6 md:p-10">
+            <div className="flex flex-wrap items-center gap-3 mb-3">
+              <span className="px-3 py-1 bg-white/20 backdrop-blur-md text-white border border-white/30 text-xs font-semibold rounded-full">
+                {service.category?.name ?? "Layanan"}
+              </span>
+              {service.rating > 0 && (
+                <div className="flex items-center gap-1 text-yellow-400">
+                  <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                  <span className="text-xs font-semibold ml-1">{service.rating.toFixed(1)}</span>
+                </div>
+              )}
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight max-w-4xl">{service.name}</h1>
+          </div>
+
+          {images.length > 1 && (
+            <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 flex items-center justify-between px-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button onClick={() => setActiveImg((p) => (p - 1 + images.length) % images.length)}
+                className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-white hover:bg-white/40 transition-colors shadow-sm">
+                <span className="material-symbols-outlined">chevron_left</span>
+              </button>
+              <button onClick={() => setActiveImg((p) => (p + 1) % images.length)}
+                className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-white hover:bg-white/40 transition-colors shadow-sm">
+                <span className="material-symbols-outlined">chevron_right</span>
+              </button>
+            </div>
+          )}
+          <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-md text-white text-xs px-2.5 py-1 rounded-full border border-white/20">
+            {activeImg + 1} / {images.length || 1}
+          </div>
+        </div>
+
+        {/* Thumbnails */}
+        {images.length > 1 && (
+          <div className="flex gap-3 overflow-x-auto pb-4 mb-4">
+            {images.slice(0, 8).map((img, i) => (
+              <button key={i} onClick={() => setActiveImg(i)}
+                className={`flex-shrink-0 w-24 aspect-video rounded-xl overflow-hidden border-2 transition-all shadow-sm ${
+                  activeImg === i ? "border-[#003c90] opacity-100 scale-105" : "border-transparent opacity-60 hover:opacity-100"
+                }`}>
+                <img src={img} alt={`thumb-${i}`} className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
-          {/* ═══ LEFT COLUMN: Gallery + Info + Tabs ═══ */}
+          {/* ═══ LEFT COLUMN: Tabs & Content ═══ */}
           <div className="lg:col-span-8 flex flex-col gap-6">
-
-            {/* ── Gallery ── */}
-            <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-[#e5eeff] shadow-sm group">
-              {images.length > 0 ? (
-                <img src={images[activeImg]} alt={service.name} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <span className="material-symbols-outlined text-7xl text-[#737784]">design_services</span>
-                </div>
-              )}
-              {images.length > 1 && (
-                <div className="absolute inset-0 flex items-center justify-between p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => setActiveImg((p) => (p - 1 + images.length) % images.length)}
-                    className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-[#0b1c30] hover:bg-white transition-colors shadow-sm">
-                    <span className="material-symbols-outlined">chevron_left</span>
-                  </button>
-                  <button onClick={() => setActiveImg((p) => (p + 1) % images.length)}
-                    className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-[#0b1c30] hover:bg-white transition-colors shadow-sm">
-                    <span className="material-symbols-outlined">chevron_right</span>
-                  </button>
-                </div>
-              )}
-              <div className="absolute bottom-3 right-3 bg-black/50 text-white text-xs px-2 py-1 rounded">
-                {activeImg + 1}/{images.length || 1}
-              </div>
-            </div>
-
-            {/* Thumbnails */}
-            {images.length > 1 && (
-              <div className="flex gap-3 overflow-x-auto pb-1">
-                {images.slice(0, 6).map((img, i) => (
-                  <button key={i} onClick={() => setActiveImg(i)}
-                    className={`flex-shrink-0 w-20 aspect-video rounded-lg overflow-hidden border-2 transition-all ${
-                      activeImg === i ? "border-[#003c90] opacity-100" : "border-transparent opacity-60 hover:opacity-100"
-                    }`}>
-                    <img src={img} alt={`thumb-${i}`} className="w-full h-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* ── Service Title + Badges ── */}
-            <div>
-              <div className="flex flex-wrap items-center gap-3 mb-3">
-                <span className="px-3 py-1 bg-[#d3e4fe] text-[#003c90] text-xs font-semibold rounded-full">
-                  {service.category?.name ?? "Layanan"}
-                </span>
-                {service.rating > 0 && (
-                  <div className="flex items-center gap-1 text-[#003c90]">
-                    <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                    <span className="text-xs font-semibold ml-1">{service.rating.toFixed(1)}</span>
-                  </div>
-                )}
-                <span className="text-xs text-[#737784]">Terjual {Math.floor(service.rating * 5) || 1} kali</span>
-              </div>
-              <h1 className="text-2xl md:text-3xl font-bold text-[#0b1c30] leading-tight">{service.name}</h1>
-            </div>
 
             {/* ── Tab Navigation ── */}
             <div className="flex border-b border-[#c3c6d5] gap-6">
@@ -239,29 +236,20 @@ export default function JasaDetailClient({ service }: { service: ApiService }) {
             {activeTab === "deskripsi" && (
             <div className="space-y-8 py-4 max-w-4xl">
 
-              {methodologyText ? (
-                <div className="whitespace-pre-line text-[#434653] text-sm leading-relaxed bg-[#f0f4ff] rounded-xl p-6 border border-[#d3e4fe]">
-                  <h4 className="font-bold text-[#003c90] mb-3 text-base">Metodologi & Proses</h4>
-                  {methodologyText}
-                </div>
-              ) : (
-                <div className="grid md:grid-cols-2 gap-6">
-                  {[
-                    { step: "1", title: "Discovery & Briefing", desc: "Pertemuan awal untuk memahami kebutuhan, gaya, dan anggaran Anda secara mendalam." },
-                    { step: "2", title: "Konsep & Moodboard", desc: "Penyusunan palet, material, dan referensi visual untuk menyatukan visi." },
-                    { step: "3", title: "Eksekusi & Delivery", desc: "Pengerjaan detail dengan standar kualitas tinggi sesuai timeline yang disepakati." },
-                    { step: "4", title: "Revisi & Finalisasi", desc: "Penyesuaian berdasarkan feedback hingga Anda puas dengan hasilnya." },
-                  ].map((item) => (
-                    <div key={item.step} className="flex gap-4">
-                      <span className="w-8 h-8 rounded-full bg-[#d3e4fe] flex items-center justify-center font-bold text-[#003c90] shrink-0">
-                        {item.step}
-                      </span>
-                    <div>
-                      <h4 className="font-semibold text-[#0b1c30] text-sm">{item.title}</h4>
-                      <p className="text-[#434653] text-sm mt-1">{item.desc}</p>
-                    </div>
-                  </div>
-                  ))}
+              <div className="bg-white rounded-xl border border-[#c3c6d5] p-6 shadow-sm mb-6">
+                <h4 className="font-bold text-[#003c90] mb-3 text-base">Tentang Jasa Ini</h4>
+                <div className="whitespace-pre-line text-[#434653] text-sm leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: description || "Belum ada deskripsi." }}
+                />
+              </div>
+
+              {methodologyText && (
+                <div className="whitespace-pre-line text-[#434653] text-sm leading-relaxed bg-gradient-to-br from-[#f0f4ff] to-[#e5eeff] rounded-xl p-6 border border-[#d3e4fe] shadow-sm">
+                  <h4 className="font-bold text-[#003c90] mb-4 text-base flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[#003c90]">subject</span>
+                    Metodologi & Proses
+                  </h4>
+                  <div className="text-sm leading-relaxed text-[#434653]">{methodologyText}</div>
                 </div>
               )}
 
@@ -470,58 +458,27 @@ export default function JasaDetailClient({ service }: { service: ApiService }) {
           )}
 
         {/* Reviews Section */}
-        <section className="mb-16">
-          <div className="bg-white p-6 rounded-xl border border-[#c3c6d5] shadow-sm">
-            <div className="flex items-center justify-between mb-6">
+        <section className="mt-12">
+          <div className="bg-white p-6 md:p-8 rounded-xl border border-[#c3c6d5] shadow-sm">
+            <div className="flex items-center justify-between mb-8 border-b border-[#c3c6d5] pb-4">
               <div className="flex items-center gap-3">
-                <h3 className="text-lg font-bold text-[#0b1c30]">Ulasan Pelanggan</h3>
-                <div className="flex items-center gap-1 bg-[#e5eeff] px-2 py-1 rounded text-[#003c90] text-xs font-semibold">
-                  <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                  <span>{service.rating > 0 ? service.rating.toFixed(1) : "0.0"} Rata-rata</span>
-                </div>
+                <h3 className="text-xl font-bold text-[#0b1c30]">Ulasan Pelanggan</h3>
+                {service.rating > 0 && (
+                  <div className="flex items-center gap-1 bg-[#e5eeff] px-2.5 py-1 rounded-md text-[#003c90] text-sm font-semibold">
+                    <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                    <span>{service.rating.toFixed(1)} Rata-rata</span>
+                  </div>
+                )}
               </div>
-              <button className="border border-[#003c90] text-[#003c90] text-xs font-semibold px-4 py-2 rounded-lg hover:bg-[#eff4ff] transition-colors">
+            </div>
+            
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <span className="material-symbols-outlined text-6xl text-[#c3c6d5] mb-3">reviews</span>
+              <p className="font-semibold text-[#0b1c30]">Belum Ada Ulasan</p>
+              <p className="text-[#737784] text-sm mt-1">Jadilah yang pertama untuk memberikan ulasan pada layanan ini.</p>
+              <button className="mt-6 border border-[#003c90] text-[#003c90] font-semibold px-6 py-2.5 rounded-lg hover:bg-[#eff4ff] transition-colors">
                 Tulis Ulasan
               </button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {[
-                {
-                  name: "Sarah Jenkins",
-                  rating: 5,
-                  text: "Kualitas desain websitenya sangat tinggi. Tim menjaga komunikasi profesional sepanjang proses dan memberikan hasil yang tepat sesuai kebutuhan kami.",
-                  avatar: "SJ",
-                  time: "2 minggu lalu",
-                },
-                {
-                  name: "Mark D.",
-                  rating: 5,
-                  text: "Saya sangat terkesan dengan eksekusi teknisnya. Kecepatan situs kami luar biasa dan kami sudah melihat peningkatan signifikan pada SEO sejak peluncuran.",
-                  avatar: "MD",
-                  time: "1 bulan lalu",
-                },
-              ].map((review, i) => (
-                <div key={i} className="p-4 bg-[#eff4ff] rounded-lg flex flex-col gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#d3e4fe] flex items-center justify-center text-[#003c90] text-xs font-bold">
-                      {review.avatar}
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-semibold text-[#0b1c30]">{review.name}</h4>
-                      <div className="flex text-yellow-400 text-sm">
-                        {Array.from({ length: 5 }).map((_, j) => (
-                          <span key={j} className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1", fontSize: "14px" }}>star</span>
-                        ))}
-                      </div>
-                    </div>
-                    <span className="ml-auto text-xs text-[#737784]">{review.time}</span>
-                  </div>
-                  <p className="text-sm text-[#434653] leading-relaxed">{review.text}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-6 text-center">
-              <button className="text-[#003c90] text-xs font-semibold hover:underline">Lihat Semua Ulasan</button>
             </div>
           </div>
         </section>

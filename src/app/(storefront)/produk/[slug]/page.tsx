@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import ProductDetailClient from "./ProductDetailClient";
 import { fetchProductBySlug, formatRupiah } from "@/lib/api";
+import { resolveImageUrl } from "@/lib/image-url";
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -46,7 +47,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
   // Pastikan array gambar aman
   const rawImages = Array.isArray(apiProduct.images) ? apiProduct.images : [];
-  const gallery = rawImages.length > 0 ? rawImages : ["/placeholder.png"];
+  const gallery = rawImages.length > 0 ? rawImages.map(resolveImageUrl) : ["/placeholder.png"];
   const image = gallery[0];
 
   // Konversi ApiProduct ke format yang diharapkan ProductDetailClient

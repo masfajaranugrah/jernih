@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { formatRupiah, type ApiProduct } from "@/lib/api";
 import { emitWishlistChange } from "@/lib/cart";
+import { resolveImageUrl } from "@/lib/image-url";
 
 
 function truncate(text: string, max = 60): string {
@@ -100,7 +101,7 @@ function ProductCard({
         {product.images[0] ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={product.images[0]}
+            src={resolveImageUrl(product.images[0])}
             alt={product.name}
             className="h-full w-full object-cover"
           />
@@ -488,8 +489,7 @@ export default function ProdukPageClient({
                         >
                           <div className="w-9 h-9 rounded-lg bg-neutral-100 shrink-0 overflow-hidden flex items-center justify-center">
                             {item.images[0] ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={item.images[0]} alt={item.name} className="w-full h-full object-cover" />
+                              <img src={resolveImageUrl(item.images[0])} alt={item.name} className="w-full h-full object-cover" />
                             ) : (
                               <span className="text-xs">📷</span>
                             )}

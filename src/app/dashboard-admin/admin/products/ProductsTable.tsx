@@ -5,6 +5,7 @@ import Link from "next/link";
 import { formatRupiah, type ApiProduct } from "@/lib/api";
 import { adminApi } from "@/lib/admin-api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { resolveImageUrl } from "@/lib/image-url";
 
 export default function ProductsTable({ products }: { products: ApiProduct[] }) {
   const queryClient = useQueryClient();
@@ -49,7 +50,7 @@ export default function ProductsTable({ products }: { products: ApiProduct[] }) 
                     <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-[#edeeef]">
                       {product.images[0] ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={product.images[0]} alt={product.name} className="h-full w-full object-cover" />
+                        <img src={resolveImageUrl(product.images[0])} alt={product.name} className="h-full w-full object-cover" />
                       ) : (
                         <span className="flex h-full w-full items-center justify-center">
                           <span className="material-symbols-outlined text-[#bfc9c3] text-2xl">image</span>

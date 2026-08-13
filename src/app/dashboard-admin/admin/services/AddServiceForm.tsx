@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, useTransition } from "react";
+import { useState, useRef, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createService } from "@/lib/service-actions";
+import { getCategories, type ApiCategory } from "@/lib/category-actions";
 import { useToast } from "@/app/dashboard-admin/components/Toast";
 
 const inputCls =
@@ -29,11 +30,36 @@ export default function AddServiceForm() {
 
   // Basic fields
   const [name, setName] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [description, setDescription] = useState("");
   const [methodology, setMethodology] = useState("");
   const [priceFrom, setPriceFrom] = useState("");
   const [unit, setUnit] = useState("project");
   const [isActive, setIsActive] = useState(true);
+
+  // Categories
+  const [dbCategories, setDbCategories] = useState<ApiCategory[]>([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    async function loadCategories() {
+      const cats = await getCategories();
+      setDbCategories(cats);
+    }
+    loadCategories();
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Images
   const [imageUrls, setImageUrls] = useState<string[]>([]);
@@ -110,6 +136,7 @@ export default function AddServiceForm() {
 
     const fullDescription = [
       description,
+      methodology.trim() ? `||METHODOLOGY_START||${methodology}||METHODOLOGY_END||` : "",
       tiersData.length ? `||PACKAGES_START||${JSON.stringify(tiersData)}||PACKAGES_END||` : "",
     ].filter(Boolean).join("\n");
 
@@ -118,6 +145,7 @@ export default function AddServiceForm() {
         await createService({
           name: name.trim(),
           slug: toSlug(name),
+          categoryId: categoryId || undefined,
           description: fullDescription,
           priceFrom: Number(priceFrom),
           unit,
@@ -180,6 +208,58 @@ export default function AddServiceForm() {
                   <div className="space-y-1.5">
                     <label className="block text-xs font-semibold uppercase tracking-wider text-[#707974]">Slug URL</label>
                     <input type="text" className={inputCls + " text-[#707974]"} value={toSlug(name)} readOnly />
+                  </div>
+                  <div className="space-y-1.5 relative" ref={dropdownRef}>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#707974]">
+                      Kategori
+                    </label>
+                    <div
+                      className={`${inputCls} flex items-center justify-between cursor-pointer`}
+                      onClick={() => setDropdownOpen((prev) => !prev)}
+                    >
+                      <span className={categoryId ? "text-[#191c1d]" : "text-[#707974]"}>
+                        {dbCategories.find((c) => c.id === categoryId)?.name ?? "-- Pilih Kategori --"}
+                      </span>
+                      <span className="material-symbols-outlined text-sm">expand_more</span>
+                    </div>
+
+                    {dropdownOpen && (
+                      <div className="absolute left-0 top-[68px] z-50 w-full rounded-xl border border-[#bfc9c3] bg-white p-2 shadow-lg">
+                        <input
+                          type="text"
+                          className="mb-2 w-full rounded border border-[#bfc9c3] px-3 py-1.5 text-sm outline-none focus:border-[#003527]"
+                          placeholder="Cari kategori..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                        <div className="max-h-48 overflow-y-auto">
+                          <div
+                            className="cursor-pointer rounded px-3 py-2 text-sm text-[#707974] hover:bg-[#f3f4f5]"
+                            onClick={() => {
+                              setCategoryId("");
+                              setDropdownOpen(false);
+                            }}
+                          >
+                            -- Kosongkan Kategori --
+                          </div>
+                          {dbCategories.filter((c) =>
+                            c.name.toLowerCase().includes(searchQuery.toLowerCase())
+                          ).map((c) => (
+                            <div
+                              key={c.id}
+                              className="cursor-pointer rounded px-3 py-2 text-sm hover:bg-[#f3f4f5]"
+                              onClick={() => {
+                                setCategoryId(c.id);
+                                setDropdownOpen(false);
+                                setSearchQuery("");
+                              }}
+                            >
+                              {c.name}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-1.5">
                     <label className="block text-xs font-semibold uppercase tracking-wider text-[#707974]">Satuan</label>

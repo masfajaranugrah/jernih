@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { formatRupiah, type ApiProduct } from "@/lib/api";
 import { emitWishlistChange } from "@/lib/cart";
+import { resolveImageUrl } from "@/lib/image-url";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
 
@@ -94,7 +95,7 @@ function ProductCard({
 
         {/* Product Image */}
         <Image
-          src={product.images && product.images[0] ? product.images[0] : "/placeholder.png"}
+          src={resolveImageUrl(product.images && product.images[0] ? product.images[0] : null)}
           alt={product.name}
           fill
           sizes="240px"

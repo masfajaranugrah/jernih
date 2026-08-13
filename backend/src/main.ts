@@ -14,6 +14,9 @@ async function bootstrap() {
     helmet({
       contentSecurityPolicy: false,
       crossOriginEmbedderPolicy: false,
+      // Allow static files (uploads) to be loaded cross-origin by Next.js frontend
+      // Without this, browser blocks /uploads/* images with CORP: same-origin
+      crossOriginResourcePolicy: false,
     }),
   );
 

@@ -113,8 +113,7 @@ export class UploadController {
       }
     }
 
-    const baseUrl = process.env.BACKEND_URL ?? 'http://localhost:3001';
-    const urls = files.map((f) => `${baseUrl}/uploads/${f.filename}`);
+    const urls = files.map((f) => `/uploads/${f.filename}`);
     return { urls };
   }
 }
