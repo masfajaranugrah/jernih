@@ -21,6 +21,8 @@ type Product = {
   slug: string;
   title: string;
   category: string;
+  brand?: string | null;
+  sku?: string | null;
   badge?: string | null;
   price: string;
   installment: string;
@@ -174,10 +176,12 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  // Ekstrak nama Brand jika ada dalam judul atau kategori
-  const brandMatch = product.title.match(/^([A-Za-z0-9]+)/);
-  const brandName = brandMatch ? brandMatch[0].toUpperCase() : product.category;
-  const skuCode = `CD${product.id.slice(0, 3).toUpperCase()}888`.slice(0, 6);
+  // Brand: gunakan dari marker jika ada, fallback ke kata pertama nama produk
+  const brandName = (product.brand || (
+    (() => { const m = product.title.match(/^([A-Za-z0-9]+)/); return m ? m[0].toUpperCase() : product.category; })()
+  )).toUpperCase();
+  // SKU: gunakan dari marker jika ada, fallback ke generate dari ID
+  const skuCode = product.sku || `CD${product.id.slice(0, 3).toUpperCase()}888`.slice(0, 6);
 
   // Parse spesifikasi warna & OS jika ada
   const colorMatch = product.title.match(/(WHITE|BLACK|SILVER|GREY|GRAY|BLUE|GOLD|RED|PINK)/i) || product.description.match(/color:\s*([^\n]+)/i);
@@ -207,20 +211,20 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       </div>
 
       {/* ── MAIN CONTENT CONTAINER ── */}
-      <main className="mx-auto max-w-5xl px-4 py-4 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-5xl px-4 pt-4 pb-28 sm:pb-32 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 lg:items-start">
           
           {/* ── 1. KIRI: GAMBAR UTAMA & GALERI THUMBNAILS (col-span-6 di desktop) ── */}
           <div className="lg:col-span-6 flex flex-col lg:sticky lg:top-16">
             {/* Frame Utama Gambar Produk (Match Screenshot 1) */}
-            <div className="relative w-full aspect-square sm:aspect-[4/3] rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-xs flex items-center justify-center overflow-hidden">
+            <div className="relative w-full aspect-square sm:aspect-[4/3] rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
               <Image
                 src={gallery[activeImage]}
                 alt={product.title}
                 fill
                 priority
                 sizes="(min-width: 1024px) 500px, 100vw"
-                className="object-contain p-2 sm:p-4 transition-all duration-300"
+                className="object-cover transition-all duration-300"
               />
             </div>
 
@@ -233,7 +237,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                     onClick={() => setActiveImage(idx)}
                     className={`relative h-16 w-16 sm:h-18 sm:w-18 shrink-0 rounded-xl bg-white p-1 transition-all cursor-pointer ${
                       activeImage === idx
-                        ? "border-2 border-red-600 shadow-xs"
+                        ? "border-2 border-[#5E3CF6] shadow-xs"
                         : "border border-slate-200 hover:border-slate-300"
                     }`}
                   >
@@ -290,7 +294,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                     <span className="text-xs sm:text-sm text-slate-400 line-through font-medium">
                       {formatPrice(oldPriceNum)}
                     </span>
-                    <span className="bg-red-600 text-white text-xs font-extrabold px-2.5 py-0.5 rounded-full shadow-2xs">
+                    <span className="bg-[#5E3CF6] text-white text-xs font-extrabold px-2.5 py-0.5 rounded-full shadow-2xs">
                       - {discountAmount > 0 ? formatPrice(discountAmount) : `${discountPercent}%`}
                     </span>
                   </>
@@ -302,12 +306,12 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             <div className="flex items-center gap-3 text-xs sm:text-sm text-slate-600 flex-wrap py-2 border-y border-slate-200/80">
               <div>
                 <span>Brand: </span>
-                <span className="text-red-600 font-bold">{brandName}</span>
+                <span className="text-[#5E3CF6] font-bold">{brandName}</span>
               </div>
               <div className="h-3.5 w-px bg-slate-300" />
               <div>
                 <span>Kategori: </span>
-                <span className="text-red-600 font-bold">{product.category}</span>
+                <span className="text-[#5E3CF6] font-bold">{product.category}</span>
               </div>
               <div className="h-3.5 w-px bg-slate-300" />
               <div>
@@ -332,7 +336,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                       }}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
                         selectedTypeIdx === i
-                          ? "bg-red-600 text-white border-red-600 shadow-xs"
+                          ? "bg-[#5E3CF6] text-white border-[#5E3CF6] shadow-xs"
                           : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
                       }`}
                     >
@@ -382,7 +386,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  className="h-10 px-4 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-extrabold text-xs sm:text-sm rounded-lg shadow-xs flex items-center justify-center gap-2 transition cursor-pointer select-none shrink-0"
+                  className="h-10 px-4 bg-[#5E3CF6] hover:bg-[#4c30d4] active:scale-95 text-white font-extrabold text-xs sm:text-sm rounded-lg shadow-xs flex items-center justify-center gap-2 transition cursor-pointer select-none shrink-0"
                 >
                   <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
                     <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.89-2-2-2z" />
@@ -400,7 +404,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                 >
                   <svg
                     className={`w-5 h-5 ${
-                      inWishlist ? "fill-red-600 text-red-600" : "fill-none stroke-slate-600 stroke-2"
+                      inWishlist ? "fill-[#5E3CF6] text-[#5E3CF6]" : "fill-none stroke-slate-600 stroke-2"
                     }`}
                     viewBox="0 0 24 24"
                   >
@@ -430,7 +434,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                   onClick={() => setActiveTab("description")}
                   className={`pb-2.5 text-sm sm:text-base font-bold transition-all cursor-pointer relative ${
                     activeTab === "description"
-                      ? "text-red-600 border-b-2 border-red-600"
+                      ? "text-[#5E3CF6] border-b-2 border-[#5E3CF6]"
                       : "text-slate-600 hover:text-slate-900 border-b-2 border-transparent"
                   }`}
                 >
@@ -440,7 +444,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                   onClick={() => setActiveTab("info")}
                   className={`pb-2.5 text-sm sm:text-base font-bold transition-all cursor-pointer relative ${
                     activeTab === "info"
-                      ? "text-red-600 border-b-2 border-red-600"
+                      ? "text-[#5E3CF6] border-b-2 border-[#5E3CF6]"
                       : "text-slate-600 hover:text-slate-900 border-b-2 border-transparent"
                   }`}
                 >
@@ -463,10 +467,22 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                       <p><span className="text-slate-500">Operating System:</span> <span className="font-semibold text-slate-800">{osSpec}</span></p>
                     </div>
 
-                    {/* Deskripsi Teks */}
-                    <div className="whitespace-pre-line text-xs sm:text-sm text-slate-700 leading-relaxed pt-3 border-t border-slate-100 mt-3">
-                      {product.description}
-                    </div>
+                    {/* Deskripsi Teks — render HTML dari rich text editor */}
+                    <div
+                      className="text-xs sm:text-sm text-slate-700 leading-relaxed pt-3 border-t border-slate-100 mt-3
+                        [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mb-2 [&_h1]:mt-3
+                        [&_h2]:text-base [&_h2]:font-bold [&_h2]:mb-1.5 [&_h2]:mt-2.5
+                        [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mb-1 [&_h3]:mt-2
+                        [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-1.5
+                        [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-1.5
+                        [&_li]:my-0.5
+                        [&_a]:text-blue-600 [&_a]:underline
+                        [&_p]:my-1.5 [&_p]:leading-relaxed
+                        [&_strong]:font-bold [&_em]:italic [&_u]:underline [&_s]:line-through
+                        [&_br]:block [&_br]:content-[''] [&_br]:mt-1
+                        [&_span]:inline break-words"
+                      dangerouslySetInnerHTML={{ __html: product.description }}
+                    />
                   </div>
                 ) : (
                   <div className="space-y-3 text-xs sm:text-sm text-slate-700">
@@ -496,7 +512,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         <button
           onClick={scrollToTop}
           aria-label="Kembali ke Atas"
-          className="fixed bottom-6 right-6 z-40 bg-red-600 hover:bg-red-700 active:scale-95 text-white p-3 rounded-lg shadow-lg transition cursor-pointer border border-white/20"
+          className="fixed bottom-6 right-6 z-40 bg-[#5E3CF6] hover:bg-[#4c30d4] active:scale-95 text-white p-3 rounded-lg shadow-lg transition cursor-pointer border border-white/20"
         >
           <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
             <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z" />

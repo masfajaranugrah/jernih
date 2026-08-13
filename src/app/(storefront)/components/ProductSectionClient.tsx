@@ -34,6 +34,11 @@ function HeartIcon({ isFav }: { isFav: boolean }) {
   );
 }
 
+function truncate(text: string, max = 60): string {
+  if (!text) return "";
+  return text.length > max ? text.slice(0, max).trimEnd() + "..." : text;
+}
+
 function getBadgeText(product: ApiProduct, idx?: number): string | null {
   if (product.description) {
     const m = product.description.match(/^\[badge:([A-Z0-9%\s-]+)\]/i);
@@ -99,8 +104,8 @@ function ProductCard({
 
       {/* Info Section - Nama penuh (kecil), rating, lalu harga */}
       <div className="mt-2.5 flex flex-col items-start text-left px-0.5">
-        <h3 className="font-semibold text-xs sm:text-sm leading-snug text-black line-clamp-2">
-          {product.name}
+        <h3 className="font-semibold text-xs sm:text-sm leading-snug text-black">
+          {truncate(product.name)}
         </h3>
         {/* Baris rating + total terjual */}
         <div className="mt-1.5 flex w-full items-center gap-1">

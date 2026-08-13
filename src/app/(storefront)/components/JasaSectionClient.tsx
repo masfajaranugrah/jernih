@@ -23,6 +23,11 @@ async function fetchServicesClient(limit = 12): Promise<ApiService[]> {
   }
 }
 
+function truncate(text: string, max = 60): string {
+  if (!text) return "";
+  return text.length > max ? text.slice(0, max).trimEnd() + "..." : text;
+}
+
 function getBadgeText(service: ApiService, idx?: number): string | null {
   if (service.description) {
     const m = service.description.match(/^\[badge:([A-Z0-9%\s-]+)\]/i);
@@ -79,8 +84,8 @@ function ServiceCard({
 
       {/* Info Section */}
       <div className="mt-2.5 flex flex-col items-start text-left px-0.5">
-        <h3 className="font-semibold text-xs sm:text-sm leading-snug text-black line-clamp-2">
-          {service.name}
+        <h3 className="font-semibold text-xs sm:text-sm leading-snug text-black">
+          {truncate(service.name)}
         </h3>
         {/* Baris rating + total dipesan */}
         <div className="mt-1.5 flex w-full items-center gap-1">

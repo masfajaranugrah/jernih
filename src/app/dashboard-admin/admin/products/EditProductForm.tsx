@@ -3,6 +3,7 @@
 import { useState, useRef, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { editProduct } from "@/lib/product-actions";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import { getCategories, type ApiCategory } from "@/lib/category-actions";
 import { handleSessionExpired } from "@/lib/auth";
 import type { ApiProduct } from "@/lib/api";
@@ -58,9 +59,19 @@ export default function EditProductForm({ product }: { product: ApiProduct }) {
   const [name, setName] = useState(product.name);
   const [categoryId, setCategoryId] = useState(product.categoryId ?? "");
   const [description, setDescription] = useState(
-    // Strip badge prefix agar tidak tampil di textarea
-    (product.description ?? "").replace(/^\[badge:[A-Z0-9]+\]\s*/, "")
+    // Strip semua markers (badge/brand/sku) agar tidak tampil di editor
+    (product.description ?? "").replace(/^(\[badge:[A-Z0-9]+\]|\[brand:[^\]]+\]|\[sku:[^\]]+\])+\s*/g, "")
   );
+  // Pre-fill brand dari marker
+  const [brand, setBrand] = useState(() => {
+    const m = (product.description ?? "").match(/\[brand:([^\]]+)\]/);
+    return m ? m[1] : "";
+  });
+  // Pre-fill SKU dari marker
+  const [sku, setSku] = useState(() => {
+    const m = (product.description ?? "").match(/\[sku:([^\]]+)\]/);
+    return m ? m[1] : "";
+  });
   const [price, setPrice] = useState(String(parseFloat(product.price)));
   const [oldPrice, setOldPrice] = useState(product.oldPrice ? String(parseFloat(product.oldPrice)) : "");
   const [stock, setStock] = useState(String(product.stock));
@@ -168,10 +179,13 @@ export default function EditProductForm({ product }: { product: ApiProduct }) {
           }
         }
 
-        // Sisipkan badge ke awal description
-        const descWithBadge = badge
-          ? `[badge:${badge}] ${description.replace(/^\[badge:[A-Z0-9]+\]\s*/, "")}`
-          : description.replace(/^\[badge:[A-Z0-9]+\]\s*/, "");
+        // Sisipkan semua markers ke awal description
+        let prefixes = "";
+        if (badge) prefixes += `[badge:${badge}]`;
+        if (brand.trim()) prefixes += `[brand:${brand.trim()}]`;
+        if (sku.trim()) prefixes += `[sku:${sku.trim()}]`;
+        const rawDesc = description.replace(/^(\[badge:[A-Z0-9]+\]|\[brand:[^\]]+\]|\[sku:[^\]]+\])+\s*/g, "");
+        const descWithBadge = prefixes ? `${prefixes} ${rawDesc}` : rawDesc;
 
         const result = await editProduct(product.id, {
           name: name.trim(),
@@ -338,6 +352,31 @@ export default function EditProductForm({ product }: { product: ApiProduct }) {
             </div>
           </section>
 
+          {/* Brand & SKU */}
+          <section className="rounded-xl border border-[#e1e3e4] bg-white p-6 shadow-sm">
+            <div className="mb-5 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#003527]">label</span>
+              <h3 className="text-xs font-bold uppercase tracking-widest text-[#707974]">Brand & SKU</h3>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Brand / Merek">
+                <input
+                  type="text" className={inputCls}
+                  placeholder="Contoh: Samsung, ASUS, OLI"
+                  value={brand} onChange={(e) => setBrand(e.target.value)}
+                />
+              </Field>
+              <Field label="Kode SKU">
+                <input
+                  type="text" className={inputCls}
+                  placeholder="Contoh: SKU-001, OLI-2T"
+                  value={sku} onChange={(e) => setSku(e.target.value)}
+                />
+              </Field>
+            </div>
+            <p className="mt-2 text-[11px] text-[#707974]">Brand & SKU akan tampil di halaman detail produk bersama nama kategori.</p>
+          </section>
+
           {/* Deskripsi */}
           <section className="rounded-xl border border-[#e1e3e4] bg-white p-6 shadow-sm">
             <div className="mb-5 flex items-center gap-2">
@@ -346,14 +385,12 @@ export default function EditProductForm({ product }: { product: ApiProduct }) {
                 Deskripsi Produk
               </h3>
             </div>
-            <textarea
-              className={inputCls + " resize-none"}
-              rows={6}
-              placeholder="Tuliskan detail produk, fitur utama, keunggulan, dan informasi penting lainnya..."
+            <RichTextEditor
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={setDescription}
+              placeholder="Tuliskan detail produk, fitur utama, keunggulan, dan informasi penting lainnya..."
+              minHeight="220px"
             />
-            <p className="mt-1.5 text-[11px] text-[#707974]">{description.length} karakter</p>
           </section>
 
           {/* Status */}

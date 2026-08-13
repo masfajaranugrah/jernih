@@ -17,9 +17,32 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
   // Deskripsi bisa diawali marker [badge:XXX] dari dashboard — pisahkan jadi badge & teks bersih
   const rawDescription = apiProduct.description ?? "";
-  const badgeMatch = rawDescription.match(/^\[badge:([A-Z0-9]+)\]\s*/);
+  const badgeMatch = rawDescription.match(/\[badge:([A-Z0-9]+)\]/);
   const badge = badgeMatch ? badgeMatch[1] : null;
-  const cleanDescription = rawDescription.replace(/^\[badge:[A-Z0-9]+\]\s*/, "");
+  const brandMatch = rawDescription.match(/\[brand:([^\]]+)\]/);
+  const brandFromMarker = brandMatch ? brandMatch[1] : null;
+  const skuMatch = rawDescription.match(/\[sku:([^\]]+)\]/);
+  const skuFromMarker = skuMatch ? skuMatch[1] : null;
+  // Hapus semua markers dari deskripsi yang ditampilkan
+  let cleanDescription = rawDescription.replace(/(\[badge:[A-Z0-9]+\]|\[brand:[^\]]+\]|\[sku:[^\]]+\])+\s*/g, "");
+
+  // Bersihkan inline styles dari copy-paste HTML (Shopee/Tokopedia/dll)
+  cleanDescription = cleanDescription
+    // Hapus semua atribut style="..."
+    .replace(/\s*style="[^"]*"/gi, "")
+    // Hapus atribut box-sizing dan caret-color yang tersisa
+    .replace(/\s*(box-sizing|caret-color)\s*:\s*[^;"]+;?/gi, "")
+    // Collapse 2+ <br> berturutan menjadi satu pemisah paragraf
+    .replace(/(<br\s*\/?>[\s\n]*){2,}/gi, "</p><p>")
+    // Ganti single <br> menjadi line break yang bersih
+    .replace(/<br\s*\/?>/gi, "<br/>")
+    // Hapus <span> kosong atau yang hanya wrapping tanpa atribut
+    .replace(/<span\s*>(.*?)<\/span>/gi, "$1")
+    // Hapus tag kosong yang tersisa
+    .replace(/<(p|div|span)>\s*<\/\1>/gi, "")
+    // Trim whitespace berlebihan
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 
   // Pastikan array gambar aman
   const rawImages = Array.isArray(apiProduct.images) ? apiProduct.images : [];
@@ -32,6 +55,8 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     slug: apiProduct.slug,
     title: apiProduct.name,
     category: apiProduct.category?.name ?? "Produk",
+    brand: brandFromMarker ?? null,
+    sku: skuFromMarker ?? null,
     badge,
     price: formatRupiah(apiProduct.price),
     installment: apiProduct.oldPrice

@@ -4,6 +4,12 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ApiRentalItem } from "@/lib/rental-actions";
 
+
+function truncate(text: string, max = 60): string {
+  if (!text) return "";
+  return text.length > max ? text.slice(0, max).trimEnd() + "..." : text;
+}
+
 function StarIcon() {
   return (
     <svg className="w-3.5 h-3.5 fill-amber-400 shrink-0" viewBox="0 0 24 24">
@@ -89,8 +95,8 @@ function RentalCard({ item, index }: { item: ApiRentalItem; index?: number }) {
 
       <div className="mt-2.5 flex flex-col items-start px-0.5">
         <Link href={`/sewa/${item.slug}`}>
-          <h3 className="font-bold text-sm sm:text-base text-neutral-900 leading-snug group-hover:text-blue-600 transition-colors line-clamp-2">
-            {item.name}
+          <h3 className="font-bold text-sm sm:text-base text-neutral-900 leading-snug group-hover:text-blue-600 transition-colors">
+            {truncate(item.name)}
           </h3>
         </Link>
 

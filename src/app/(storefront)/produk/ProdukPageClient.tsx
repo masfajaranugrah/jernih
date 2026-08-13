@@ -5,6 +5,12 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { formatRupiah, type ApiProduct } from "@/lib/api";
 import { emitWishlistChange } from "@/lib/cart";
 
+
+function truncate(text: string, max = 60): string {
+  if (!text) return "";
+  return text.length > max ? text.slice(0, max).trimEnd() + "..." : text;
+}
+
 function HeartIcon({ isFav }: { isFav: boolean }) {
   return (
     <svg
@@ -109,7 +115,7 @@ function ProductCard({
       <div className="mt-2.5 flex flex-col items-start px-0.5">
         <Link href={`/produk/${product.slug}`}>
           <h3 className="font-bold text-sm sm:text-base text-neutral-900 leading-snug group-hover:text-blue-600 transition-colors">
-            {product.name}
+            {truncate(product.name)}
           </h3>
         </Link>
 

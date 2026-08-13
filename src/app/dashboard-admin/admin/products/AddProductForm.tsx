@@ -4,6 +4,7 @@ import { useState, useRef, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { createProduct } from "@/lib/product-actions";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import { getCategories, type ApiCategory } from "@/lib/category-actions";
 import { handleSessionExpired } from "@/lib/auth";
 import { useToast } from "@/app/dashboard-admin/components/Toast";
@@ -60,6 +61,8 @@ export default function AddProductForm() {
   const [name, setName] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [description, setDescription] = useState("");
+  const [brand, setBrand] = useState("");
+  const [sku, setSku] = useState("");
   const [price, setPrice] = useState("");
   const [oldPrice, setOldPrice] = useState("");
   const [stock, setStock] = useState("1");
@@ -154,9 +157,12 @@ export default function AddProductForm() {
         }
       }
 
-      const descWithBadge = badge
-        ? `[badge:${badge}] ${description}`
-        : description;
+      // Susun prefix markers: badge + brand + sku
+      let prefixes = "";
+      if (badge) prefixes += `[badge:${badge}]`;
+      if (brand.trim()) prefixes += `[brand:${brand.trim()}]`;
+      if (sku.trim()) prefixes += `[sku:${sku.trim()}]`;
+      const descWithBadge = prefixes ? `${prefixes} ${description}` : description;
       const result = await createProduct({
         name: name.trim(),
         slug: toSlug(name),
@@ -314,6 +320,31 @@ export default function AddProductForm() {
             </div>
           </section>
 
+          {/* Brand & SKU */}
+          <section className="rounded-xl border border-[#e1e3e4] bg-white p-6 shadow-sm">
+            <div className="mb-5 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#003527]">label</span>
+              <h3 className="text-xs font-bold uppercase tracking-widest text-[#707974]">Brand & SKU</h3>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Brand / Merek">
+                <input
+                  type="text" className={inputCls}
+                  placeholder="Contoh: Samsung, ASUS, Logitech"
+                  value={brand} onChange={(e) => setBrand(e.target.value)}
+                />
+              </Field>
+              <Field label="Kode SKU">
+                <input
+                  type="text" className={inputCls}
+                  placeholder="Contoh: SKU-001, OLI-2T"
+                  value={sku} onChange={(e) => setSku(e.target.value)}
+                />
+              </Field>
+            </div>
+            <p className="mt-2 text-[11px] text-[#707974]">Brand & SKU akan tampil di halaman detail produk bersama nama kategori.</p>
+          </section>
+
           {/* Deskripsi */}
           <section className="rounded-xl border border-[#e1e3e4] bg-white p-6 shadow-sm">
             <div className="mb-5 flex items-center gap-2">
@@ -322,14 +353,12 @@ export default function AddProductForm() {
                 Deskripsi Produk
               </h3>
             </div>
-            <textarea
-              className={inputCls + " resize-none"}
-              rows={6}
-              placeholder="Tuliskan detail produk, fitur utama, keunggulan, dan informasi penting lainnya..."
+            <RichTextEditor
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={setDescription}
+              placeholder="Tuliskan detail produk, fitur utama, keunggulan, dan informasi penting lainnya..."
+              minHeight="220px"
             />
-            <p className="mt-1.5 text-[11px] text-[#707974]">{description.length} karakter</p>
           </section>
 
           {/* Spesifikasi */}

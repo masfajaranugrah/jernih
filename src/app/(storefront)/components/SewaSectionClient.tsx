@@ -21,6 +21,11 @@ async function fetchRentalItemsClient(limit = 12): Promise<ApiRentalItem[]> {
   }
 }
 
+function truncate(text: string, max = 60): string {
+  if (!text) return "";
+  return text.length > max ? text.slice(0, max).trimEnd() + "..." : text;
+}
+
 function getBadgeText(item: ApiRentalItem, idx?: number): string | null {
   if (item.description) {
     const m = item.description.match(/^\[badge:([A-Z0-9%\s-]+)\]/i);
@@ -77,8 +82,8 @@ function RentalCard({
 
       {/* Info Section */}
       <div className="mt-2.5 flex flex-col items-start text-left px-0.5">
-        <h3 className="font-semibold text-xs sm:text-sm leading-snug text-black line-clamp-2">
-          {item.name}
+        <h3 className="font-semibold text-xs sm:text-sm leading-snug text-black">
+          {truncate(item.name)}
         </h3>
         {/* Baris rating + total disewa */}
         <div className="mt-1.5 flex w-full items-center gap-1">
