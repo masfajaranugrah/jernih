@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-import type { HeroMain, HeroBanner } from "@/lib/hero-store";
+import type { HeroBanner } from "@/lib/hero-store";
 
 const API_URL = process.env.API_URL ?? "http://localhost:3001/api";
 
@@ -18,7 +18,7 @@ async function getServerToken(): Promise<string> {
 const ALLOWED_HERO_FIELDS = new Set([
   "badge", "title", "titleSuffix", "subtitle", "tagline",
   "description", "ctaText", "ctaColor", "ctaTextColor",
-  "bgColor", "imageUrl", "imageAlt", "linkHref", "align", "isActive",
+  "bgColor", "imageUrl", "imageAlt", "linkHref", "align", "isActive", "position",
 ]);
 
 /**
@@ -40,17 +40,41 @@ function transformBannerPayload(data: Record<string, unknown>): Record<string, u
     } else if (ALLOWED_HERO_FIELDS.has(key)) {
       result[key] = value;
     }
-    // field lain diabaikan
   }
 
   return result;
 }
 
-// ── Helper: kirim PUT ke backend ─────────────────────────────────────────────
-async function putHero(position: number, data: object) {
+// ── Server Actions ───────────────────────────────────────────────────────────
+
+/** Tambah banner baru (Create) */
+export async function createHeroBanner(data: Partial<HeroBanner>) {
   const token = await getServerToken();
   const payload = transformBannerPayload(data as Record<string, unknown>);
-  const res = await fetch(`${API_URL}/hero/${position}`, {
+  const res = await fetch(`${API_URL}/hero`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Gagal membuat hero banner: ${err}`);
+  }
+  revalidatePath("/");
+  return res.json();
+}
+
+/** Simpan perubahan banner (Update) */
+export async function saveHeroBanner(
+  id: string,
+  data: Partial<HeroBanner>,
+) {
+  const token = await getServerToken();
+  const payload = transformBannerPayload(data as Record<string, unknown>);
+  const res = await fetch(`${API_URL}/hero/${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -60,29 +84,27 @@ async function putHero(position: number, data: object) {
   });
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`Gagal simpan hero position ${position}: ${err}`);
+    throw new Error(`Gagal memperbarui hero banner ${id}: ${err}`);
   }
+  revalidatePath("/");
   return res.json();
 }
 
-// ── Server actions ───────────────────────────────────────────────────────────
-
-/** Simpan hero main (position 0) */
-export async function saveHeroMain(data: Partial<HeroMain>) {
-  await putHero(0, data);
+/** Hapus banner (Delete) */
+export async function deleteHeroBanner(id: string) {
+  const token = await getServerToken();
+  const res = await fetch(`${API_URL}/hero/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Gagal menghapus hero banner ${id}: ${err}`);
+  }
   revalidatePath("/");
-}
-
-/** Simpan banner (position 1, 2, 3) */
-export async function saveHeroBanner(
-  index: 0 | 1 | 2,
-  data: Partial<HeroBanner>,
-) {
-  // index 0 = banner kanan atas → position 1
-  // index 1 = banner kiri bawah → position 2
-  // index 2 = banner kanan bawah → position 3
-  await putHero(index + 1, data);
-  revalidatePath("/");
+  return res.json();
 }
 
 /** Reset semua hero ke default */

@@ -8,7 +8,7 @@ export default function StorefrontLoading() {
   return (
     <>
       <HeroSkeleton />
-      <main className="flex w-full flex-col gap-14 px-4 py-12 md:px-8 md:py-20">
+      <main className="flex w-full flex-col gap-14 px-4 md:px-8">
         <PromoSkeleton />
         <ProductSkeleton />
         <ProductSkeleton />

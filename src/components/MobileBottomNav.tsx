@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useParams } from "next/navigation";
+import { usePathname, useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { getCartCount, CART_EVENT, WISHLIST_EVENT } from "@/lib/cart";
 import { getToken, getTokenSlug } from "@/lib/auth";
@@ -32,7 +32,7 @@ function setCachedCount(count: number) {
       WISHLIST_COUNT_KEY,
       JSON.stringify({ count, timestamp: Date.now() })
     );
-  } catch {}
+  } catch { }
 }
 
 /* ───────── Modern SVG Icons matching screenshot ───────── */
@@ -215,7 +215,7 @@ export default function MobileBottomNav({ initialSlug }: { initialSlug?: string 
           setWishlistCount(data.count);
           setCachedCount(data.count);
         }
-      } catch {}
+      } catch { }
     }
     fetchWishlist();
     window.addEventListener(WISHLIST_EVENT, fetchWishlist);
@@ -229,13 +229,20 @@ export default function MobileBottomNav({ initialSlug }: { initialSlug?: string 
     return null;
   }
 
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const router = useRouter();
+
   const wishlistHref = nama
     ? `/dashboard/pelanggan/${nama}/wishlist`
-    : "/dashboard/pelanggan/login?from=wishlist";
+    : null; // null = butuh login
 
   const profileHref = nama
     ? `/dashboard/pelanggan/${nama}/profile`
-    : "/dashboard/pelanggan/login";
+    : null; // null = butuh login
 
   const isHomeActive = pathname === "/";
   const isProdukActive = pathname === "/produk" || pathname.startsWith("/produk/");
@@ -280,11 +287,12 @@ export default function MobileBottomNav({ initialSlug }: { initialSlug?: string 
     },
     {
       key: "wishlist",
-      href: wishlistHref,
+      href: wishlistHref || "#",
       label: "Wishlist",
       icon: <HeartOutlineIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5 shrink-0" />,
       isActive: isWishlistActive,
       badgeCount: wishlistCount,
+      requireAuth: !wishlistHref,
     },
     {
       key: "cart",
@@ -293,55 +301,185 @@ export default function MobileBottomNav({ initialSlug }: { initialSlug?: string 
       icon: <ShoppingBasketIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5 shrink-0" />,
       isActive: isCartActive,
       badgeCount: cartCount,
+      requireAuth: false,
     },
     {
       key: "profile",
-      href: profileHref,
+      href: profileHref || "#",
       label: "Profile",
       icon: <UserIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5 shrink-0" />,
       isActive: isProfileActive,
       badgeCount: 0,
+      requireAuth: !profileHref,
     },
   ];
 
-  return (
-    <div className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-50 select-none w-[96vw] max-w-lg px-1 flex justify-center">
-      {/* Outer Floating Pill Bar Container */}
-      <nav className="w-full bg-white rounded-full px-2 py-1.5 shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100 flex items-center justify-between gap-1 sm:gap-2">
-        {navItems.map((item) => {
-          const active = item.isActive;
-          return (
-            <Link
-              key={item.key}
-              href={item.href}
-              aria-label={item.label}
-              className={`relative flex items-center transition-all duration-300 ease-out cursor-pointer rounded-full ${
-                active
-                  ? "bg-[#5E3CF6] text-white px-3 py-1.5 sm:px-4 sm:py-2 font-semibold text-xs sm:text-sm shadow-md shadow-[#5E3CF6]/30 gap-1.5 sm:gap-2"
-                  : "text-[#1C1C1C] hover:text-black hover:bg-slate-100 p-2 sm:p-2.5"
-              }`}
-            >
-              <div className="relative flex items-center justify-center shrink-0">
-                {item.icon}
+  // ── Login Modal Handler ──
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError("");
+    setLoginLoading(true);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Login gagal");
+      setShowLoginModal(false);
+      router.refresh();
+      window.location.reload();
+    } catch (err: any) {
+      setLoginError(err.message);
+    } finally {
+      setLoginLoading(false);
+    }
+  };
 
-                {/* Badge untuk Cart/Wishlist */}
-                {item.badgeCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2 bg-[#FF3B30] text-white text-[9px] font-extrabold h-4 min-w-[16px] px-1 rounded-full flex items-center justify-center border-2 border-white shadow-xs leading-none">
-                    {item.badgeCount > 99 ? "99+" : item.badgeCount}
-                  </span>
-                )}
+  return (
+    <>
+      {/* ── Login Modal Overlay ── */}
+      {showLoginModal && (
+        <div
+          className="md:hidden fixed inset-0 z-[200] flex items-end justify-center"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowLoginModal(false); }}
+        >
+          {/* Blur backdrop */}
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowLoginModal(false)} />
+
+          {/* Modal Card */}
+          <div className="relative z-10 w-full max-w-sm mx-auto mb-24 rounded-3xl bg-white shadow-2xl px-6 pt-6 pb-8 animate-in slide-in-from-bottom-6 duration-300">
+            {/* Drag handle */}
+            <div className="w-10 h-1 bg-neutral-200 rounded-full mx-auto mb-5" />
+
+            {/* Header */}
+            <div className="mb-5 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-[#5E3CF6]/10 flex items-center justify-center mx-auto mb-3">
+                <UserIcon className="w-6 h-6 text-[#5E3CF6]" />
+              </div>
+              <h2 className="text-lg font-extrabold text-black tracking-tight">Masuk ke Akun</h2>
+              <p className="text-xs text-neutral-500 mt-1">Login untuk mengakses fitur lengkap</p>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleLoginSubmit} className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-neutral-600 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder="email@example.com"
+                  required
+                  autoComplete="email"
+                  className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm focus:outline-none focus:border-[#5E3CF6] focus:ring-2 focus:ring-[#5E3CF6]/20 transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-neutral-600 mb-1">Password</label>
+                <input
+                  type="password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  autoComplete="current-password"
+                  className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm focus:outline-none focus:border-[#5E3CF6] focus:ring-2 focus:ring-[#5E3CF6]/20 transition"
+                />
               </div>
 
-              {/* Text label jika item sedang aktif */}
-              {active && (
-                <span className="text-xs sm:text-sm font-semibold tracking-wide whitespace-nowrap pl-0.5">
-                  {item.label}
-                </span>
+              {loginError && (
+                <p className="text-xs text-red-500 font-medium bg-red-50 rounded-lg px-3 py-2">{loginError}</p>
               )}
-            </Link>
-          );
-        })}
-      </nav>
-    </div>
+
+              <button
+                type="submit"
+                disabled={loginLoading}
+                className="w-full rounded-xl bg-[#5E3CF6] text-white font-extrabold text-sm py-3 mt-1 transition hover:bg-[#4c30d4] active:scale-[0.98] disabled:opacity-60"
+              >
+                {loginLoading ? "Memproses..." : "Masuk"}
+              </button>
+            </form>
+
+            {/* Footer links */}
+            <div className="mt-4 flex items-center justify-between text-xs">
+              <Link href="/dashboard/pelanggan/register" onClick={() => setShowLoginModal(false)} className="text-[#5E3CF6] font-bold hover:underline">
+                Daftar Akun
+              </Link>
+              <Link href="/dashboard/pelanggan/login" onClick={() => setShowLoginModal(false)} className="text-neutral-400 hover:underline">
+                Login lengkap →
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Mobile Bottom Nav ── */}
+      <div className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-50 select-none w-[95vw] max-w-lg px-1 flex justify-center">
+        {/* Outer Floating Pill Bar Container */}
+        <nav className="w-full bg-white rounded-full px-1.5 h-[60px] shadow-[0_10px_35px_rgba(0,0,0,0.12)] border border-slate-100 flex items-center justify-between gap-1 sm:gap-2">
+          {navItems.map((item) => {
+            const active = item.isActive;
+            // Jika butuh auth, gunakan button + modal
+            if (item.requireAuth) {
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => setShowLoginModal(true)}
+                  aria-label={item.label}
+                  className={`relative flex items-center transition-all duration-300 ease-out cursor-pointer rounded-full ${
+                    active
+                      ? "bg-[#5E3CF6] text-white px-3 py-3 sm:px-4 sm:py-3 font-semibold text-xs sm:text-sm shadow-md shadow-[#5E3CF6]/30 gap-1.5 sm:gap-2"
+                      : "text-[#1C1C1C] hover:text-black hover:bg-slate-100 p-2 sm:p-2.5"
+                  }`}
+                >
+                  <div className="relative flex items-center justify-center shrink-0">
+                    {item.icon}
+                    {item.badgeCount > 0 && (
+                      <span className="absolute -top-1.5 -right-2 bg-[#FF3B30] text-white text-[9px] font-extrabold h-4 min-w-[16px] px-1 rounded-full flex items-center justify-center border-2 border-white shadow-xs leading-none">
+                        {item.badgeCount > 99 ? "99+" : item.badgeCount}
+                      </span>
+                    )}
+                  </div>
+                  {active && (
+                    <span className="text-xs sm:text-sm font-semibold tracking-wide whitespace-nowrap pl-0.5">{item.label}</span>
+                  )}
+                </button>
+              );
+            }
+            return (
+              <Link
+                key={item.key}
+                href={item.href}
+                aria-label={item.label}
+                className={`relative flex items-center transition-all duration-300 ease-out cursor-pointer rounded-full ${active
+                  ? "bg-[#5E3CF6] text-white px-3 py-3 sm:px-4 sm:py-3 font-semibold text-xs sm:text-sm shadow-md shadow-[#5E3CF6]/30 gap-1.5 sm:gap-2"
+                  : "text-[#1C1C1C] hover:text-black hover:bg-slate-100 p-2 sm:p-2.5"
+                  }`}
+              >
+                <div className="relative flex items-center justify-center shrink-0">
+                  {item.icon}
+
+                  {/* Badge untuk Cart/Wishlist */}
+                  {item.badgeCount > 0 && (
+                    <span className="absolute -top-1.5 -right-2 bg-[#FF3B30] text-white text-[9px] font-extrabold h-4 min-w-[16px] px-1 rounded-full flex items-center justify-center border-2 border-white shadow-xs leading-none">
+                      {item.badgeCount > 99 ? "99+" : item.badgeCount}
+                    </span>
+                  )}
+                </div>
+
+                {/* Text label jika item sedang aktif */}
+                {active && (
+                  <span className="text-xs sm:text-sm font-semibold tracking-wide whitespace-nowrap pl-0.5">
+                    {item.label}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+    </>
   );
 }

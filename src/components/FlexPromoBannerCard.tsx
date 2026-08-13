@@ -31,7 +31,7 @@ export function IntelFlexBannerCard({ className = "" }: { className?: string }) 
 
         {/* Store Badge Right */}
         <span className="shrink-0 rounded-full bg-white/10 px-2.5 sm:px-3.5 py-0.5 sm:py-1 text-[9px] sm:text-xs font-bold uppercase tracking-wider text-amber-100/90 backdrop-blur-md border border-white/10 select-none">
-          AGRES.ID
+          JernihCreatif
         </span>
       </div>
 
@@ -61,9 +61,8 @@ export function IntelFlexBannerCard({ className = "" }: { className?: string }) 
                 key={idx}
                 onClick={() => setActiveDot(idx)}
                 aria-label={`Intel Slide ${idx + 1}`}
-                className={`h-1 sm:h-1.5 rounded-full transition-all duration-300 ${
-                  activeDot === idx ? "w-3 sm:w-4 bg-white" : "w-1 sm:w-1.5 bg-white/40 hover:bg-white/70"
-                }`}
+                className={`h-1 sm:h-1.5 rounded-full transition-all duration-300 ${activeDot === idx ? "w-3 sm:w-4 bg-white" : "w-1 sm:w-1.5 bg-white/40 hover:bg-white/70"
+                  }`}
               />
             ))}
           </div>
@@ -71,7 +70,7 @@ export function IntelFlexBannerCard({ className = "" }: { className?: string }) 
 
         {/* Right Label Placeholder (Kosong agar rata kiri-kanan sempurna) */}
         <span className="shrink-0 text-[9px] sm:text-xs font-bold text-white/60 tracking-tight select-none z-10 ml-auto hidden xs:inline-block whitespace-nowrap opacity-0">
-          AGRES.ID
+          JernihCreatif
         </span>
       </div>
     </div>
@@ -106,7 +105,7 @@ export function HisenseFlexBannerCard({ className = "" }: { className?: string }
             OFFICIAL RETAILER
           </span>
           <span className="rounded-md bg-black/60 px-1.5 sm:px-2.5 py-0.5 sm:py-1 text-[8px] sm:text-xs font-black uppercase tracking-wide text-amber-400 border border-amber-400/20 select-none">
-            AGRES.ID
+            JernihCreatif
           </span>
         </div>
       </div>
@@ -136,9 +135,8 @@ export function HisenseFlexBannerCard({ className = "" }: { className?: string }
                 key={idx}
                 onClick={() => setActiveDot(idx)}
                 aria-label={`Hisense Slide ${idx + 1}`}
-                className={`h-1 sm:h-1.5 rounded-full transition-all duration-300 ${
-                  activeDot === idx ? "w-3 sm:w-4 bg-white" : "w-1 sm:w-1.5 bg-white/40 hover:bg-white/70"
-                }`}
+                className={`h-1 sm:h-1.5 rounded-full transition-all duration-300 ${activeDot === idx ? "w-3 sm:w-4 bg-white" : "w-1 sm:w-1.5 bg-white/40 hover:bg-white/70"
+                  }`}
               />
             ))}
           </div>

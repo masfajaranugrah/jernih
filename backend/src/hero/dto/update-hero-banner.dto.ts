@@ -17,4 +17,5 @@ export class UpdateHeroBannerDto {
   @IsOptional() @IsString() linkHref?: string;
   @IsOptional() @IsString() align?: string;
   @IsOptional() @IsBoolean() isActive?: boolean;
+  @IsOptional() @IsNumber() position?: number;
 }

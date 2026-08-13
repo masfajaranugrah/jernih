@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Delete, Param, Body, UseGuards, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards } from '@nestjs/common';
 import { HeroService } from './hero.service';
 import { UpdateHeroBannerDto } from './dto/update-hero-banner.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -15,15 +15,23 @@ export class HeroController {
     return this.heroService.findAll();
   }
 
-  /** PUT /api/hero/:position — Admin only */
+  /** POST /api/hero — Admin only */
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
-  @Put(':position')
-  upsert(
-    @Param('position', ParseIntPipe) position: number,
+  @Post()
+  create(@Body() dto: UpdateHeroBannerDto) {
+    return this.heroService.create(dto);
+  }
+
+  /** PUT /api/hero/:id — Admin only */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Put(':id')
+  update(
+    @Param('id') id: string,
     @Body() dto: UpdateHeroBannerDto,
   ) {
-    return this.heroService.upsert(position, dto);
+    return this.heroService.update(id, dto);
   }
 
   /** DELETE /api/hero/reset — Admin only */
@@ -32,5 +40,13 @@ export class HeroController {
   @Delete('reset')
   reset() {
     return this.heroService.resetAll();
+  }
+
+  /** DELETE /api/hero/:id — Admin only */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Delete(':id')
+  delete(@Param('id') id: string) {
+    return this.heroService.delete(id);
   }
 }

@@ -52,48 +52,13 @@ const socialLinks = [
 export default function StorefrontFooter() {
   return (
     <footer className="w-full bg-white">
-      {/* ── Company Profile ── */}
-      <section className="border-b border-[#e2e8f0] bg-white">
-        <div className="mx-auto max-w-[1280px] px-6 py-14 md:px-12">
-          <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
-            <div>
-              <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#2563eb]">Tentang Jernih Kreatif</p>
-              <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-black md:text-3xl">
-                Solusi belanja, sewa, dan jasa dalam satu platform.
-              </h2>
-              <div className="mt-5 space-y-3 text-sm leading-7 text-[#475569]">
-                <p>
-                  Jernih Kreatif adalah platform marketplace yang membantu pelanggan menemukan produk, layanan sewa, dan jasa profesional dengan proses yang mudah, aman, dan transparan.
-                </p>
-                <p>
-                  Melalui satu ekosistem digital, pelanggan dapat mencari kebutuhan rumah tangga, elektronik, gadget, komputer, fashion, hobi, perlengkapan usaha, layanan sewa, hingga jasa kreatif dan teknis.
-                </p>
-                <p>
-                  Jernih Kreatif juga menjadi wadah bagi UMKM, pelaku usaha, distributor, penyedia jasa, dan individu untuk memasarkan produk maupun layanan kepada pelanggan di Indonesia.
-                </p>
-              </div>
-              <p className="mt-5 text-sm font-bold text-black">
-                Semua kebutuhan Anda, dalam satu platform terpercaya.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-[#e2e8f0] bg-[#f8fafc] p-6">
-              <h3 className="text-sm font-extrabold uppercase tracking-[0.16em] text-black">Ruang Lingkup Platform</h3>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                {[
-                  "Marketplace produk dari berbagai kategori.",
-                  "Layanan sewa untuk kebutuhan personal, event, dan usaha.",
-                  "Jasa profesional untuk kebutuhan kreatif, teknis, dan bisnis.",
-                  "Peluang pemasaran digital untuk UMKM dan pelaku usaha lokal.",
-                ].map((item) => (
-                  <div key={item} className="flex items-start gap-3 rounded-xl bg-white p-3 text-sm font-semibold text-[#334155]">
-                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#2563eb]" />
-                    <span>{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+      {/* ── Tentang ── */}
+      <section className="border-b border-neutral-100 bg-white">
+        <div className="mx-auto max-w-[1280px] px-6 py-10 md:px-12 md:py-14">
+          <h2 className="text-lg font-bold text-black mb-4">Tentang Jernih Kreatif</h2>
+          <p className="text-sm leading-7 text-neutral-600 text-justify">
+            Jernih Kreatif adalah platform marketplace yang membantu pelanggan menemukan produk, layanan sewa, dan jasa profesional dengan proses yang mudah, aman, dan transparan. Melalui satu ekosistem digital, pelanggan dapat mencari kebutuhan rumah tangga, elektronik, gadget, komputer, fashion, hobi, perlengkapan usaha, layanan sewa, hingga jasa kreatif dan teknis. Jernih Kreatif juga menjadi wadah bagi UMKM, pelaku usaha, distributor, penyedia jasa, dan individu untuk memasarkan produk maupun layanan kepada pelanggan di Indonesia. Platform ini mencakup marketplace produk dari berbagai kategori, layanan sewa untuk kebutuhan personal, event, dan usaha, jasa profesional untuk kebutuhan kreatif, teknis, dan bisnis, serta peluang pemasaran digital untuk UMKM dan pelaku usaha lokal. Semua kebutuhan Anda, dalam satu platform terpercaya.
+          </p>
         </div>
       </section>
 
@@ -115,7 +80,7 @@ export default function StorefrontFooter() {
             ].map((item) => (
               <div key={item.title} className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
                 <p className="text-sm font-extrabold text-black">{item.title}</p>
-                <p className="mt-2 text-sm leading-6 text-[#475569]">{item.desc}</p>
+                <p className="mt-2 text-sm leading-6 text-[#475569] text-justify">{item.desc}</p>
               </div>
             ))}
           </div>
@@ -145,7 +110,7 @@ export default function StorefrontFooter() {
               </div>
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-[0.15em] text-black">Transparan</p>
-                <p className="mt-1.5 text-xs leading-relaxed text-[#475569]">Informasi toko, produk, harga, ulasan, dan ketentuan layanan disajikan secara jelas agar pelanggan dapat membandingkan pilihan sebelum bertransaksi.</p>
+                <p className="mt-1.5 text-xs leading-relaxed text-[#475569] text-justify">Informasi toko, produk, harga, ulasan, dan ketentuan layanan disajikan secara jelas agar pelanggan dapat membandingkan pilihan sebelum bertransaksi.</p>
               </div>
             </div>
             <div className="flex items-start gap-4 rounded-lg border border-[#e2e8f0] bg-white p-4">
@@ -154,7 +119,7 @@ export default function StorefrontFooter() {
               </div>
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-[0.15em] text-black">Aman</p>
-                <p className="mt-1.5 text-xs leading-relaxed text-[#475569]">Sistem transaksi dirancang untuk membantu mengurangi risiko penipuan, menjaga alur pembayaran, dan memberi pelanggan pengalaman belanja yang lebih terlindungi.</p>
+                <p className="mt-1.5 text-xs leading-relaxed text-[#475569] text-justify">Sistem transaksi dirancang untuk membantu mengurangi risiko penipuan, menjaga alur pembayaran, dan memberi pelanggan pengalaman belanja yang lebih terlindungi.</p>
               </div>
             </div>
             <div className="flex items-start gap-4 rounded-lg border border-[#e2e8f0] bg-white p-4">
@@ -163,7 +128,7 @@ export default function StorefrontFooter() {
               </div>
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-[0.15em] text-black">Rekening Bersama</p>
-                <p className="mt-1.5 text-xs leading-relaxed text-[#475569]">Dana pelanggan dapat dikelola melalui mekanisme rekening bersama sesuai ketentuan platform, sehingga pembayaran diteruskan setelah transaksi memenuhi ketentuan yang berlaku.</p>
+                <p className="mt-1.5 text-xs leading-relaxed text-[#475569] text-justify">Dana pelanggan dapat dikelola melalui mekanisme rekening bersama sesuai ketentuan platform, sehingga pembayaran diteruskan setelah transaksi memenuhi ketentuan yang berlaku.</p>
               </div>
             </div>
           </div>
