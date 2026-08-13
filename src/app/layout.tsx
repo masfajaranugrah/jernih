@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "@fontsource/open-sauce-one";
 import "@fontsource/open-sauce-one/700.css";
 import "@fontsource/open-sauce-one/800.css";
@@ -8,6 +8,13 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Jernih Creatif",
   description: "Marketplace modern untuk produk, jasa, dan sewa peralatan.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({

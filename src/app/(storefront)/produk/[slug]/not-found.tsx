@@ -45,7 +45,7 @@ export default async function NotFound() {
       title: p.name,
       price: formatRupiah(p.price),
       href: `/produk/${p.slug}`,
-      img: p.images[0] ?? "/placeholder.png",
+      img: (Array.isArray(p.images) && p.images[0]) ? p.images[0] : "/placeholder.png",
     })),
     ...staticItems,
   ].sort(() => Math.random() - 0.5).slice(0, 6);

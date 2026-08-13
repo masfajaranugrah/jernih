@@ -178,6 +178,12 @@ export default function MobileBottomNav({ initialSlug }: { initialSlug?: string 
 
   const [cartCount, setCartCount] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const router = useRouter();
 
   // Sembunyikan navbar di halaman detail produk/sewa/jasa
   const isDetailPage =
@@ -228,13 +234,6 @@ export default function MobileBottomNav({ initialSlug }: { initialSlug?: string 
   if (isDetailPage) {
     return null;
   }
-
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [loginError, setLoginError] = useState("");
-  const [loginLoading, setLoginLoading] = useState(false);
-  const router = useRouter();
 
   const wishlistHref = nama
     ? `/dashboard/pelanggan/${nama}/wishlist`

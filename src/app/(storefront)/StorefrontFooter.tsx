@@ -105,8 +105,14 @@ export default function StorefrontFooter() {
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             <div className="flex items-start gap-4 rounded-lg border border-[#e2e8f0] bg-white p-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1e3a8a]/10 text-black">
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0 1 12 2.944a11.955 11.955 0 0 1-8.618 3.04A12.02 12.02 0 0 0 3 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+              <div className="relative h-10 w-10 shrink-0">
+                <Image
+                  src="/img/footer/1.png"
+                  alt="Transparan"
+                  width={40}
+                  height={40}
+                  className="h-10 w-10 object-contain"
+                />
               </div>
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-[0.15em] text-black">Transparan</p>
@@ -114,17 +120,32 @@ export default function StorefrontFooter() {
               </div>
             </div>
             <div className="flex items-start gap-4 rounded-lg border border-[#e2e8f0] bg-white p-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1e3a8a]/10 text-black">
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 15v2m-6 4h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2zm10-10V7a4 4 0 0 0-8 0v4h8z"/></svg>
-              </div>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full   text-black">
+                <div className="relative h-10 w-10 shrink-0">
+                  <Image
+                    src="/img/footer/2.png"
+                    alt="Transparan"
+                    width={40}
+                    height={40}
+                    className="h-10 w-10 object-contain"
+                  />
+                </div>              </div>
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-[0.15em] text-black">Aman</p>
                 <p className="mt-1.5 text-xs leading-relaxed text-[#475569] text-justify">Sistem transaksi dirancang untuk membantu mengurangi risiko penipuan, menjaga alur pembayaran, dan memberi pelanggan pengalaman belanja yang lebih terlindungi.</p>
               </div>
             </div>
             <div className="flex items-start gap-4 rounded-lg border border-[#e2e8f0] bg-white p-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1e3a8a]/10 text-black">
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3H6a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3z"/></svg>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-black">
+                <div className="relative h-10 w-10 shrink-0">
+                  <Image
+                    src="/img/footer/3.png"
+                    alt="Transparan"
+                    width={40}
+                    height={40}
+                    className="h-10 w-10 object-contain"
+                  />
+                </div>
               </div>
               <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-[0.15em] text-black">Rekening Bersama</p>
@@ -203,16 +224,19 @@ export default function StorefrontFooter() {
         </div>
 
         {/* ── Map ── */}
-        <div className="w-full overflow-hidden" style={{ filter: 'grayscale(100%)' }}>
+        <div className="relative w-full h-[170px] overflow-hidden" style={{ filter: 'grayscale(100%)' }}>
           <iframe
             src="https://www.openstreetmap.org/export/embed.html?bbox=95.293%2C-10.706%2C141.855%2C5.910&amp;layer=mapnik"
             width="100%"
-            height="200"
-            style={{ border: 0, display: 'block' }}
+            height="220"
+            style={{ border: 0, display: 'block', marginTop: '-10px' }}
             title="Peta Indonesia"
             loading="lazy"
             referrerPolicy="no-referrer"
           />
+          <div className="absolute bottom-3 right-4 z-10 rounded-lg bg-white/90 px-3 py-1.5 text-xs font-bold text-neutral-800 shadow-md border border-neutral-200/80 backdrop-blur-sm">
+            © Jernih Creative
+          </div>
         </div>
 
         <div className="border-t border-[#e2e8f0]">

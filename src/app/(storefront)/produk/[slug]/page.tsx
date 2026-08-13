@@ -21,6 +21,11 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   const badge = badgeMatch ? badgeMatch[1] : null;
   const cleanDescription = rawDescription.replace(/^\[badge:[A-Z0-9]+\]\s*/, "");
 
+  // Pastikan array gambar aman
+  const rawImages = Array.isArray(apiProduct.images) ? apiProduct.images : [];
+  const gallery = rawImages.length > 0 ? rawImages : ["/placeholder.png"];
+  const image = gallery[0];
+
   // Konversi ApiProduct ke format yang diharapkan ProductDetailClient
   const product = {
     id: apiProduct.id,
@@ -33,8 +38,8 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       ? `Harga normal: ${formatRupiah(apiProduct.oldPrice)}`
       : "Harga terbaik untuk kamu",
     stock: apiProduct.stock === 0 ? "Stok Habis" : `Stok Tersedia (${apiProduct.stock})`,
-    image: apiProduct.images[0] ?? "/placeholder.png",
-    gallery: apiProduct.images.length > 0 ? apiProduct.images : ["/placeholder.png"],
+    image,
+    gallery,
     description: cleanDescription || "Tidak ada deskripsi tersedia.",
     details: [
       `Dijual oleh: ${sellerName}`,

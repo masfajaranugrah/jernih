@@ -44,7 +44,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [addedToCart, setAddedToCart] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  const gallery = product.gallery.length > 0 ? product.gallery : [product.image];
+  const gallery = Array.isArray(product.gallery) && product.gallery.length > 0 ? product.gallery : [product.image || "/placeholder.png"];
   const hasTypes = product.types && product.types.length > 0;
   const [selectedTypeIdx, setSelectedTypeIdx] = useState(0);
   const activeType = hasTypes ? product.types![selectedTypeIdx] : null;
