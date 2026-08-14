@@ -17,6 +17,17 @@ const nextConfig: NextConfig = {
   // Compress response otomatis
   compress: true,
 
+  // Proxy /uploads ke backend port 3001 agar tidak 404
+  async rewrites() {
+    const backendUrl = (process.env.API_URL ?? "http://localhost:3001/api").replace(/\/api$/, "");
+    return [
+      {
+        source: "/uploads/:path*",
+        destination: `${backendUrl}/uploads/:path*`,
+      },
+    ];
+  },
+
   // Header keamanan + performa
   async headers() {
     return [

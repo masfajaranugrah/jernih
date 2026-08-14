@@ -16,7 +16,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   // Nama seller default — override ke brand sendiri
   const sellerName = "Jernih Creative Official";
 
-  // Deskripsi bisa diawali marker [badge:XXX] dari dashboard — pisahkan jadi badge & teks bersih
+  // Deskripsi bisa diawali marker [badge:XXX] atau ||SPECS_START|| dari dashboard
   const rawDescription = apiProduct.description ?? "";
   const badgeMatch = rawDescription.match(/\[badge:([A-Z0-9]+)\]/);
   const badge = badgeMatch ? badgeMatch[1] : null;
@@ -24,8 +24,22 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   const brandFromMarker = brandMatch ? brandMatch[1] : null;
   const skuMatch = rawDescription.match(/\[sku:([^\]]+)\]/);
   const skuFromMarker = skuMatch ? skuMatch[1] : null;
+
+  // Parse structured specifications
+  let structuredSpecs: Record<string, string> = {};
+  const specsMatch = rawDescription.match(/\|\|SPECS_START\|\|([\s\S]*?)\|\|SPECS_END\|\|/);
+  if (specsMatch) {
+    try {
+      structuredSpecs = JSON.parse(specsMatch[1]);
+    } catch {
+      structuredSpecs = {};
+    }
+  }
+
   // Hapus semua markers dari deskripsi yang ditampilkan
-  let cleanDescription = rawDescription.replace(/(\[badge:[A-Z0-9]+\]|\[brand:[^\]]+\]|\[sku:[^\]]+\])+\s*/g, "");
+  let cleanDescription = rawDescription
+    .replace(/(\[badge:[A-Z0-9]+\]|\[brand:[^\]]+\]|\[sku:[^\]]+\])+\s*/g, "")
+    .replace(/\|\|SPECS_START\|\|[\s\S]*?\|\|SPECS_END\|\|/g, "");
 
   // Bersihkan inline styles dari copy-paste HTML (Shopee/Tokopedia/dll)
   cleanDescription = cleanDescription
@@ -56,8 +70,8 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     slug: apiProduct.slug,
     title: apiProduct.name,
     category: apiProduct.category?.name ?? "Produk",
-    brand: brandFromMarker ?? null,
-    sku: skuFromMarker ?? null,
+    brand: brandFromMarker ?? structuredSpecs["Brand"] ?? null,
+    sku: skuFromMarker ?? structuredSpecs["SKU"] ?? null,
     badge,
     price: formatRupiah(apiProduct.price),
     installment: apiProduct.oldPrice
@@ -72,11 +86,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       "Lokasi: Indonesia",
       apiProduct.category ? `Kategori: ${apiProduct.category.name}` : null,
     ].filter(Boolean) as string[],
-    specs: [
-      ["Kategori", apiProduct.category?.name ?? "-"],
-      ["Stok", String(apiProduct.stock)],
-      ["Dijual oleh", sellerName],
-    ],
+    specs: structuredSpecs,
     types: (apiProduct.types ?? []).map((t) => ({
       id: t.id,
       name: t.name,

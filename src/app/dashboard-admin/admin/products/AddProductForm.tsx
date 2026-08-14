@@ -71,6 +71,8 @@ export default function AddProductForm() {
   const [weight, setWeight] = useState("");
   const [color, setColor] = useState("");
   const [warranty, setWarranty] = useState("");
+  const [condition, setCondition] = useState("Baru");
+  const [customSpecs, setCustomSpecs] = useState<{ key: string; value: string }[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);       // file belum diupload
   const [pendingPreviews, setPendingPreviews] = useState<string[]>([]); // blob URL untuk preview
@@ -104,10 +106,24 @@ export default function AddProductForm() {
     setPendingPreviews((prev) => prev.filter((_, i) => i !== index));
   }
 
-  // ── Drag & drop (simulasi — tampilkan preview dari URL yang di-drag) ─────────
+  // ── Drag & drop file atau URL ───────────────────────────────────────────────
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragActive(false);
+
+    // 1. File gambar yang di-drag dari komputer
+    const droppedFiles = Array.from(e.dataTransfer.files ?? []);
+    if (droppedFiles.length > 0) {
+      const imageFiles = droppedFiles.filter((f) => f.type.startsWith("image/"));
+      if (imageFiles.length > 0) {
+        const previews = imageFiles.map((f) => URL.createObjectURL(f));
+        setPendingFiles((prev) => [...prev, ...imageFiles]);
+        setPendingPreviews((prev) => [...prev, ...previews]);
+        return;
+      }
+    }
+
+    // 2. URL gambar yang di-drag
     const text = e.dataTransfer.getData("text/plain").trim();
     if (text.startsWith("http")) {
       setImageUrls((prev) => [...prev, text]);
@@ -157,11 +173,30 @@ export default function AddProductForm() {
         }
       }
 
-      // Susun prefix markers: badge + brand + sku
+      // Susun dictionary spesifikasi
+      const specsObj: Record<string, string> = {};
+      if (brand.trim()) specsObj["Brand"] = brand.trim();
+      if (sku.trim()) specsObj["SKU"] = sku.trim();
+      if (condition.trim()) specsObj["Kondisi"] = condition.trim();
+      if (material.trim()) specsObj["Material"] = material.trim();
+      if (dimensions.trim()) specsObj["Dimensi"] = dimensions.trim();
+      if (weight.trim()) specsObj["Berat"] = weight.trim();
+      if (color.trim()) specsObj["Warna"] = color.trim();
+      if (warranty.trim()) specsObj["Garansi"] = warranty.trim();
+      customSpecs.forEach(({ key, value }) => {
+        if (key.trim() && value.trim()) {
+          specsObj[key.trim()] = value.trim();
+        }
+      });
+
+      // Susun prefix markers: badge + brand + sku + specs
       let prefixes = "";
       if (badge) prefixes += `[badge:${badge}]`;
       if (brand.trim()) prefixes += `[brand:${brand.trim()}]`;
       if (sku.trim()) prefixes += `[sku:${sku.trim()}]`;
+      if (Object.keys(specsObj).length > 0) {
+        prefixes += `||SPECS_START||${JSON.stringify(specsObj)}||SPECS_END||`;
+      }
       const descWithBadge = prefixes ? `${prefixes} ${description}` : description;
       const result = await createProduct({
         name: name.trim(),
@@ -366,25 +401,85 @@ export default function AddProductForm() {
             <div className="mb-5 flex items-center gap-2">
               <span className="material-symbols-outlined text-[#003527]">straighten</span>
               <h3 className="text-xs font-bold uppercase tracking-widest text-[#707974]">
-                Spesifikasi
+                Spesifikasi Produk
               </h3>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-              <Field label="Material">
-                <input type="text" className={inputCls} placeholder="Aluminium, Plastik, dll" value={material} onChange={(e) => setMaterial(e.target.value)} />
+              <Field label="Kondisi">
+                <input type="text" className={inputCls} placeholder="Baru / Bekas" value={condition} onChange={(e) => setCondition(e.target.value)} />
               </Field>
-              <Field label="Dimensi (cm)">
-                <input type="text" className={inputCls} placeholder="30 x 20 x 5" value={dimensions} onChange={(e) => setDimensions(e.target.value)} />
+              <Field label="Material / Bahan">
+                <input type="text" className={inputCls} placeholder="Plastik Tebal, Kayu, dll" value={material} onChange={(e) => setMaterial(e.target.value)} />
               </Field>
-              <Field label="Berat (kg)">
-                <input type="text" className={inputCls} placeholder="1.5" value={weight} onChange={(e) => setWeight(e.target.value)} />
+              <Field label="Dimensi / Ukuran">
+                <input type="text" className={inputCls} placeholder="50cm x 60cm" value={dimensions} onChange={(e) => setDimensions(e.target.value)} />
+              </Field>
+              <Field label="Berat">
+                <input type="text" className={inputCls} placeholder="Contoh: 2 kg" value={weight} onChange={(e) => setWeight(e.target.value)} />
               </Field>
               <Field label="Warna">
-                <input type="text" className={inputCls} placeholder="Hitam, Putih, dll" value={color} onChange={(e) => setColor(e.target.value)} />
+                <input type="text" className={inputCls} placeholder="Putih, Hitam, dll" value={color} onChange={(e) => setColor(e.target.value)} />
               </Field>
               <Field label="Garansi">
-                <input type="text" className={inputCls} placeholder="1 Tahun resmi" value={warranty} onChange={(e) => setWarranty(e.target.value)} />
+                <input type="text" className={inputCls} placeholder="Contoh: 1 Bulan / 1 Tahun" value={warranty} onChange={(e) => setWarranty(e.target.value)} />
               </Field>
+            </div>
+
+            {/* Spesifikasi Kustom Tambahan */}
+            <div className="mt-5 pt-4 border-t border-[#e1e3e4]">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h4 className="text-xs font-bold text-[#191c1d]">Spesifikasi Kustom Tambahan</h4>
+                  <p className="text-[11px] text-[#707974]">Tambahkan parameter lain yang spesifik untuk produk ini (misal: Kapasitas, Daya, Fitur, dll).</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCustomSpecs((prev) => [...prev, { key: "", value: "" }])}
+                  className="flex items-center gap-1 rounded-lg bg-[#003527]/10 px-3 py-1.5 text-xs font-bold text-[#003527] hover:bg-[#003527]/20 transition cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-sm">add</span>
+                  Tambah Baris
+                </button>
+              </div>
+
+              {customSpecs.length > 0 && (
+                <div className="space-y-2">
+                  {customSpecs.map((cs, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="Nama Spek (misal: Daya)"
+                        className="w-1/3 rounded-lg border border-[#bfc9c3] bg-white px-3 py-2 text-xs outline-none focus:border-[#003527]"
+                        value={cs.key}
+                        onChange={(e) => {
+                          const next = [...customSpecs];
+                          next[idx] = { ...next[idx], key: e.target.value };
+                          setCustomSpecs(next);
+                        }}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Nilai Spek (misal: 100 Watt)"
+                        className="flex-1 rounded-lg border border-[#bfc9c3] bg-white px-3 py-2 text-xs outline-none focus:border-[#003527]"
+                        value={cs.value}
+                        onChange={(e) => {
+                          const next = [...customSpecs];
+                          next[idx] = { ...next[idx], value: e.target.value };
+                          setCustomSpecs(next);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setCustomSpecs((prev) => prev.filter((_, i) => i !== idx))}
+                        className="p-1 text-red-500 hover:text-red-700 transition"
+                        title="Hapus"
+                      >
+                        <span className="material-symbols-outlined text-base">delete</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </section>
         </div>

@@ -55,22 +55,49 @@ export default function EditProductForm({ product }: { product: ApiProduct }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Parse initial specs dari description jika ada
+  const initialSpecs = (() => {
+    const specsMatch = (product.description ?? "").match(/\|\|SPECS_START\|\|([\s\S]*?)\|\|SPECS_END\|\|/);
+    if (specsMatch) {
+      try {
+        return JSON.parse(specsMatch[1]) as Record<string, string>;
+      } catch {
+        return {};
+      }
+    }
+    return {};
+  })();
+
   // ── Form state (pre-filled dari product) ────────────────────────────────────
   const [name, setName] = useState(product.name);
   const [categoryId, setCategoryId] = useState(product.categoryId ?? "");
   const [description, setDescription] = useState(
-    // Strip semua markers (badge/brand/sku) agar tidak tampil di editor
-    (product.description ?? "").replace(/^(\[badge:[A-Z0-9]+\]|\[brand:[^\]]+\]|\[sku:[^\]]+\])+\s*/g, "")
+    // Strip semua markers (badge/brand/sku/specs) agar tidak tampil di editor
+    (product.description ?? "")
+      .replace(/^(\[badge:[A-Z0-9]+\]|\[brand:[^\]]+\]|\[sku:[^\]]+\])+\s*/g, "")
+      .replace(/\|\|SPECS_START\|\|[\s\S]*?\|\|SPECS_END\|\|/g, "")
   );
-  // Pre-fill brand dari marker
+  // Pre-fill brand dari marker atau specs
   const [brand, setBrand] = useState(() => {
     const m = (product.description ?? "").match(/\[brand:([^\]]+)\]/);
-    return m ? m[1] : "";
+    return m ? m[1] : (initialSpecs["Brand"] || "");
   });
-  // Pre-fill SKU dari marker
+  // Pre-fill SKU dari marker atau specs
   const [sku, setSku] = useState(() => {
     const m = (product.description ?? "").match(/\[sku:([^\]]+)\]/);
-    return m ? m[1] : "";
+    return m ? m[1] : (initialSpecs["SKU"] || "");
+  });
+  const [condition, setCondition] = useState(initialSpecs["Kondisi"] || "Baru");
+  const [material, setMaterial] = useState(initialSpecs["Material"] || "");
+  const [dimensions, setDimensions] = useState(initialSpecs["Dimensi"] || "");
+  const [weight, setWeight] = useState(initialSpecs["Berat"] || "");
+  const [color, setColor] = useState(initialSpecs["Warna"] || "");
+  const [warranty, setWarranty] = useState(initialSpecs["Garansi"] || "");
+  const [customSpecs, setCustomSpecs] = useState<{ key: string; value: string }[]>(() => {
+    const standardKeys = ["Brand", "SKU", "Kondisi", "Material", "Dimensi", "Berat", "Warna", "Garansi"];
+    return Object.entries(initialSpecs)
+      .filter(([k]) => !standardKeys.includes(k))
+      .map(([key, value]) => ({ key, value }));
   });
   const [price, setPrice] = useState(String(parseFloat(product.price)));
   const [oldPrice, setOldPrice] = useState(product.oldPrice ? String(parseFloat(product.oldPrice)) : "");
@@ -179,12 +206,34 @@ export default function EditProductForm({ product }: { product: ApiProduct }) {
           }
         }
 
+        // Susun dictionary spesifikasi
+        const specsObj: Record<string, string> = {};
+        if (brand.trim()) specsObj["Brand"] = brand.trim();
+        if (sku.trim()) specsObj["SKU"] = sku.trim();
+        if (condition.trim()) specsObj["Kondisi"] = condition.trim();
+        if (material.trim()) specsObj["Material"] = material.trim();
+        if (dimensions.trim()) specsObj["Dimensi"] = dimensions.trim();
+        if (weight.trim()) specsObj["Berat"] = weight.trim();
+        if (color.trim()) specsObj["Warna"] = color.trim();
+        if (warranty.trim()) specsObj["Garansi"] = warranty.trim();
+        customSpecs.forEach(({ key, value }) => {
+          if (key.trim() && value.trim()) {
+            specsObj[key.trim()] = value.trim();
+          }
+        });
+
         // Sisipkan semua markers ke awal description
         let prefixes = "";
         if (badge) prefixes += `[badge:${badge}]`;
         if (brand.trim()) prefixes += `[brand:${brand.trim()}]`;
         if (sku.trim()) prefixes += `[sku:${sku.trim()}]`;
-        const rawDesc = description.replace(/^(\[badge:[A-Z0-9]+\]|\[brand:[^\]]+\]|\[sku:[^\]]+\])+\s*/g, "");
+        if (Object.keys(specsObj).length > 0) {
+          prefixes += `||SPECS_START||${JSON.stringify(specsObj)}||SPECS_END||`;
+        }
+        const rawDesc = description
+          .replace(/^(\[badge:[A-Z0-9]+\]|\[brand:[^\]]+\]|\[sku:[^\]]+\])+\s*/g, "")
+          .replace(/\|\|SPECS_START\|\|[\s\S]*?\|\|SPECS_END\|\|/g, "")
+          .trim();
         const descWithBadge = prefixes ? `${prefixes} ${rawDesc}` : rawDesc;
 
         const result = await editProduct(product.id, {
@@ -391,6 +440,93 @@ export default function EditProductForm({ product }: { product: ApiProduct }) {
               placeholder="Tuliskan detail produk, fitur utama, keunggulan, dan informasi penting lainnya..."
               minHeight="220px"
             />
+          </section>
+
+          {/* Spesifikasi */}
+          <section className="rounded-xl border border-[#e1e3e4] bg-white p-6 shadow-sm">
+            <div className="mb-5 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#003527]">straighten</span>
+              <h3 className="text-xs font-bold uppercase tracking-widest text-[#707974]">
+                Spesifikasi Produk
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+              <Field label="Kondisi">
+                <input type="text" className={inputCls} placeholder="Baru / Bekas" value={condition} onChange={(e) => setCondition(e.target.value)} />
+              </Field>
+              <Field label="Material / Bahan">
+                <input type="text" className={inputCls} placeholder="Plastik Tebal, Kayu, dll" value={material} onChange={(e) => setMaterial(e.target.value)} />
+              </Field>
+              <Field label="Dimensi / Ukuran">
+                <input type="text" className={inputCls} placeholder="50cm x 60cm" value={dimensions} onChange={(e) => setDimensions(e.target.value)} />
+              </Field>
+              <Field label="Berat">
+                <input type="text" className={inputCls} placeholder="Contoh: 2 kg" value={weight} onChange={(e) => setWeight(e.target.value)} />
+              </Field>
+              <Field label="Warna">
+                <input type="text" className={inputCls} placeholder="Putih, Hitam, dll" value={color} onChange={(e) => setColor(e.target.value)} />
+              </Field>
+              <Field label="Garansi">
+                <input type="text" className={inputCls} placeholder="Contoh: 1 Bulan / 1 Tahun" value={warranty} onChange={(e) => setWarranty(e.target.value)} />
+              </Field>
+            </div>
+
+            {/* Spesifikasi Kustom Tambahan */}
+            <div className="mt-5 pt-4 border-t border-[#e1e3e4]">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h4 className="text-xs font-bold text-[#191c1d]">Spesifikasi Kustom Tambahan</h4>
+                  <p className="text-[11px] text-[#707974]">Tambahkan parameter lain yang spesifik untuk produk ini (misal: Kapasitas, Daya, Fitur, dll).</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCustomSpecs((prev) => [...prev, { key: "", value: "" }])}
+                  className="flex items-center gap-1 rounded-lg bg-[#003527]/10 px-3 py-1.5 text-xs font-bold text-[#003527] hover:bg-[#003527]/20 transition cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-sm">add</span>
+                  Tambah Baris
+                </button>
+              </div>
+
+              {customSpecs.length > 0 && (
+                <div className="space-y-2">
+                  {customSpecs.map((cs, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="Nama Spek (misal: Daya)"
+                        className="w-1/3 rounded-lg border border-[#bfc9c3] bg-white px-3 py-2 text-xs outline-none focus:border-[#003527]"
+                        value={cs.key}
+                        onChange={(e) => {
+                          const next = [...customSpecs];
+                          next[idx] = { ...next[idx], key: e.target.value };
+                          setCustomSpecs(next);
+                        }}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Nilai Spek (misal: 100 Watt)"
+                        className="flex-1 rounded-lg border border-[#bfc9c3] bg-white px-3 py-2 text-xs outline-none focus:border-[#003527]"
+                        value={cs.value}
+                        onChange={(e) => {
+                          const next = [...customSpecs];
+                          next[idx] = { ...next[idx], value: e.target.value };
+                          setCustomSpecs(next);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setCustomSpecs((prev) => prev.filter((_, i) => i !== idx))}
+                        className="p-1 text-red-500 hover:text-red-700 transition"
+                        title="Hapus"
+                      >
+                        <span className="material-symbols-outlined text-base">delete</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </section>
 
           {/* Status */}

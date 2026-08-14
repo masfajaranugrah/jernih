@@ -30,7 +30,7 @@ type Product = {
   image: string;
   description: string;
   details: string[];
-  specs: string[][];
+  specs?: Record<string, string> | null;
   gallery: string[];
   types?: ProductType[];
 };
@@ -176,19 +176,20 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  // Brand: gunakan dari marker jika ada, fallback ke kata pertama nama produk
-  const brandName = (product.brand || (
-    (() => { const m = product.title.match(/^([A-Za-z0-9]+)/); return m ? m[0].toUpperCase() : product.category; })()
-  )).toUpperCase();
+  // Brand: gunakan dari marker jika ada, fallback ke "-"
+  const brandName = product.brand ? product.brand.toUpperCase() : "-";
   // SKU: gunakan dari marker jika ada, fallback ke generate dari ID
   const skuCode = product.sku || `CD${product.id.slice(0, 3).toUpperCase()}888`.slice(0, 6);
 
-  // Parse spesifikasi warna & OS jika ada
-  const colorMatch = product.title.match(/(WHITE|BLACK|SILVER|GREY|GRAY|BLUE|GOLD|RED|PINK)/i) || product.description.match(/color:\s*([^\n]+)/i);
-  const colorSpec = colorMatch ? colorMatch[1] : "White";
-
-  const osMatch = product.title.match(/(W11|WINDOWS 11|WIN 11|DOS|LINUX|MAC|MACOS)/i) || product.description.match(/os:\s*([^\n]+)/i);
-  const osSpec = osMatch ? (osMatch[1].toUpperCase() === "W11" ? "Windows 11" : osMatch[1]) : "Windows 11";
+  // Parse spesifikasi dinamis
+  const customSpecsList: [string, string][] = [];
+  if (product.specs && typeof product.specs === "object") {
+    Object.entries(product.specs).forEach(([k, v]) => {
+      if (v && String(v).trim()) {
+        customSpecsList.push([k, String(v).trim()]);
+      }
+    });
+  }
 
   return (
     <div className="min-h-screen bg-slate-50/60 text-slate-900 w-full overflow-x-hidden font-sans">
@@ -456,15 +457,31 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               <div className="py-4 space-y-4">
                 {activeTab === "description" ? (
                   <div>
-                    {/* Spesifikasi Subheader (Match Screenshot 2) */}
+                    {/* Spesifikasi Subheader */}
                     <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-900 mb-2.5">
                       SPESIFIKASI
                     </h3>
                     <div className="space-y-1.5 text-xs sm:text-sm text-slate-700 font-medium">
-                      <p><span className="text-slate-500">Brand:</span> <span className="font-semibold text-slate-800">{brandName}</span></p>
-                      <p><span className="text-slate-500">Tipe:</span> <span className="font-semibold text-slate-800">{product.title}</span></p>
-                      <p><span className="text-slate-500">Color:</span> <span className="font-semibold text-slate-800">{colorSpec}</span></p>
-                      <p><span className="text-slate-500">Operating System:</span> <span className="font-semibold text-slate-800">{osSpec}</span></p>
+                      {customSpecsList.length > 0 ? (
+                        <>
+                          {brandName !== "-" && !customSpecsList.some(([k]) => k.toLowerCase() === "brand") && (
+                            <p><span className="text-slate-500">Brand:</span> <span className="font-semibold text-slate-800">{brandName}</span></p>
+                          )}
+                          <p><span className="text-slate-500">Kategori:</span> <span className="font-semibold text-slate-800">{product.category}</span></p>
+                          {customSpecsList.map(([key, val]) => (
+                            <p key={key}><span className="text-slate-500">{key}:</span> <span className="font-semibold text-slate-800">{val}</span></p>
+                          ))}
+                        </>
+                      ) : (
+                        <>
+                          {brandName !== "-" && (
+                            <p><span className="text-slate-500">Brand:</span> <span className="font-semibold text-slate-800">{brandName}</span></p>
+                          )}
+                          <p><span className="text-slate-500">Kategori:</span> <span className="font-semibold text-slate-800">{product.category}</span></p>
+                          <p><span className="text-slate-500">SKU:</span> <span className="font-semibold text-slate-800">{skuCode}</span></p>
+                          <p><span className="text-slate-500">Kondisi:</span> <span className="font-semibold text-slate-800">Baru (Original)</span></p>
+                        </>
+                      )}
                     </div>
 
                     {/* Deskripsi Teks — render HTML dari rich text editor */}
