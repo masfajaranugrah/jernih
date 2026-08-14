@@ -6,6 +6,8 @@ import * as compression from 'compression';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 
+import { getUploadDir } from './upload/upload.controller';
+
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
@@ -23,7 +25,9 @@ async function bootstrap() {
   // Gzip/Brotli compression — kurangi ukuran response JSON hingga 70%
   app.use(compression({ level: 6, threshold: 1024 }));
 
-  // Serve static files dari public/ — pakai process.cwd() agar konsisten
+  // Serve static files dari uploads dir secara fleksibel
+  const uploadDir = getUploadDir();
+  app.useStaticAssets(uploadDir, { prefix: '/uploads/' });
   app.useStaticAssets(join(process.cwd(), 'public'));
 
   // Global prefix untuk semua route
