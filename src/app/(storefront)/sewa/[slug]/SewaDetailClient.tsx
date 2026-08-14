@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ApiRentalItem } from "@/lib/rental-actions";
+import { resolveImageUrl } from "@/lib/image-url";
 
 function formatRupiah(val: string | number) {
   return "Rp " + parseFloat(String(val)).toLocaleString("id-ID");
@@ -76,7 +77,7 @@ export default function SewaDetailClient({ item }: { item: ApiRentalItem }) {
   const [activeImg, setActiveImg] = useState(0);
   const [shareOpen, setShareOpen] = useState(false);
 
-  const images = item.images ?? [];
+  const images = (item.images ?? []).map(resolveImageUrl);
   const extraCount = Math.max(0, images.length - 4);
   const category = item.description?.match(/^\[cat:([^\]]+)\]/)?.[1] ?? "Sewa";
   const cleanDesc = item.description?.replace(/^\[cat:[^\]]+\]\s*/, "");
