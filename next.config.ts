@@ -17,13 +17,13 @@ const nextConfig: NextConfig = {
   // Compress response otomatis
   compress: true,
 
-  // Proxy /uploads ke backend port 3001 agar tidak 404
+  // Proxy /uploads ke backend — gunakan /api/uploads agar Nginx bisa proxy ke NestJS
   async rewrites() {
-    const backendUrl = (process.env.API_URL ?? "http://localhost:3001/api").replace(/\/api$/, "");
+    const backendBase = (process.env.API_URL ?? "http://localhost:3001/api").replace(/\/api$/, "");
     return [
       {
         source: "/uploads/:path*",
-        destination: `${backendUrl}/uploads/:path*`,
+        destination: `${backendBase}/api/uploads/:path*`,
       },
     ];
   },
