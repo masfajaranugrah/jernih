@@ -182,22 +182,28 @@ export default function EditProductForm({ product }: { product: ApiProduct }) {
       try {
         // Upload pending files dulu baru simpan
         let finalImageUrls = [...imageUrls];
+        console.log("[EDIT PRODUCT] Memulai submit. Gambar awal yang ada:", imageUrls);
+        console.log("[EDIT PRODUCT] File pending yang akan diupload:", pendingFiles.length);
 
         if (pendingFiles.length > 0) {
           setUploadingImages(true);
           try {
             const formData = new FormData();
             pendingFiles.forEach((f) => formData.append("files", f));
+            console.log("[EDIT PRODUCT] Mengirim POST /api/upload...");
             const res = await fetch("/api/upload", { method: "POST", body: formData });
             if (!res.ok) throw new Error("Upload gagal");
             const data = await res.json();
+            console.log("[EDIT PRODUCT] Hasil upload dari server:", data);
             const uploadedUrls: string[] = data.urls ?? [];
             finalImageUrls = [...finalImageUrls, ...uploadedUrls];
+            console.log("[EDIT PRODUCT] Daftar total gambar setelah upload:", finalImageUrls);
             // Cleanup blob URLs
             pendingPreviews.forEach((p) => URL.revokeObjectURL(p));
             setPendingFiles([]);
             setPendingPreviews([]);
-          } catch {
+          } catch (err) {
+            console.error("[EDIT PRODUCT] Error saat upload gambar:", err);
             setError("Upload gambar gagal. Coba lagi.");
             setUploadingImages(false);
             return;
@@ -236,6 +242,7 @@ export default function EditProductForm({ product }: { product: ApiProduct }) {
           .trim();
         const descWithBadge = prefixes ? `${prefixes} ${rawDesc}` : rawDesc;
 
+        console.log("[EDIT PRODUCT] Menyimpan produk ke database dengan gambar:", finalImageUrls);
         const result = await editProduct(product.id, {
           name: name.trim(),
           slug: toSlug(name),
@@ -254,6 +261,8 @@ export default function EditProductForm({ product }: { product: ApiProduct }) {
           })),
         });
 
+        console.log("[EDIT PRODUCT] Respon editProduct dari server:", result);
+
         if (!result.success) {
           if (result.error.includes("Session") || result.error.includes("login ulang")) {
             handleSessionExpired();
@@ -263,6 +272,7 @@ export default function EditProductForm({ product }: { product: ApiProduct }) {
           return;
         }
 
+        console.log("✅ [EDIT PRODUCT] Gambar & produk berhasil disimpan di database!");
         queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
         queryClient.invalidateQueries({ queryKey: ["admin", "product", product.id] });
         router.push("/dashboard-admin/admin/products");

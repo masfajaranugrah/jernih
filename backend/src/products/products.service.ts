@@ -138,8 +138,9 @@ export class ProductsService {
   async update(id: string, dto: UpdateProductDto) {
     await this.findOne(id);
     const { types, ...productData } = dto;
+    console.log(`[BACKEND Product Update] ID: ${id}, Gambar yang diterima:`, dto.images);
     try {
-      return await this.prisma.product.update({
+      const updated = await this.prisma.product.update({
         where: { id },
         data: {
           ...productData,
@@ -154,6 +155,8 @@ export class ProductsService {
         },
         include: { types: true },
       });
+      console.log(`[BACKEND Product Update] Berhasil update produk ${id}. Gambar tersimpan di DB:`, updated.images);
+      return updated;
     } catch (err: any) {
       if (err?.message?.includes('numeric field overflow') || err?.code === '22003') {
         throw new BadRequestException(

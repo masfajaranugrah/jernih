@@ -171,7 +171,8 @@ export default function EditServiceForm({ service }: { service: ApiService }) {
 
     startTransition(async () => {
       try {
-        await editService(service.id, {
+        console.log(`[EDIT SERVICE] Menyimpan jasa ${service.id} dengan images:`, imageUrls);
+        const res = await editService(service.id, {
           name: name.trim(),
           slug: toSlug(name),
           categoryId: categoryId || undefined,
@@ -181,9 +182,11 @@ export default function EditServiceForm({ service }: { service: ApiService }) {
           images: imageUrls,
           isActive,
         });
+        console.log("✅ [EDIT SERVICE] Sukses update jasa:", res);
         success("Jasa berhasil diperbarui!");
         router.push("/dashboard-admin/admin/services");
       } catch (err: unknown) {
+        console.error("[EDIT SERVICE] Gagal menyimpan jasa:", err);
         toastError("Gagal menyimpan", err instanceof Error ? err.message : "Coba lagi.");
       }
     });

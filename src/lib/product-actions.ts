@@ -154,6 +154,7 @@ export async function editProduct(
     return { success: false, error: "Session tidak valid. Silakan login ulang." };
   }
 
+  console.log(`[SERVER ACTION editProduct] Mengirim PATCH ${API_URL}/products/${id} dengan images:`, data.images);
   const res = await fetch(`${API_URL}/products/${id}`, {
     method: "PATCH",
     headers,
@@ -164,10 +165,12 @@ export async function editProduct(
     if (res.status === 401) return { success: false, error: "Session telah berakhir. Silakan login ulang." };
     const err = await res.json().catch(() => ({}));
     const msg = Array.isArray(err.message) ? err.message.join(", ") : (err.message ?? `Gagal mengupdate produk: ${res.status}`);
+    console.error(`[SERVER ACTION editProduct] Gagal update: ${msg}`);
     return { success: false, error: msg };
   }
 
   const result = await res.json();
+  console.log(`[SERVER ACTION editProduct] Sukses mengupdate produk ${id}. Hasil:`, result.images);
   revalidateProductCaches();
   return { success: true, data: result };
 }
