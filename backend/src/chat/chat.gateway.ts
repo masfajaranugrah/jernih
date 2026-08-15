@@ -9,7 +9,9 @@ import {
 } from '@nestjs/websockets';
 import { JwtService } from '@nestjs/jwt';
 import { Server, Socket } from 'socket.io';
-import { PrismaService } from '../prisma/prisma.service';
+import { DatabaseService } from '../database/database.service';
+import { users, chats } from '../../db/schema';
+import { eq, and, or, inArray } from 'drizzle-orm';
 
 /**
  * Gateway realtime chat.
@@ -35,13 +37,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
+  static instance: ChatGateway | null = null;
+
   // userId → jumlah socket aktif
   private readonly connections = new Map<string, number>();
 
   constructor(
     private jwtService: JwtService,
-    private prisma: PrismaService,
-  ) {}
+    private readonly database: DatabaseService,
+  ) {
+    ChatGateway.instance = this;
+  }
 
   /** Ambil token dari handshake: auth.token dulu, lalu cookie mh_token */
   private extractToken(client: Socket): string | null {
@@ -92,8 +98,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (next === 0) {
       this.connections.delete(userId);
       const seenAt = new Date();
-      await this.prisma.user
-        .update({ where: { id: userId }, data: { lastSeenAt: seenAt } })
+      await this.database.db
+        .update(users)
+        .set({ lastSeenAt: seenAt })
+        .where(eq(users.id, userId))
         .catch(() => {});
       this.server.emit('presence:update', {
         userId,
@@ -133,16 +141,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (ids.length === 0) return;
 
     // Hanya izinkan cek presence user yang pernah chat dengan requester
-    const chatPartners = await this.prisma.chat.findMany({
-      where: {
-        OR: [
-          { senderId: client.data.userId, receiverId: { in: ids } },
-          { receiverId: client.data.userId, senderId: { in: ids } },
-        ],
-      },
-      select: { senderId: true, receiverId: true },
-      take: 50,
-    });
+    const chatPartners = await this.database.db
+      .select({ senderId: chats.senderId, receiverId: chats.receiverId })
+      .from(chats)
+      .where(
+        or(
+          and(eq(chats.senderId, client.data.userId), inArray(chats.receiverId, ids)),
+          and(eq(chats.receiverId, client.data.userId), inArray(chats.senderId, ids)),
+        ),
+      )
+      .limit(50);
     const allowedIds = new Set<string>();
     for (const c of chatPartners) {
       if (c.senderId === client.data.userId) allowedIds.add(c.receiverId);
@@ -157,11 +165,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const dbRecords =
       unknownIds.length > 0
-        ? await this.prisma.user
-            .findMany({
-              where: { id: { in: unknownIds } },
-              select: { id: true, lastSeenAt: true },
-            })
+        ? await this.database.db
+            .select({ id: users.id, lastSeenAt: users.lastSeenAt })
+            .from(users)
+            .where(inArray(users.id, unknownIds))
             .catch(() => [])
         : [];
 

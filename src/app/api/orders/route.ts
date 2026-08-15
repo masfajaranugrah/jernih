@@ -11,7 +11,13 @@ export async function GET(req: NextRequest) {
   }
 
   const status = req.nextUrl.searchParams.get("status");
-  const qs = status ? `?status=${encodeURIComponent(status)}` : "";
+  const page = req.nextUrl.searchParams.get("page");
+  const limit = req.nextUrl.searchParams.get("limit");
+  const params = new URLSearchParams();
+  if (status) params.set("status", status);
+  if (page) params.set("page", page);
+  if (limit) params.set("limit", limit);
+  const qs = params.toString() ? `?${params.toString()}` : "";
 
   let res: Response;
   try {

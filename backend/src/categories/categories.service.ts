@@ -1,22 +1,22 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { DatabaseService, genId } from '../database/database.service';
+import { categories } from '../../db/schema';
+import { eq } from 'drizzle-orm';
 
 @Injectable()
 export class CategoriesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly database: DatabaseService) {}
 
   async create(dto: { name: string; slug?: string; icon?: string }) {
     const slug = dto.slug || dto.name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     try {
-      return await this.prisma.category.create({
-        data: {
-          name: dto.name,
-          slug,
-          icon: dto.icon || null,
-        },
-      });
+      const [row] = await this.database.db
+        .insert(categories)
+        .values({ id: genId('cat'), name: dto.name, slug, icon: dto.icon || null })
+        .returning();
+      return row;
     } catch (err: any) {
-      if (err?.code === 'P2002') {
+      if (err?.code === '23505') {
         throw new BadRequestException('Nama atau slug kategori sudah digunakan.');
       }
       throw err;
@@ -24,15 +24,11 @@ export class CategoriesService {
   }
 
   async findAll() {
-    return await this.prisma.category.findMany({
-      orderBy: { name: 'asc' },
-    });
+    return this.database.db.select().from(categories).orderBy(categories.name);
   }
 
   async findOne(id: string) {
-    const category = await this.prisma.category.findUnique({
-      where: { id },
-    });
+    const [category] = await this.database.db.select().from(categories).where(eq(categories.id, id));
     if (!category) throw new NotFoundException('Kategori tidak ditemukan');
     return category;
   }
@@ -44,12 +40,14 @@ export class CategoriesService {
       data.slug = dto.name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     }
     try {
-      return await this.prisma.category.update({
-        where: { id },
-        data,
-      });
+      const [row] = await this.database.db
+        .update(categories)
+        .set(data)
+        .where(eq(categories.id, id))
+        .returning();
+      return row;
     } catch (err: any) {
-      if (err?.code === 'P2002') {
+      if (err?.code === '23505') {
         throw new BadRequestException('Nama atau slug kategori sudah digunakan.');
       }
       throw err;
@@ -59,9 +57,8 @@ export class CategoriesService {
   async remove(id: string) {
     await this.findOne(id);
     try {
-      return await this.prisma.category.delete({
-        where: { id },
-      });
+      const [row] = await this.database.db.delete(categories).where(eq(categories.id, id)).returning();
+      return row;
     } catch (err: any) {
       throw new BadRequestException('Tidak dapat menghapus kategori karena masih digunakan oleh produk/jasa.');
     }

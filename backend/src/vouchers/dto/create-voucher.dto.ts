@@ -3,7 +3,7 @@ import {
   IsBoolean, IsPositive, Min, IsDateString,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { VoucherType } from '@prisma/client';
+import { VoucherType } from '../../common/enums';
 
 export class CreateVoucherDto {
   @IsString() @IsNotEmpty() code: string;

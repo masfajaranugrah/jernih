@@ -1,52 +1,67 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { DatabaseService, genId } from '../database/database.service';
+import { services } from '../../db/schema';
+import { eq, and, or, ilike, desc } from 'drizzle-orm';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
 
 @Injectable()
 export class ServicesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly database: DatabaseService) {}
 
   async create(dto: CreateServiceDto) {
     try {
-      return await this.prisma.service.create({ data: dto });
+      const [row] = await this.database.db
+        .insert(services)
+        .values({ id: genId('svc'), ...(dto as any) })
+        .returning();
+      return row;
     } catch (err: any) {
       if (err?.message?.includes('numeric field overflow') || err?.code === '22003') {
         throw new BadRequestException('Harga terlalu besar. Maksimum adalah Rp 9.999.999.999');
       }
-      if (err?.code === 'P2002') {
+      if (err?.code === '23505') {
         throw new BadRequestException('Slug jasa sudah digunakan, gunakan nama yang berbeda.');
       }
       throw err;
     }
   }
 
-  async findAll(query?: { search?: string; categoryId?: string; mitraId?: string }) {
-    return this.prisma.service.findMany({
-      where: {
-        isActive: true,
-        ...(query?.search && {
-          OR: [
-            { name: { contains: query.search, mode: 'insensitive' } },
-            { description: { contains: query.search, mode: 'insensitive' } },
-          ],
-        }),
-        ...(query?.categoryId && { categoryId: query.categoryId }),
-        ...(query?.mitraId && { mitraId: query.mitraId }),
+  async findAll(query?: {
+    search?: string;
+    categoryId?: string;
+    mitraId?: string;
+    limit?: number;
+    page?: number;
+  }) {
+    const conditions = [
+      eq(services.isActive, true),
+      ...(query?.search
+        ? [or(ilike(services.name, `%${query.search}%`), ilike(services.description, `%${query.search}%`))]
+        : []),
+      ...(query?.categoryId ? [eq(services.categoryId, query.categoryId)] : []),
+      ...(query?.mitraId ? [eq(services.mitraId, query.mitraId)] : []),
+    ];
+    const limit = query?.limit != null ? Math.min(100, Math.max(1, Number(query.limit))) : undefined;
+    const page = Math.max(1, Number(query?.page) || 1);
+    const offset = limit ? (page - 1) * limit : undefined;
+    return this.database.db.query.services.findMany({
+      where: and(...conditions),
+      with: {
+        mitra: { columns: { id: true, storeName: true, city: true } },
+        category: { columns: { id: true, name: true } },
       },
-      include: {
-        mitra: { select: { id: true, storeName: true, city: true } },
-        category: { select: { id: true, name: true } },
-      },
-      orderBy: { createdAt: 'desc' },
+      orderBy: desc(services.createdAt),
+      limit,
+      offset,
     });
   }
 
   async findOne(id: string) {
-    const service = await this.prisma.service.findUnique({
-      where: { id },
-      include: {
-        mitra: { select: { id: true, storeName: true, logo: true, city: true, rating: true } },
+    const service = await this.database.db.query.services.findFirst({
+      where: eq(services.id, id),
+      with: {
+        mitra: { columns: { id: true, storeName: true, logo: true, city: true, rating: true } },
         category: true,
       },
     });
@@ -55,10 +70,10 @@ export class ServicesService {
   }
 
   async findBySlug(slug: string) {
-    const service = await this.prisma.service.findUnique({
-      where: { slug },
-      include: {
-        mitra: { select: { id: true, storeName: true, logo: true, city: true, rating: true } },
+    const service = await this.database.db.query.services.findFirst({
+      where: eq(services.slug, slug),
+      with: {
+        mitra: { columns: { id: true, storeName: true, logo: true, city: true, rating: true } },
         category: true,
       },
     });
@@ -69,12 +84,17 @@ export class ServicesService {
   async update(id: string, dto: UpdateServiceDto) {
     await this.findOne(id);
     try {
-      return await this.prisma.service.update({ where: { id }, data: dto });
+      const [row] = await this.database.db
+        .update(services)
+        .set(dto as any)
+        .where(eq(services.id, id))
+        .returning();
+      return row;
     } catch (err: any) {
       if (err?.message?.includes('numeric field overflow') || err?.code === '22003') {
         throw new BadRequestException('Harga terlalu besar. Maksimum adalah Rp 9.999.999.999');
       }
-      if (err?.code === 'P2002') {
+      if (err?.code === '23505') {
         throw new BadRequestException('Slug jasa sudah digunakan, gunakan nama yang berbeda.');
       }
       throw err;
@@ -83,7 +103,7 @@ export class ServicesService {
 
   async remove(id: string) {
     await this.findOne(id);
-    await this.prisma.service.delete({ where: { id } });
+    await this.database.db.delete(services).where(eq(services.id, id));
     return { message: 'Jasa berhasil dihapus' };
   }
 }

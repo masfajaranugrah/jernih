@@ -6,23 +6,25 @@ import {
 } from '@nestjs/common';
 import { join, basename } from 'path';
 import { promises as fs } from 'fs';
-import { PrismaService } from '../prisma/prisma.service';
+import { DatabaseService, genId } from '../database/database.service';
+import { users as usersTable, chats, products } from '../../db/schema';
+import { eq, and, or, desc, asc, inArray, ne, sql, lt } from 'drizzle-orm';
 import { SendMessageDto } from './dto/send-message.dto';
 import { ChatGateway } from './chat.gateway';
 
 // Include standar untuk setiap pesan — sender/receiver ringkas + card produk
-const messageInclude = {
-  sender: { select: { id: true, name: true, avatar: true } },
-  receiver: { select: { id: true, name: true, avatar: true } },
+const messageWith = {
+  sender: { columns: { id: true, name: true, avatar: true } },
+  receiver: { columns: { id: true, name: true, avatar: true } },
   product: {
-    select: { id: true, name: true, slug: true, price: true, images: true },
+    columns: { id: true, name: true, slug: true, price: true, images: true },
   },
 } as const;
 
 @Injectable()
 export class ChatService {
   constructor(
-    private prisma: PrismaService,
+    private readonly database: DatabaseService,
     private gateway: ChatGateway,
   ) {}
 
@@ -42,9 +44,9 @@ export class ChatService {
   async sendMessage(senderId: string, dto: SendMessageDto) {
     // Pesan dari pelanggan SELALU diarahkan ke admin, apa pun receiverId-nya.
     // Admin tetap memakai receiverId dari client (memilih pelanggan tujuan).
-    const sender = await this.prisma.user.findUnique({
-      where: { id: senderId },
-      select: { role: true },
+    const sender = await this.database.db.query.users.findFirst({
+      where: eq(usersTable.id, senderId),
+      columns: { role: true },
     });
     if (!sender) throw new NotFoundException('Pengirim tidak ditemukan');
 
@@ -66,52 +68,63 @@ export class ChatService {
     }
 
     if (dto.productId) {
-      const product = await this.prisma.product.findUnique({
-        where: { id: dto.productId },
-        select: { id: true },
-      });
+      const [product] = await this.database.db
+        .select({ id: products.id })
+        .from(products)
+        .where(eq(products.id, dto.productId));
       if (!product) throw new NotFoundException('Produk tidak ditemukan');
     }
 
-    const msg = await this.prisma.chat.create({
-      data: {
-        senderId,
-        receiverId,
-        message: dto.message,
-        imageUrl: dto.imageUrl,
-        videoUrl: dto.videoUrl,
-        productId: dto.productId,
-      },
-      include: messageInclude,
+    const id = genId('chat');
+    await this.database.db.insert(chats).values({
+      id,
+      senderId,
+      receiverId,
+      message: dto.message,
+      imageUrl: dto.imageUrl ?? null,
+      videoUrl: dto.videoUrl ?? null,
+      productId: dto.productId ?? null,
     });
 
-    this.gateway.emitNewMessage(msg);
+    const msg = await this.database.db.query.chats.findFirst({
+      where: eq(chats.id, id),
+      with: messageWith,
+    });
+
+    this.gateway.emitNewMessage(msg!);
     return msg;
   }
 
   /** Kirim pesan sistem (dari order, notifikasi, dll) */
-  async sendSystemMessage(adminId: string, body: { message: string; type?: string; orderNumber?: string; receiverId?: string }) {
+  async sendSystemMessage(
+    adminId: string,
+    body: { message: string; type?: string; orderNumber?: string; receiverId?: string },
+  ) {
     if (!body.message) throw new BadRequestException('Pesan tidak boleh kosong');
 
     // Cari receiver: jika tidak ditentukan, cari user yang bukan admin
     let receiverId = body.receiverId;
     if (!receiverId) {
-      const admin = await this.prisma.user.findUnique({
-        where: { id: adminId },
-        select: { role: true },
+      const admin = await this.database.db.query.users.findFirst({
+        where: eq(usersTable.id, adminId),
+        columns: { role: true },
       });
       // Kirim ke admin sendiri jika tidak ada receiver spesifik
       receiverId = adminId;
     }
 
-    const msg = await this.prisma.chat.create({
-      data: {
-        senderId: adminId,
-        receiverId,
-        message: body.message,
-        isSystem: true,
-      },
-      include: { sender: { select: { id: true, name: true, avatar: true } } },
+    const id = genId('chat');
+    await this.database.db.insert(chats).values({
+      id,
+      senderId: adminId,
+      receiverId,
+      message: body.message,
+      isSystem: true,
+    });
+
+    const msg = await this.database.db.query.chats.findFirst({
+      where: eq(chats.id, id),
+      with: { sender: { columns: { id: true, name: true, avatar: true } } },
     });
 
     // Broadcast via gateway
@@ -122,9 +135,9 @@ export class ChatService {
           senderId: adminId,
           receiverId,
           message: body.message,
-          id: msg.id,
+          id: msg!.id,
           isSystem: true,
-          createdAt: msg.createdAt,
+          createdAt: msg!.createdAt,
         } as any);
       }
     } catch { /* gateway mungkin tidak tersedia */ }
@@ -140,93 +153,123 @@ export class ChatService {
     } catch { return null; }
   }
 
-  /** Ambil riwayat percakapan antara dua user */
-  async getConversation(userId: string, otherId: string) {
-    const messages = await this.prisma.chat.findMany({
-      where: {
-        OR: [
-          { senderId: userId, receiverId: otherId },
-          { senderId: otherId, receiverId: userId },
-        ],
-      },
-      include: messageInclude,
-      orderBy: { createdAt: 'asc' },
+  /** Ambil riwayat percakapan antara dua user.
+   *  `limit` (default 100, maks 500) + `before` (tanggal ISO) untuk memuat
+   *  halaman pesan yang lebih lama tanpa menurunkan seluruh riwayat.
+   */
+  async getConversation(userId: string, otherId: string, limit = 100, before?: string) {
+    const pageLimit = Math.min(500, Math.max(1, Number(limit) || 100));
+    const messages = await this.database.db.query.chats.findMany({
+      where: and(
+        or(
+          and(eq(chats.senderId, userId), eq(chats.receiverId, otherId)),
+          and(eq(chats.senderId, otherId), eq(chats.receiverId, userId)),
+        ),
+        ...(before ? [lt(chats.createdAt, new Date(before))] : []),
+      ),
+      with: messageWith,
+      orderBy: asc(chats.createdAt),
+      limit: pageLimit,
     });
     return messages.map((m) => this.sanitize(m));
   }
 
   /** Ambil daftar percakapan (inbox) user */
   async getInbox(userId: string) {
-    // Ambil semua unique lawan bicara
-    const sent = await this.prisma.chat.findMany({
-      where: { senderId: userId },
-      select: { receiverId: true },
-      distinct: ['receiverId'],
+    const db = this.database.db;
+
+    // Pesan terakhir per lawan bicara dalam SATU query (DISTINCT ON).
+    // Menggantikan pola lama 2 query per percakapan → sekarang konstan berapa pun
+    // jumlah percakapannya. Membaca lewat index (senderId, receiverId, createdAt).
+    const res = await db.execute(sql`
+      SELECT DISTINCT ON (partner) partner, id AS "messageId"
+      FROM (
+        SELECT "receiverId" AS partner, id, "createdAt"
+        FROM ${chats}
+        WHERE "senderId" = ${userId}
+        UNION ALL
+        SELECT "senderId" AS partner, id, "createdAt"
+        FROM ${chats}
+        WHERE "receiverId" = ${userId}
+      ) all_messages
+      ORDER BY partner, "createdAt" DESC NULLS LAST
+    `);
+    const rows = (res.rows as Array<{ partner: string; messageId: string }>) ?? [];
+    if (rows.length === 0) return [];
+
+    // Jumlah pesan belum dibaca per pengirim — satu query GROUP BY (sebelumnya
+    // ada 1 query $count per percakapan).
+    const unreadRows = await db
+      .select({ senderId: chats.senderId, count: sql<number>`count(*)` })
+      .from(chats)
+      .where(
+        and(
+          eq(chats.receiverId, userId),
+          eq(chats.isRead, false),
+          eq(chats.isDeleted, false),
+          ne(chats.senderId, userId),
+        ),
+      )
+      .groupBy(chats.senderId);
+
+    const unreadMap = new Map(unreadRows.map((r) => [r.senderId, Number(r.count)]));
+
+    // Muat pesan terakhir + relasi (sender/receiver/product) secara batch dengan
+    // satu WHERE IN — relational query dipecah Drizzle jadi beberapa query konstan.
+    const ids = rows.map((r) => r.messageId);
+    const messages = await db.query.chats.findMany({
+      where: inArray(chats.id, ids),
+      with: messageWith,
+      orderBy: desc(chats.createdAt),
     });
-    const received = await this.prisma.chat.findMany({
-      where: { receiverId: userId },
-      select: { senderId: true },
-      distinct: ['senderId'],
-    });
 
-    const partnerIds = [
-      ...new Set([
-        ...sent.map((c) => c.receiverId),
-        ...received.map((c) => c.senderId),
-      ]),
-    ].filter((id) => id !== userId);
+    const byPartner = new Map<string, (typeof messages)[number]>();
+    for (const m of messages) {
+      const partner = m.senderId === userId ? m.receiverId : m.senderId;
+      if (!byPartner.has(partner)) byPartner.set(partner, m);
+    }
 
-    // Ambil pesan terakhir per percakapan
-    const conversations = await Promise.all(
-      partnerIds.map(async (partnerId) => {
-        const lastMessage = await this.prisma.chat.findFirst({
-          where: {
-            OR: [
-              { senderId: userId, receiverId: partnerId },
-              { senderId: partnerId, receiverId: userId },
-            ],
-          },
-          include: messageInclude,
-          orderBy: { createdAt: 'desc' },
-        });
-
-        const unreadCount = await this.prisma.chat.count({
-          where: { senderId: partnerId, receiverId: userId, isRead: false },
-        });
-
-        return { lastMessage: this.sanitize(lastMessage), unreadCount };
-      }),
-    );
-
-    return conversations.sort(
-      (a, b) =>
-        new Date(b.lastMessage!.createdAt).getTime() -
-        new Date(a.lastMessage!.createdAt).getTime(),
-    );
+    return rows
+      .map((r) => ({
+        lastMessage: this.sanitize(byPartner.get(r.partner) ?? null),
+        unreadCount: unreadMap.get(r.partner) ?? 0,
+      }))
+      .sort(
+        (a, b) =>
+          new Date(b.lastMessage!.createdAt).getTime() -
+          new Date(a.lastMessage!.createdAt).getTime(),
+      );
   }
 
   async markAsRead(userId: string, senderId: string) {
-    await this.prisma.chat.updateMany({
-      where: { senderId, receiverId: userId, isRead: false },
-      data: { isRead: true },
-    });
+    await this.database.db
+      .update(chats)
+      .set({ isRead: true })
+      .where(
+        and(
+          eq(chats.senderId, senderId),
+          eq(chats.receiverId, userId),
+          eq(chats.isRead, false),
+        ),
+      );
     this.gateway.emitRead(userId, senderId);
     return { message: 'Pesan ditandai sudah dibaca' };
   }
 
   /** Ambil admin tujuan chat pelanggan */
   async getAdminId() {
-    const admin = await this.prisma.user.findFirst({
-      where: { role: 'ADMIN', isActive: true },
-      select: { id: true, name: true, avatar: true },
-    });
+    const [admin] = await this.database.db
+      .select({ id: usersTable.id, name: usersTable.name, avatar: usersTable.avatar })
+      .from(usersTable)
+      .where(and(eq(usersTable.role, 'ADMIN'), eq(usersTable.isActive, true)))
+      .limit(1);
     if (!admin) throw new NotFoundException('Admin tidak ditemukan');
     return admin;
   }
 
   /** Hapus pesan untuk semua (soft delete) + hapus file lampiran dari disk */
   async deleteMessage(userId: string, messageId: string) {
-    const msg = await this.prisma.chat.findUnique({ where: { id: messageId } });
+    const [msg] = await this.database.db.select().from(chats).where(eq(chats.id, messageId));
     if (!msg) throw new NotFoundException('Pesan tidak ditemukan');
     if (msg.senderId !== userId) {
       throw new ForbiddenException('Hanya pengirim yang bisa menghapus pesan');
@@ -238,16 +281,16 @@ export class ChatService {
       [msg.imageUrl, msg.videoUrl].map((url) => this.deleteUploadedFile(url)),
     );
 
-    await this.prisma.chat.update({
-      where: { id: messageId },
-      data: {
+    await this.database.db
+      .update(chats)
+      .set({
         isDeleted: true,
         message: '',
         imageUrl: null,
         videoUrl: null,
         productId: null,
-      },
-    });
+      })
+      .where(eq(chats.id, messageId));
 
     this.gateway.emitDeleted(msg.senderId, msg.receiverId, messageId);
     return { message: 'Pesan dihapus' };

@@ -1,5 +1,5 @@
 import { IsEnum, IsOptional, IsString } from 'class-validator';
-import { ComplaintStatus } from '@prisma/client';
+import { ComplaintStatus } from '../../common/enums';
 
 export class UpdateComplaintDto {
   @IsOptional() @IsEnum(ComplaintStatus) status?: ComplaintStatus;

@@ -92,6 +92,9 @@ function formatDate(iso: string) {
 
 export default function OrdersContent() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<string>("Semua");
@@ -100,12 +103,26 @@ export default function OrdersContent() {
   const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
   const [shippingForm, setShippingForm] = useState<{ courier: string; resi: string } | null>(null);
 
+  const PAGE_SIZE = 20;
+
   useEffect(() => {
-    adminApi<Order[]>('orders')
-      .then((data) => setOrders(Array.isArray(data) ? data : []))
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, []);
+    let cancelled = false;
+    setLoading(true);
+    const status = STATUS_MAP[activeTab];
+    adminApi<{ data: Order[]; meta: { total: number; page: number; limit: number; totalPages: number } }>(
+      `orders?status=${encodeURIComponent(status)}&page=${page}&limit=${PAGE_SIZE}`,
+    )
+      .then((res) => {
+        if (cancelled) return;
+        const data = Array.isArray(res) ? res : (res?.data ?? []);
+        setOrders(data);
+        setTotal(Array.isArray(res) ? data.length : (res?.meta?.total ?? data.length));
+        setTotalPages(Array.isArray(res) ? 1 : (res?.meta?.totalPages ?? 1));
+      })
+      .catch((e) => !cancelled && setError(e.message))
+      .finally(() => !cancelled && setLoading(false));
+    return () => { cancelled = true; };
+  }, [activeTab, page]);
 
   function showToast(type: "success" | "error", msg: string) {
     setToast({ type, msg });
@@ -137,12 +154,6 @@ export default function OrdersContent() {
       setUpdating(null);
     }
   }
-
-  // Filter by tab
-  const statusFilter = STATUS_MAP[activeTab];
-  const filtered = !statusFilter
-    ? orders
-    : orders.filter((o) => statusFilter.split(",").includes(o.status));
 
   // ── Render ──
   if (loading) {
@@ -181,7 +192,7 @@ export default function OrdersContent() {
         {TABS.map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => { setActiveTab(tab); setPage(1); }}
             className={`pb-3 text-sm font-semibold whitespace-nowrap transition-colors border-b-2 ${
               activeTab === tab
                 ? "border-[#003527] text-[#003527]"
@@ -189,17 +200,12 @@ export default function OrdersContent() {
             }`}
           >
             {tab}
-            {tab !== "Semua" && (
-              <span className="ml-1.5 text-xs opacity-60">
-                ({orders.filter((o) => statusFilter.split(",").includes(o.status)).length})
-              </span>
-            )}
           </button>
         ))}
       </div>
 
       {/* Orders grid */}
-      {filtered.length === 0 ? (
+      {orders.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <svg className="h-16 w-16 text-[#bfc9c3] mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -208,13 +214,39 @@ export default function OrdersContent() {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5">
-          {filtered.map((order) => (
+          {orders.map((order) => (
             <OrderCard
               key={order.id}
               order={order}
               onSelect={() => setSelected(order)}
             />
           ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-8 pt-4 border-t border-[#e1e3e4]">
+          <p className="text-xs text-[#707974]">
+            Menampilkan {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} dari {total} pesanan
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="px-3 py-1.5 rounded-lg border border-[#bfc9c3] text-sm font-semibold text-[#404944] disabled:opacity-40 hover:bg-[#f3f4f5]"
+            >
+              Sebelumnya
+            </button>
+            <span className="text-sm text-[#404944] font-semibold">{page} / {totalPages}</span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className="px-3 py-1.5 rounded-lg border border-[#bfc9c3] text-sm font-semibold text-[#404944] disabled:opacity-40 hover:bg-[#f3f4f5]"
+            >
+              Berikutnya
+            </button>
+          </div>
         </div>
       )}
 

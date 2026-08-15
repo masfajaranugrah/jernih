@@ -1,31 +1,38 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { DatabaseService, genId } from '../database/database.service';
+import { products, productTypes } from '../../db/schema';
+import { eq, and, or, ilike, gte, lte, desc } from 'drizzle-orm';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 
 @Injectable()
 export class ProductsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly database: DatabaseService) {}
 
   async create(dto: CreateProductDto) {
     const { types, ...productData } = dto;
     try {
-      return await this.prisma.product.create({
-        data: {
-          ...productData,
-          ...(types?.length
-            ? { types: { createMany: { data: types } } }
-            : {}),
-        },
-        include: { types: true },
+      const productId = genId('prod');
+      await this.database.db.transaction(async (tx) => {
+        await tx.insert(products).values({ id: productId, ...(productData as any) });
+        if (types?.length) {
+          await tx
+            .insert(productTypes)
+            .values(types.map((t) => ({ id: genId('pt'), productId, ...(t as any) })));
+        }
       });
+      const row = await this.database.db.query.products.findFirst({
+        where: eq(products.id, productId),
+        with: { types: true },
+      });
+      return row;
     } catch (err: any) {
       if (err?.message?.includes('numeric field overflow') || err?.code === '22003') {
         throw new BadRequestException(
           'Harga yang dimasukkan terlalu besar. Maksimum harga adalah Rp 9.999.999.999',
         );
       }
-      if (err?.code === 'P2002') {
+      if (err?.code === '23505') {
         throw new BadRequestException('Slug produk sudah digunakan, gunakan nama yang berbeda.');
       }
       throw err;
@@ -45,56 +52,53 @@ export class ProductsService {
     const limit = Math.min(100, Math.max(1, Number(query?.limit) || 20));
     const skip = (page - 1) * limit;
 
-    const where: any = {
-      isActive: true,
-      ...(query?.search && {
-        OR: [
-          { name: { contains: query.search, mode: 'insensitive' } },
-          { description: { contains: query.search, mode: 'insensitive' } },
-        ],
-      }),
-      ...(query?.categoryId && { categoryId: query.categoryId }),
-      ...(query?.minPrice !== undefined && !isNaN(Number(query.minPrice)) && {
-        price: { gte: Number(query.minPrice) },
-      }),
-      ...(query?.maxPrice !== undefined && !isNaN(Number(query.maxPrice)) && {
-        price: { lte: Number(query.maxPrice) },
-      }),
-    };
+    const conditions = [
+      eq(products.isActive, true),
+      ...(query?.search
+        ? [or(ilike(products.name, `%${query.search}%`), ilike(products.description, `%${query.search}%`))]
+        : []),
+      ...(query?.categoryId ? [eq(products.categoryId, query.categoryId)] : []),
+      ...(query?.minPrice !== undefined && !isNaN(Number(query.minPrice))
+        ? [gte(products.price, String(query.minPrice))]
+        : []),
+      ...(query?.maxPrice !== undefined && !isNaN(Number(query.maxPrice))
+        ? [lte(products.price, String(query.maxPrice))]
+        : []),
+    ];
+    const where = conditions.length ? and(...conditions) : undefined;
 
-    // Mode light: HANYA field untuk kartu list (gambar, nama, rating, harga)
-    // + slug (link) + oldPrice (harga coret) + category (filter /produk & search).
-    // Tidak ada description/totalSold/createdAt — hemat payload & percepat respons.
+    // Mode light: HANYA field untuk kartu list + slug + oldPrice + category.
     // Data lengkap baru diambil via GET /products/slug/:slug saat klik detail.
-    const findManyArgs: any = {
-      where,
-      orderBy: { createdAt: 'desc' },
-      skip,
-      take: limit,
-    };
-
-    if (query?.light) {
-      findManyArgs.select = {
-        id: true,
-        name: true,
-        slug: true,
-        price: true,
-        oldPrice: true,
-        rating: true,
-        totalSold: true,
-        images: true,
-        category: { select: { id: true, name: true, slug: true } },
-      };
-    } else {
-      findManyArgs.include = {
-        category: { select: { id: true, name: true, slug: true } },
-        types: { where: { isActive: true } },
-      };
-    }
-
     const [data, total] = await Promise.all([
-      this.prisma.product.findMany(findManyArgs),
-      this.prisma.product.count({ where }),
+      query?.light
+        ? this.database.db.query.products.findMany({
+            where,
+            columns: {
+              id: true,
+              name: true,
+              slug: true,
+              price: true,
+              oldPrice: true,
+              rating: true,
+              totalSold: true,
+              images: true,
+            },
+            with: { category: { columns: { id: true, name: true, slug: true } } },
+            orderBy: desc(products.createdAt),
+            limit,
+            offset: skip,
+          })
+        : this.database.db.query.products.findMany({
+            where,
+            with: {
+              category: { columns: { id: true, name: true, slug: true } },
+              types: { where: eq(productTypes.isActive, true) },
+            },
+            orderBy: desc(products.createdAt),
+            limit,
+            offset: skip,
+          }),
+      this.database.db.$count(products, where),
     ]);
 
     // Kartu list hanya butuh gambar pertama — kirim maksimal 1 saja.
@@ -112,11 +116,11 @@ export class ProductsService {
   }
 
   async findOne(id: string) {
-    const product = await this.prisma.product.findUnique({
-      where: { id },
-      include: {
+    const product = await this.database.db.query.products.findFirst({
+      where: eq(products.id, id),
+      with: {
         category: true,
-        types: { where: { isActive: true } },
+        types: { where: eq(productTypes.isActive, true) },
       },
     });
     if (!product) throw new NotFoundException('Produk tidak ditemukan');
@@ -124,11 +128,11 @@ export class ProductsService {
   }
 
   async findBySlug(slug: string) {
-    const product = await this.prisma.product.findUnique({
-      where: { slug },
-      include: {
+    const product = await this.database.db.query.products.findFirst({
+      where: eq(products.slug, slug),
+      with: {
         category: true,
-        types: { where: { isActive: true } },
+        types: { where: eq(productTypes.isActive, true) },
       },
     });
     if (!product) throw new NotFoundException('Produk tidak ditemukan');
@@ -140,22 +144,22 @@ export class ProductsService {
     const { types, ...productData } = dto;
     console.log(`[BACKEND Product Update] ID: ${id}, Gambar yang diterima:`, dto.images);
     try {
-      const updated = await this.prisma.product.update({
-        where: { id },
-        data: {
-          ...productData,
-          ...(types !== undefined
-            ? {
-                types: {
-                  deleteMany: { productId: id },
-                  createMany: { data: types },
-                },
-              }
-            : {}),
-        },
-        include: { types: true },
+      await this.database.db.transaction(async (tx) => {
+        if (types !== undefined) {
+          await tx.delete(productTypes).where(eq(productTypes.productId, id));
+        }
+        await tx.update(products).set(productData as any).where(eq(products.id, id));
+        if (types?.length) {
+          await tx
+            .insert(productTypes)
+            .values(types.map((t) => ({ id: genId('pt'), productId: id, ...(t as any) })));
+        }
       });
-      console.log(`[BACKEND Product Update] Berhasil update produk ${id}. Gambar tersimpan di DB:`, updated.images);
+      const updated = await this.database.db.query.products.findFirst({
+        where: eq(products.id, id),
+        with: { types: true },
+      });
+      console.log(`[BACKEND Product Update] Berhasil update produk ${id}. Gambar tersimpan di DB:`, updated?.images);
       return updated;
     } catch (err: any) {
       if (err?.message?.includes('numeric field overflow') || err?.code === '22003') {
@@ -163,7 +167,7 @@ export class ProductsService {
           'Harga yang dimasukkan terlalu besar. Maksimum harga adalah Rp 9.999.999.999',
         );
       }
-      if (err?.code === 'P2002') {
+      if (err?.code === '23505') {
         throw new BadRequestException('Slug produk sudah digunakan, gunakan nama yang berbeda.');
       }
       throw err;
@@ -172,7 +176,7 @@ export class ProductsService {
 
   async remove(id: string) {
     await this.findOne(id);
-    await this.prisma.product.delete({ where: { id } });
+    await this.database.db.delete(products).where(eq(products.id, id));
     return { message: 'Produk berhasil dihapus' };
   }
 }

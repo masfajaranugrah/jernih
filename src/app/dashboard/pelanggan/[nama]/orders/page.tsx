@@ -6,6 +6,17 @@ import Link from "next/link";
 
 const tabs = ["Semua", "Belum Bayar", "Dikemas", "Dikirim", "Selesai"] as const;
 
+/** Map tab → status backend (bisa lebih dari satu) */
+const tabStatus: Record<string, string> = {
+  Semua: "",
+  "Belum Bayar": "PENDING",
+  Dikemas: "CONFIRMED,PROCESSING",
+  Dikirim: "SHIPPED",
+  Selesai: "DELIVERED",
+};
+
+const PAGE_SIZE = 20;
+
 type ApiOrderItem = {
   id: string;
   name: string;
@@ -127,12 +138,17 @@ export default function OrdersPelangganPage({
   const nama = use(params).nama;
   const [activeTab, setActiveTab] = useState<string>("Semua");
   const [orders, setOrders] = useState<ApiOrder[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/orders", { cache: "no-store" })
+    setLoading(true);
+    const status = tabStatus[activeTab];
+    fetch(`/api/orders?status=${encodeURIComponent(status)}&page=${page}&limit=${PAGE_SIZE}`, { cache: "no-store" })
       .then(async (res) => {
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
@@ -140,8 +156,12 @@ export default function OrdersPelangganPage({
         }
         return res.json();
       })
-      .then((data: ApiOrder[]) => {
-        if (!cancelled) setOrders(Array.isArray(data) ? data : []);
+      .then((data: { data?: ApiOrder[]; meta?: { total: number; totalPages: number }; }) => {
+        if (cancelled) return;
+        const items = Array.isArray(data) ? data : (data?.data ?? []);
+        setOrders(items);
+        setTotal(Array.isArray(data) ? items.length : (data?.meta?.total ?? items.length));
+        setTotalPages(Array.isArray(data) ? 1 : (data?.meta?.totalPages ?? 1));
       })
       .catch((e: Error) => {
         if (!cancelled) setError(e.message);
@@ -150,7 +170,7 @@ export default function OrdersPelangganPage({
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, []);
+  }, [activeTab, page]);
 
   const filtered =
     activeTab === "Semua"
@@ -192,7 +212,7 @@ export default function OrdersPelangganPage({
         {tabs.map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => { setActiveTab(tab); setPage(1); }}
             className={`pb-3 text-sm font-semibold whitespace-nowrap transition-colors border-b-2 ${
               activeTab === tab
                 ? "border-[#003527] text-[#003527]"
@@ -230,6 +250,31 @@ export default function OrdersPelangganPage({
           {filtered.map((order) => (
             <OrderCard key={order.id} order={order} nama={nama} />
           ))}
+        </div>
+      )}
+
+      {totalPages > 1 && !loading && !error && (
+        <div className="flex items-center justify-between mt-8 pt-4 border-t border-[#e1e3e4]">
+          <p className="text-xs text-[#707974]">
+            Menampilkan {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} dari {total} pesanan
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="px-3 py-1.5 rounded-lg border border-[#bfc9c3] text-sm font-semibold text-[#404944] disabled:opacity-40 hover:bg-[#f3f4f5]"
+            >
+              Sebelumnya
+            </button>
+            <span className="text-sm text-[#404944] font-semibold">{page} / {totalPages}</span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className="px-3 py-1.5 rounded-lg border border-[#bfc9c3] text-sm font-semibold text-[#404944] disabled:opacity-40 hover:bg-[#f3f4f5]"
+            >
+              Berikutnya
+            </button>
+          </div>
         </div>
       )}
     </>

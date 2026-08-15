@@ -2,7 +2,9 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../prisma/prisma.service';
+import { DatabaseService } from '../database/database.service';
+import { users } from '../../db/schema';
+import { eq } from 'drizzle-orm';
 
 export type JwtPayload = {
   sub: string;  // user id
@@ -24,7 +26,7 @@ const CACHE_TTL = 5_000; // 5 detik — tidak perlu realtime untuk data user
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     config: ConfigService,
-    private prisma: PrismaService,
+    private readonly database: DatabaseService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -48,13 +50,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     // Cache miss — query DB
-    const user = await this.prisma.user.findUnique({
-      where: { id: payload.sub },
-      select: {
+    const user = await this.database.db.query.users.findFirst({
+      where: eq(users.id, payload.sub),
+      columns: {
         id: true, email: true, name: true, role: true,
         isActive: true, tokenVersion: true,
-        mitra: { select: { id: true } },
       },
+      with: { mitra: { columns: { id: true } } },
     });
 
     if (!user || !user.isActive) {

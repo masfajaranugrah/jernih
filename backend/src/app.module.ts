@@ -2,7 +2,7 @@ import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { PrismaModule } from './prisma/prisma.module';
+import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { MitraModule } from './mitra/mitra.module';
@@ -31,7 +31,7 @@ import { CsrfOriginMiddleware } from './common/middleware/csrf-origin.middleware
       ttl: 60000,
       limit: 100,
     }]),
-    PrismaModule,
+    DatabaseModule,
     AuthModule,
     UsersModule,
     MitraModule,

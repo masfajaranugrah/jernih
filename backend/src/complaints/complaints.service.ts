@@ -1,41 +1,48 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { DatabaseService, genId } from '../database/database.service';
+import { complaints } from '../../db/schema';
+import { eq, desc } from 'drizzle-orm';
 import { CreateComplaintDto } from './dto/create-complaint.dto';
 import { UpdateComplaintDto } from './dto/update-complaint.dto';
 
 @Injectable()
 export class ComplaintsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly database: DatabaseService) {}
 
   async create(userId: string, dto: CreateComplaintDto) {
-    return this.prisma.complaint.create({
-      data: { userId, ...dto },
-      include: { user: { select: { id: true, name: true, email: true } } },
+    const id = genId('cmp');
+    await this.database.db
+      .insert(complaints)
+      .values({ id, userId, ...(dto as any) });
+    const row = await this.database.db.query.complaints.findFirst({
+      where: eq(complaints.id, id),
+      with: { user: { columns: { id: true, name: true, email: true } } },
     });
+    return row;
   }
 
   async findAll(userId?: string) {
-    return this.prisma.complaint.findMany({
-      where: { ...(userId && { userId }) },
-      include: {
-        user: { select: { id: true, name: true } },
-        order: { select: { id: true, total: true } },
+    return this.database.db.query.complaints.findMany({
+      where: userId ? eq(complaints.userId, userId) : undefined,
+      with: {
+        user: { columns: { id: true, name: true } },
+        order: { columns: { id: true, total: true } },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: desc(complaints.createdAt),
     });
   }
 
   async findOne(id: string) {
-    const complaint = await this.prisma.complaint.findUnique({
-      where: { id },
-      include: {
-        user: { select: { id: true, name: true, email: true } },
-        mitra: { select: { id: true, storeName: true } },
+    const row = await this.database.db.query.complaints.findFirst({
+      where: eq(complaints.id, id),
+      with: {
+        user: { columns: { id: true, name: true, email: true } },
+        mitra: { columns: { id: true, storeName: true } },
         order: true,
       },
     });
-    if (!complaint) throw new NotFoundException('Komplain tidak ditemukan');
-    return complaint;
+    if (!row) throw new NotFoundException('Komplain tidak ditemukan');
+    return row;
   }
 
   /** findOne dengan IDOR check — hanya pemilik atau ADMIN */
@@ -49,6 +56,11 @@ export class ComplaintsService {
 
   async update(id: string, dto: UpdateComplaintDto) {
     await this.findOne(id);
-    return this.prisma.complaint.update({ where: { id }, data: dto });
+    const [row] = await this.database.db
+      .update(complaints)
+      .set(dto as any)
+      .where(eq(complaints.id, id))
+      .returning();
+    return row;
   }
 }

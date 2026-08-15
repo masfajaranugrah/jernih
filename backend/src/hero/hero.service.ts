@@ -1,32 +1,34 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { DatabaseService, genId } from '../database/database.service';
+import { heroBanners } from '../../db/schema';
+import { eq, asc } from 'drizzle-orm';
 import { UpdateHeroBannerDto } from './dto/update-hero-banner.dto';
 
 @Injectable()
 export class HeroService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly database: DatabaseService) {}
 
   /** Ambil semua banner (urut position lalu updatedAt) */
   async findAll() {
-    return this.prisma.heroBanner.findMany({
-      orderBy: [
-        { position: 'asc' },
-        { updatedAt: 'asc' },
-      ],
-    });
+    return this.database.db
+      .select()
+      .from(heroBanners)
+      .orderBy(asc(heroBanners.position), asc(heroBanners.updatedAt));
   }
 
   /** Ambil banner berdasarkan ID */
   async findOne(id: string) {
-    const banner = await this.prisma.heroBanner.findUnique({ where: { id } });
-    if (!banner) throw new NotFoundException(`Banner dengan ID ${id} tidak ditemukan`);
-    return banner;
+    const [row] = await this.database.db.select().from(heroBanners).where(eq(heroBanners.id, id));
+    if (!row) throw new NotFoundException(`Banner dengan ID ${id} tidak ditemukan`);
+    return row;
   }
 
   /** Buat banner baru */
   async create(dto: UpdateHeroBannerDto) {
-    return this.prisma.heroBanner.create({
-      data: {
+    const [row] = await this.database.db
+      .insert(heroBanners)
+      .values({
+        id: genId('banner'),
         badge: dto.badge ?? '',
         title: dto.title ?? '',
         titleSuffix: dto.titleSuffix ?? '',
@@ -43,28 +45,35 @@ export class HeroService {
         align: dto.align ?? 'left',
         isActive: dto.isActive ?? true,
         position: dto.position ?? 0,
-      },
-    });
+      })
+      .returning();
+    return row;
   }
 
   /** Update banner berdasarkan ID */
   async update(id: string, dto: UpdateHeroBannerDto) {
     await this.findOne(id);
-    return this.prisma.heroBanner.update({
-      where: { id },
-      data: dto,
-    });
+    const [row] = await this.database.db
+      .update(heroBanners)
+      .set(dto as any)
+      .where(eq(heroBanners.id, id))
+      .returning();
+    return row;
   }
 
   /** Hapus banner berdasarkan ID */
   async delete(id: string) {
     await this.findOne(id);
-    return this.prisma.heroBanner.delete({ where: { id } });
+    const [row] = await this.database.db
+      .delete(heroBanners)
+      .where(eq(heroBanners.id, id))
+      .returning();
+    return row;
   }
 
   /** Reset semua banner ke default */
   async resetAll() {
-    await this.prisma.heroBanner.deleteMany();
+    await this.database.db.delete(heroBanners);
     return { message: 'Semua hero banner berhasil direset' };
   }
 }

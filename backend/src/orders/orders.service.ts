@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { DatabaseService, genId } from '../database/database.service';
+import { orders, orderItems, products, services, users, vouchers, voucherUses, chats } from '../../db/schema';
+import { eq, and, desc, sql, inArray } from 'drizzle-orm';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { MidtransService } from '../midtrans/midtrans.service';
@@ -8,23 +10,40 @@ import { getChannel, calculateFee } from '../midtrans/payment-methods';
 @Injectable()
 export class OrdersService {
   constructor(
-    private prisma: PrismaService,
+    private readonly database: DatabaseService,
     private midtrans: MidtransService,
   ) {}
 
   async create(userId: string, dto: CreateOrderDto) {
+    const orderId = genId('ord');
+
     // Gunakan transaction untuk atomicity — stock, voucher, dan order all-or-nothing
-    return this.prisma.$transaction(async (tx) => {
+    await this.database.db.transaction(async (tx) => {
       // Hitung subtotal dari items
       let subtotal = 0;
       const itemsData: any[] = [];
+
+      // Muat semua produk & jasa sekali query per tipe (bukan SELECT per item).
+      const productIds = dto.items.filter((i) => i.productId).map((i) => i.productId!);
+      const serviceIds = dto.items.filter((i) => i.serviceId).map((i) => i.serviceId!);
+
+      const [productsMap, servicesMap] = await Promise.all([
+        productIds.length
+          ? tx.select().from(products).where(inArray(products.id, productIds))
+              .then((rows) => new Map(rows.map((r) => [r.id, r])))
+          : Promise.resolve(new Map<string, any>()),
+        serviceIds.length
+          ? tx.select().from(services).where(inArray(services.id, serviceIds))
+              .then((rows) => new Map(rows.map((r) => [r.id, r])))
+          : Promise.resolve(new Map<string, any>()),
+      ]);
 
       for (const item of dto.items) {
         let price = 0;
         let name = '';
 
         if (item.productId) {
-          const product = await tx.product.findUnique({ where: { id: item.productId } });
+          const product = productsMap.get(item.productId);
           if (!product) throw new NotFoundException(`Produk ${item.productId} tidak ditemukan`);
 
           const qty = item.quantity ?? 1;
@@ -37,15 +56,15 @@ export class OrdersService {
           }
 
           // Kurangi stok secara atomik
-          await tx.product.update({
-            where: { id: item.productId },
-            data: { stock: { decrement: qty } },
-          });
+          await tx
+            .update(products)
+            .set({ stock: sql`${products.stock} - ${qty}` })
+            .where(eq(products.id, item.productId));
 
           price = Number(product.price);
           name = product.name;
         } else if (item.serviceId) {
-          const service = await tx.service.findUnique({ where: { id: item.serviceId } });
+          const service = servicesMap.get(item.serviceId);
           if (!service) throw new NotFoundException(`Jasa ${item.serviceId} tidak ditemukan`);
           price = Number(service.priceFrom);
           name = service.name;
@@ -74,9 +93,7 @@ export class OrdersService {
       let voucherUseId: string | undefined;
 
       if (dto.voucherCode) {
-        const voucher = await tx.voucher.findUnique({
-          where: { code: dto.voucherCode },
-        });
+        const [voucher] = await tx.select().from(vouchers).where(eq(vouchers.code, dto.voucherCode));
 
         if (!voucher || !voucher.isActive || voucher.usedCount >= voucher.quota) {
           throw new BadRequestException('Voucher tidak valid atau sudah habis');
@@ -98,15 +115,14 @@ export class OrdersService {
         }
 
         // Buat VoucherUse + increment usedCount dalam 1 transaction
-        const voucherUse = await tx.voucherUse.create({
-          data: { voucherId: voucher.id, userId },
-        });
-        voucherUseId = voucherUse.id;
+        const vUseId = genId('vu');
+        await tx.insert(voucherUses).values({ id: vUseId, voucherId: voucher.id, userId });
+        voucherUseId = vUseId;
 
-        await tx.voucher.update({
-          where: { id: voucher.id },
-          data: { usedCount: { increment: 1 } },
-        });
+        await tx
+          .update(vouchers)
+          .set({ usedCount: sql`${vouchers.usedCount} + 1` })
+          .where(eq(vouchers.id, voucher.id));
       }
 
       const shippingCost = dto.shippingCost ?? 0;
@@ -118,58 +134,85 @@ export class OrdersService {
         return 'ORD-' + uuid.slice(0, 9);
       })();
 
-      return tx.order.create({
-        data: {
-          userId,
-          orderNumber,
-          addressId: dto.addressId,
-          voucherUseId,
-          subtotal,
-          discountAmount,
-          shippingCost,
-          total,
-          notes: dto.notes,
-          paymentMethod: dto.paymentMethod,
-          items: { create: itemsData },
-        },
-        include: { items: true, address: true },
+      await tx.insert(orders).values({
+        id: orderId,
+        userId,
+        orderNumber,
+        addressId: dto.addressId ?? null,
+        voucherUseId: voucherUseId ?? null,
+        subtotal: String(subtotal),
+        discountAmount: String(discountAmount),
+        shippingCost: String(shippingCost),
+        total: String(total),
+        notes: dto.notes ?? null,
+        paymentMethod: dto.paymentMethod ?? null,
       });
+
+      if (itemsData.length) {
+        await tx.insert(orderItems).values(
+          itemsData.map((it) => ({ id: genId('oi'), orderId, ...it })),
+        );
+      }
     });
+
+    const order = await this.database.db.query.orders.findFirst({
+      where: eq(orders.id, orderId),
+      with: { items: true, address: true },
+    });
+    return order;
   }
 
-  async findAll(userId?: string, status?: string) {
-    return this.prisma.order.findMany({
-      where: {
-        ...(userId && { userId }),
-        ...(status && { status: status as any }),
-      },
-      include: {
-        items: {
-          include: {
-            product: { select: { id: true, name: true, images: true } },
-            service: { select: { id: true, name: true, images: true } },
+  async findAll(userId?: string, status?: string, page = 1, limit = 20) {
+    const statuses = status
+      ?.split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const conditions = [
+      ...(userId ? [eq(orders.userId, userId)] : []),
+      ...(statuses?.length ? [inArray(orders.status, statuses as any)] : []),
+    ];
+    const where = conditions.length ? and(...conditions) : undefined;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.database.db.query.orders.findMany({
+        where,
+        with: {
+          items: {
+            with: {
+              product: { columns: { id: true, name: true, images: true } },
+              service: { columns: { id: true, name: true, images: true } },
+            },
           },
+          address: true,
+          user: { columns: { id: true, name: true, email: true } },
         },
-        address: true,
-        user: { select: { id: true, name: true, email: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        orderBy: desc(orders.createdAt),
+        limit,
+        offset: skip,
+      }),
+      this.database.db.$count(orders, where),
+    ]);
+
+    return {
+      data,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async findOne(id: string, requesterId?: string, requesterRole?: string) {
-    const order = await this.prisma.order.findUnique({
-      where: { id },
-      include: {
+    const order = await this.database.db.query.orders.findFirst({
+      where: eq(orders.id, id),
+      with: {
         items: {
-          include: {
-            product: { select: { id: true, name: true, images: true } },
-            service: { select: { id: true, name: true, images: true } },
+          with: {
+            product: { columns: { id: true, name: true, images: true } },
+            service: { columns: { id: true, name: true, images: true } },
           },
         },
         address: true,
-        user: { select: { id: true, name: true, email: true, phone: true } },
-        voucherUse: { include: { voucher: true } },
+        user: { columns: { id: true, name: true, email: true, phone: true } },
+        voucherUse: { with: { voucher: true } },
       },
     });
     if (!order) throw new NotFoundException('Order tidak ditemukan');
@@ -183,33 +226,41 @@ export class OrdersService {
   }
 
   async updateStatus(id: string, dto: UpdateOrderStatusDto) {
-    await this.findOne(id);
-    return this.prisma.order.update({
-      where: { id },
-      data: {
+    const [existing] = await this.database.db
+      .select({ id: orders.id })
+      .from(orders)
+      .where(eq(orders.id, id));
+    if (!existing) throw new NotFoundException('Order tidak ditemukan');
+
+    const [row] = await this.database.db
+      .update(orders)
+      .set({
         status: dto.status,
         ...(dto.status === 'SHIPPED' && {
           shippingCourier: dto.shippingCourier,
           trackingNumber: dto.trackingNumber,
         }),
         ...(dto.status === 'DELIVERED' && { paidAt: new Date() }),
-      },
-    });
+      } as any)
+      .where(eq(orders.id, id))
+      .returning();
+    return row;
   }
 
   /** Kirim bot message dari admin ke customer — pesan berbeda sesuai status */
   async sendBotMessage(orderId: string, customerId: string) {
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
-      include: { items: true },
+    const order = await this.database.db.query.orders.findFirst({
+      where: eq(orders.id, orderId),
+      with: { items: true },
     });
     if (!order) throw new NotFoundException('Order tidak ditemukan');
 
     // Cari admin aktif
-    const admin = await this.prisma.user.findFirst({
-      where: { role: 'ADMIN', isActive: true },
-      select: { id: true },
-    });
+    const [admin] = await this.database.db
+      .select({ id: users.id })
+      .from(users)
+      .where(and(eq(users.role, 'ADMIN'), eq(users.isActive, true)))
+      .limit(1);
     if (!admin) throw new NotFoundException('Admin tidak ditemukan');
 
     const orderNumber = order.orderNumber ?? order.id.slice(0, 8).toUpperCase();
@@ -249,13 +300,13 @@ export class OrdersService {
         message = `📋 *Pesanan #${orderNumber}*\n\nStatus pesanan: ${order.status}. Silakan hubungi admin untuk informasi lebih lanjut.\n\n*Tim Jernih Creatife*`;
     }
 
-    await this.prisma.chat.create({
-      data: {
-        senderId: admin.id,
-        receiverId: customerId,
-        message,
-        isSystem: true,
-      },
+    const chatId = genId('chat');
+    await this.database.db.insert(chats).values({
+      id: chatId,
+      senderId: admin.id,
+      receiverId: customerId,
+      message,
+      isSystem: true,
     });
 
     return { message: 'Bot message sent' };
@@ -263,7 +314,7 @@ export class OrdersService {
 
   /** Upload bukti pembayaran oleh customer */
   async uploadPayment(id: string, userId: string, paymentProof: string) {
-    const order = await this.prisma.order.findUnique({ where: { id } });
+    const [order] = await this.database.db.select().from(orders).where(eq(orders.id, id));
     if (!order) throw new NotFoundException('Order tidak ditemukan');
     if (order.userId !== userId) {
       throw new ForbiddenException('Anda tidak memiliki akses ke order ini');
@@ -272,14 +323,16 @@ export class OrdersService {
       throw new BadRequestException('Order sudah tidak dalam status menunggu pembayaran');
     }
 
-    return this.prisma.order.update({
-      where: { id },
-      data: {
+    const [row] = await this.database.db
+      .update(orders)
+      .set({
         paymentProof,
         status: 'CONFIRMED',
         paidAt: new Date(),
-      },
-    });
+      })
+      .where(eq(orders.id, id))
+      .returning();
+    return row;
   }
 
   /** Buat payment-intent Midtrans untuk order (hanya pemilik & status PENDING) */
@@ -289,9 +342,12 @@ export class OrdersService {
       throw new BadRequestException('Metode pembayaran tidak valid');
     }
 
-    const order = await this.prisma.order.findUnique({
-      where: { id },
-      include: { items: true, user: { select: { email: true, name: true, phone: true } } },
+    const order = await this.database.db.query.orders.findFirst({
+      where: eq(orders.id, id),
+      with: {
+        items: true,
+        user: { columns: { email: true, name: true, phone: true } },
+      },
     });
     if (!order) throw new NotFoundException('Order tidak ditemukan');
     if (order.userId !== userId) {
@@ -307,18 +363,18 @@ export class OrdersService {
     const totalAmount = Number(order.total) + fee;
 
     // Snap membutuhkan order_id unik — gunakan orderNumber (sudah unik)
-    const { token, redirect_url } = await this.midtrans.createSnapToken(order, channel, fee);
+    const { token, redirect_url } = await this.midtrans.createSnapToken(order as any, channel, fee);
 
     // Simpan snapToken + metode bayar + fee ke order utk resume bayar & tampilan detail
-    await this.prisma.order.update({
-      where: { id },
-      data: {
+    await this.database.db
+      .update(orders)
+      .set({
         paymentMethod: paymentMethodId,
         snapToken: token,
-        paymentFee: fee,
+        paymentFee: String(fee),
         midtransTransactionId: order.orderNumber ?? order.id.slice(0, 9).toUpperCase(),
-      },
-    });
+      })
+      .where(eq(orders.id, id));
 
     return { token, redirect_url, fee, totalAmount };
   }

@@ -14,8 +14,8 @@ export class RentalsController {
 
   /** GET /api/rentals/items — daftar semua item yang bisa disewa */
   @Get('items')
-  findAllItems(@Query('search') search?: string, @Query('all') all?: string) {
-    return this.rentalsService.findAllItems({ search, all: all === 'true' });
+  findAllItems(@Query('search') search?: string, @Query('all') all?: string, @Query('limit') limit?: string, @Query('page') page?: string) {
+    return this.rentalsService.findAllItems({ search, all: all === 'true', limit: limit ? Number(limit) : undefined, page: page ? Number(page) : undefined });
   }
 
   /** GET /api/rentals/items/:id */
@@ -64,11 +64,13 @@ export class RentalsController {
   /** GET /api/rentals — list sewa milik user */
   @UseGuards(JwtAuthGuard)
   @Get()
-  findAll(@Request() req: any, @Query('mitraId') mitraId?: string) {
+  findAll(@Request() req: any, @Query('mitraId') mitraId?: string, @Query('page') page?: string, @Query('limit') limit?: string) {
     const isAdmin = req.user.role === 'ADMIN';
     return this.rentalsService.findAll(
       isAdmin ? undefined : req.user.id,
       mitraId,
+      page ? Math.max(1, Number(page)) : 1,
+      limit ? Math.min(100, Math.max(1, Number(limit))) : 50,
     );
   }
 

@@ -2,7 +2,7 @@
 sk-elDoDXufQ8nFExgSdIv8JbpDaE5GOcGodW6eW8kg9TZkHzcz
 Panduan ini mencakup deployment full-stack Eccomarket:
 - **Frontend**: Next.js (port 3000) → `jernihcreatif.com`
-- **Backend**: NestJS + Prisma (port 3001) → `api.jernihcreatif.com`
+- **Backend**: NestJS + Drizzle (port 3001) → `api.jernihcreatif.com`
 - **Database**: PostgreSQL (install langsung di VPS)
 - **Web Server**: Nginx sebagai reverse proxy + SSL (Let's Encrypt)
 - **Process Manager**: PM2
@@ -165,13 +165,13 @@ CORS_ORIGIN=https://jernihcreatif.com
 ### Jalankan migrasi database
 
 ```bash
-npx prisma migrate deploy
+npm run db:migrate
 ```
 
 ### (Opsional) Jalankan seed data awal
 
 ```bash
-npx ts-node prisma/seed.ts
+npm run db:seed
 ```
 
 ### Build backend
@@ -455,7 +455,7 @@ git pull origin main
 cd backend
 npm install
 npm run build
-npx prisma migrate deploy
+npm run db:migrate
 pm2 restart eccomarket-backend
 
 # Update frontend

@@ -1,27 +1,29 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { DatabaseService, genId } from '../database/database.service';
+import { wishlists, products } from '../../db/schema';
+import { eq, and, desc } from 'drizzle-orm';
 
 @Injectable()
 export class WishlistService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly database: DatabaseService) {}
 
   async findAll(userId: string, page = 1, limit = 20) {
     const skip = (page - 1) * limit;
     const [items, total] = await Promise.all([
-      this.prisma.wishlist.findMany({
-        where: { userId },
-        include: {
+      this.database.db.query.wishlists.findMany({
+        where: eq(wishlists.userId, userId),
+        with: {
           product: {
-            include: {
-              category: { select: { id: true, name: true, slug: true } },
+            with: {
+              category: { columns: { id: true, name: true, slug: true } },
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
+        orderBy: desc(wishlists.createdAt),
+        limit,
+        offset: skip,
       }),
-      this.prisma.wishlist.count({ where: { userId } }),
+      this.database.db.$count(wishlists, eq(wishlists.userId, userId)),
     ]);
     return {
       items,
@@ -33,26 +35,33 @@ export class WishlistService {
   }
 
   async count(userId: string) {
-    return this.prisma.wishlist.count({ where: { userId } });
+    return this.database.db.$count(wishlists, eq(wishlists.userId, userId));
   }
 
   async add(userId: string, productId: string) {
     if (!productId) throw new BadRequestException('productId wajib diisi');
 
-    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    const [product] = await this.database.db.select().from(products).where(eq(products.id, productId));
     if (!product) throw new NotFoundException('Produk tidak ditemukan');
 
-    // Upsert agar idempotent — klik dua kali tidak error unique constraint
-    return this.prisma.wishlist.upsert({
-      where: { userId_productId: { userId, productId } },
-      create: { userId, productId },
-      update: {},
-      include: { product: true },
+    // Upsert idempoten — index unik (userId, productId) menyingkirkan cek existing
+    // yang sebelumnya memakan 1 query tambahan.
+    await this.database.db
+      .insert(wishlists)
+      .values({ id: genId('wish'), userId, productId })
+      .onConflictDoNothing({ target: [wishlists.userId, wishlists.productId] });
+
+    const row = await this.database.db.query.wishlists.findFirst({
+      where: and(eq(wishlists.userId, userId), eq(wishlists.productId, productId)),
+      with: { product: true },
     });
+    return row;
   }
 
   async remove(userId: string, productId: string) {
-    await this.prisma.wishlist.deleteMany({ where: { userId, productId } });
+    await this.database.db
+      .delete(wishlists)
+      .where(and(eq(wishlists.userId, userId), eq(wishlists.productId, productId)));
     return { message: 'Dihapus dari wishlist' };
   }
 }

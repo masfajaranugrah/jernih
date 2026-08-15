@@ -4,18 +4,20 @@
   "private": true,
   "scripts": {
     "build": "nest build",
-    "start": "node dist/main",
+    "start": "node dist/src/main",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:migrate:deploy": "prisma migrate deploy",
-    "prisma:studio": "prisma studio",
-    "prisma:seed": "ts-node prisma/seed.ts"
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "ts-node db/seeds/seed.ts",
+    "db:seed:admin": "ts-node db/seeds/seed-admin.ts",
+    "db:seed:products": "ts-node db/seeds/seed-products.ts",
+    "db:seed:jasa-sewa": "ts-node db/seeds/seed-jasa-sewa.ts"
   },
   "dependencies": {
     "@nestjs/common": "10.4.15",
@@ -28,15 +30,16 @@
     "@nestjs/platform-socket.io": "^10.4.22",
     "@nestjs/throttler": "^6.5.0",
     "@nestjs/websockets": "^10.4.22",
-    "@prisma/client": "5.22.0",
     "bcryptjs": "2.4.3",
     "class-transformer": "0.5.1",
     "class-validator": "0.14.1",
     "compression": "^1.7.4",
+    "drizzle-orm": "^0.45.2",
     "helmet": "^8.3.0",
     "passport": "0.7.0",
     "passport-jwt": "4.0.1",
     "passport-local": "1.0.0",
+    "pg": "^8.23.0",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.1",
     "socket.io": "^4.8.3"
@@ -53,12 +56,13 @@
     "@types/node": "20.17.10",
     "@types/passport-jwt": "4.0.1",
     "@types/passport-local": "1.0.38",
+    "@types/pg": "^8.21.0",
     "@types/supertest": "6.0.2",
     "@typescript-eslint/eslint-plugin": "8.18.2",
     "@typescript-eslint/parser": "8.18.2",
+    "drizzle-kit": "^0.31.10",
     "eslint": "8.57.1",
     "jest": "29.7.0",
-    "prisma": "5.22.0",
     "supertest": "7.0.0",
     "ts-jest": "29.2.5",
     "ts-node": "10.9.2",
@@ -80,8 +84,5 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
-  },
-  "prisma": {
-    "seed": "ts-node prisma/seed.ts"
   }
 }

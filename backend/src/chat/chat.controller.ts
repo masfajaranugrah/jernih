@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Param,
-  Body,
-  UseGuards,
-  Request,
-} from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards, Request } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { SendMessageDto } from './dto/send-message.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -52,10 +42,15 @@ export class ChatController {
     return this.chatService.deleteMessage(req.user.id, id);
   }
 
-  /** GET /api/chat/:partnerId — riwayat percakapan */
+  /** GET /api/chat/:partnerId — riwayat percakapan (?limit=100&before=ISO) */
   @Get(':partnerId')
-  conversation(@Request() req: any, @Param('partnerId') partnerId: string) {
-    return this.chatService.getConversation(req.user.id, partnerId);
+  conversation(
+    @Request() req: any,
+    @Param('partnerId') partnerId: string,
+    @Query('limit') limit?: string,
+    @Query('before') before?: string,
+  ) {
+    return this.chatService.getConversation(req.user.id, partnerId, limit ? Number(limit) : undefined, before);
   }
 
   /** PATCH /api/chat/:senderId/read — tandai sudah dibaca */

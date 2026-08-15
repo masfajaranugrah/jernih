@@ -24,8 +24,10 @@ export class ServicesController {
     @Query('search') search?: string,
     @Query('categoryId') categoryId?: string,
     @Query('mitraId') mitraId?: string,
+    @Query('limit') limit?: string,
+    @Query('page') page?: string,
   ) {
-    return this.servicesService.findAll({ search, categoryId, mitraId });
+    return this.servicesService.findAll({ search, categoryId, mitraId, limit: limit ? Number(limit) : undefined, page: page ? Number(page) : undefined });
   }
 
   /** GET /api/services/slug/:slug */

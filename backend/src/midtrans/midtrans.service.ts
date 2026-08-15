@@ -22,7 +22,7 @@ export interface SnapOrderInput {
   paymentMethod?: string | null;
 }
 
-/** Bentuk order dari Prisma (Decimal diubah jadi number saat diteruskan) */
+/** Order snapshot minimal yang dibutuhkan Snap — dari Order (dgn items & user) */
 export interface SnapOrderLike extends SnapOrderInput {
   total: any;
   items?: any[];

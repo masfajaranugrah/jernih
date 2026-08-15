@@ -19,9 +19,19 @@ export class OrdersController {
   }
 
   @Get()
-  findAll(@Request() req: any, @Query('status') status?: string) {
+  findAll(
+    @Request() req: any,
+    @Query('status') status?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
     const isAdmin = req.user.role === 'ADMIN';
-    return this.ordersService.findAll(isAdmin ? undefined : req.user.id, status);
+    return this.ordersService.findAll(
+      isAdmin ? undefined : req.user.id,
+      status,
+      page ? Math.max(1, Number(page)) : 1,
+      limit ? Math.min(100, Math.max(1, Number(limit))) : 20,
+    );
   }
 
   @Get(':id')

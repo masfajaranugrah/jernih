@@ -84,7 +84,7 @@ export async function fetchProductBySlug(slug: string): Promise<ApiProduct | nul
   }
 }
 
-/** Format harga dari Prisma Decimal string ke Rupiah */
+/** Format harga (decimal string dari DB) ke Rupiah */
 export function formatRupiah(value: string | number | null | undefined): string {
   if (value === null || value === undefined) return "Rp0";
   const num = typeof value === "string" ? parseFloat(value) : value;

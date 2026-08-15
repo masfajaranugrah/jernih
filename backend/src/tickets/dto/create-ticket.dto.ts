@@ -1,5 +1,5 @@
 import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
-import { TicketCategory, TicketPriority } from '@prisma/client';
+import { TicketCategory, TicketPriority } from '../../common/enums';
 
 export class CreateTicketDto {
   @IsEnum(TicketCategory, { message: 'Kategori tidak valid' })

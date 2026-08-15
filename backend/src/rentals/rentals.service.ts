@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { DatabaseService, genId } from '../database/database.service';
+import { rentals, rentalItems } from '../../db/schema';
+import { eq, and, desc, ilike } from 'drizzle-orm';
 import { CreateRentalDto } from './dto/create-rental.dto';
 import { UpdateRentalDto } from './dto/update-rental.dto';
 import { CreateRentalItemDto } from './dto/create-rental-item.dto';
@@ -7,12 +9,10 @@ import { UpdateRentalItemDto } from './dto/update-rental-item.dto';
 
 @Injectable()
 export class RentalsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly database: DatabaseService) {}
 
   async create(userId: string, dto: CreateRentalDto) {
-    const item = await this.prisma.rentalItem.findUnique({
-      where: { id: dto.rentalItemId },
-    });
+    const [item] = await this.database.db.select().from(rentalItems).where(eq(rentalItems.id, dto.rentalItemId));
     if (!item) throw new NotFoundException('Item sewa tidak ditemukan');
 
     const start = new Date(dto.startDate);
@@ -28,42 +28,52 @@ export class RentalsService {
     );
     const totalPrice = Number(item.pricePerDay) * totalDays;
 
-    return this.prisma.rental.create({
-      data: {
-        userId,
-        mitraId: item.mitraId ?? dto.mitraId,
-        rentalItemId: dto.rentalItemId,
-        startDate: new Date(dto.startDate),
-        endDate: new Date(dto.endDate),
-        totalDays,
-        totalPrice,
-        notes: dto.notes,
-      },
-      include: { rentalItem: true },
+    const id = genId('rental');
+    await this.database.db.insert(rentals).values({
+      id,
+      userId,
+      mitraId: item.mitraId ?? dto.mitraId ?? '',
+      rentalItemId: dto.rentalItemId,
+      startDate: start,
+      endDate: end,
+      totalDays,
+      totalPrice: String(totalPrice),
+      notes: dto.notes ?? null,
     });
+
+    const row = await this.database.db.query.rentals.findFirst({
+      where: eq(rentals.id, id),
+      with: { rentalItem: true },
+    });
+    return row;
   }
 
-  async findAll(userId?: string, mitraId?: string) {
-    return this.prisma.rental.findMany({
-      where: {
-        ...(userId && { userId }),
-        ...(mitraId && { mitraId }),
-      },
-      include: {
+  async findAll(userId?: string, mitraId?: string, page = 1, limit = 50) {
+    const conditions = [
+      ...(userId ? [eq(rentals.userId, userId)] : []),
+      ...(mitraId ? [eq(rentals.mitraId, mitraId)] : []),
+    ];
+    const where = conditions.length ? and(...conditions) : undefined;
+    const skip = (page - 1) * limit;
+    return this.database.db.query.rentals.findMany({
+      where,
+      with: {
         rentalItem: true,
-        user: { select: { id: true, name: true, email: true } },
+        user: { columns: { id: true, name: true, email: true } },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: desc(rentals.createdAt),
+      limit,
+      offset: skip,
     });
   }
 
   async findOne(id: string) {
-    const rental = await this.prisma.rental.findUnique({
-      where: { id },
-      include: {
+    const rental = await this.database.db.query.rentals.findFirst({
+      where: eq(rentals.id, id),
+      with: {
         rentalItem: true,
-        user: { select: { id: true, name: true, email: true, phone: true } },
-        mitra: { select: { id: true, storeName: true } },
+        user: { columns: { id: true, name: true, email: true, phone: true } },
+        mitra: { columns: { id: true, storeName: true } },
       },
     });
     if (!rental) throw new NotFoundException('Data sewa tidak ditemukan');
@@ -81,55 +91,75 @@ export class RentalsService {
 
   async update(id: string, dto: UpdateRentalDto) {
     await this.findOne(id);
-    return this.prisma.rental.update({ where: { id }, data: dto });
+    const [row] = await this.database.db
+      .update(rentals)
+      .set(dto as any)
+      .where(eq(rentals.id, id))
+      .returning();
+    return row;
   }
 
   // ── Rental Items ────────────────────────────────────────────────────────────
-  async findAllItems(query?: { search?: string; all?: boolean }) {
-    const where: any = {};
-    if (!query?.all) where.isActive = true;
-    if (query?.search) {
-      where.name = { contains: query.search, mode: 'insensitive' };
-    }
-    return this.prisma.rentalItem.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
+  async findAllItems(query?: { search?: string; all?: boolean; limit?: number; page?: number }) {
+    const conditions = [];
+    if (!query?.all) conditions.push(eq(rentalItems.isActive, true));
+    if (query?.search) conditions.push(ilike(rentalItems.name, `%${query.search}%`));
+    const limit = query?.limit != null ? Math.min(100, Math.max(1, Number(query.limit))) : undefined;
+    const page = Math.max(1, Number(query?.page) || 1);
+    const offset = limit ? (page - 1) * limit : undefined;
+    return this.database.db.query.rentalItems.findMany({
+      where: conditions.length ? and(...conditions) : undefined,
+      orderBy: desc(rentalItems.createdAt),
+      limit,
+      offset,
     });
   }
 
   async findItemById(id: string) {
-    const item = await this.prisma.rentalItem.findUnique({ where: { id } });
+    const [item] = await this.database.db.select().from(rentalItems).where(eq(rentalItems.id, id));
     if (!item) throw new NotFoundException('Item sewa tidak ditemukan');
     return item;
   }
 
   async findItemBySlug(slug: string) {
-    const item = await this.prisma.rentalItem.findUnique({ where: { slug } });
+    const [item] = await this.database.db.select().from(rentalItems).where(eq(rentalItems.slug, slug));
     if (!item) throw new NotFoundException('Item sewa tidak ditemukan');
     return item;
   }
 
   async createItem(dto: CreateRentalItemDto) {
-    return this.prisma.rentalItem.create({
-      data: {
+    const [row] = await this.database.db
+      .insert(rentalItems)
+      .values({
+        id: genId('ritem'),
         name: dto.name,
         slug: dto.slug,
-        description: dto.description,
-        pricePerDay: dto.pricePerDay,
-        deposit: dto.deposit,
+        description: dto.description ?? null,
+        pricePerDay: String(dto.pricePerDay),
+        deposit: dto.deposit != null ? String(dto.deposit) : null,
         images: dto.images ?? [],
         isActive: dto.isActive ?? true,
-      },
-    });
+      })
+      .returning();
+    return row;
   }
 
   async updateItem(id: string, dto: UpdateRentalItemDto) {
     await this.findItemById(id);
-    return this.prisma.rentalItem.update({ where: { id }, data: dto });
+    const [row] = await this.database.db
+      .update(rentalItems)
+      .set(dto as any)
+      .where(eq(rentalItems.id, id))
+      .returning();
+    return row;
   }
 
   async removeItem(id: string) {
     await this.findItemById(id);
-    return this.prisma.rentalItem.delete({ where: { id } });
+    const [row] = await this.database.db
+      .delete(rentalItems)
+      .where(eq(rentalItems.id, id))
+      .returning();
+    return row;
   }
 }

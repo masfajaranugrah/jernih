@@ -268,7 +268,7 @@ npm run dev
 - Large payload size
 
 **Solution:**
-- Enable query logging di Prisma
+- Enable query logging di DB layer
 - Add database indexes
 - Implement Redis cache
 - Enable gzip compression

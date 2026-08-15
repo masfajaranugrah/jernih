@@ -1,12 +1,14 @@
 // midtrans/midtrans.controller.ts
 import { Controller, Post, Body, BadRequestException, UnauthorizedException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { DatabaseService } from '../database/database.service';
 import { MidtransService } from './midtrans.service';
+import { orders } from '../../db/schema';
+import { eq } from 'drizzle-orm';
 
 @Controller('midtrans')
 export class MidtransController {
   constructor(
-    private prisma: PrismaService,
+    private readonly database: DatabaseService,
     private midtrans: MidtransService,
   ) {}
 
@@ -52,9 +54,7 @@ export class MidtransController {
     }
 
     // 2) Cari order — WAJIB berdasarkan orderNumber (unik), bukan input bebas
-    const order = await this.prisma.order.findUnique({
-      where: { orderNumber: order_id },
-    });
+    const [order] = await this.database.db.select().from(orders).where(eq(orders.orderNumber, order_id));
     if (!order) {
       throw new BadRequestException('Order tidak ditemukan');
     }
@@ -75,29 +75,29 @@ export class MidtransController {
       if (isPaid) return { status_code: 200, message: 'Already processed' };
 
       const isFraudRisk = fraud_status === 'challenge';
-      await this.prisma.order.update({
-        where: { id: order.id },
-        data: {
+      await this.database.db
+        .update(orders)
+        .set({
           status: isFraudRisk ? 'PENDING' : 'CONFIRMED',
           paidAt: isFraudRisk ? order.paidAt : new Date(),
           paymentMethod: order.paymentMethod ?? payment_type ?? null,
           midtransTransactionId: order_id ?? null,
-        },
-      });
+        })
+        .where(eq(orders.id, order.id));
     } else if (transaction_status === 'expire' || transaction_status === 'cancel' || transaction_status === 'deny') {
       // Order yang sudah dibayar TIDAK boleh dibatalkan oleh notifikasi telat/bohong
       if (isPaid) return { status_code: 200, message: 'Paid order unchanged' };
 
-      await this.prisma.order.update({
-        where: { id: order.id },
-        data: { status: 'CANCELLED', midtransTransactionId: order_id ?? null },
-      });
+      await this.database.db
+        .update(orders)
+        .set({ status: 'CANCELLED', midtransTransactionId: order_id ?? null })
+        .where(eq(orders.id, order.id));
     } else {
       // pending / other — update paymentMethod saja
-      await this.prisma.order.update({
-        where: { id: order.id },
-        data: { midtransTransactionId: order_id ?? null },
-      });
+      await this.database.db
+        .update(orders)
+        .set({ midtransTransactionId: order_id ?? null })
+        .where(eq(orders.id, order.id));
     }
 
     return { status_code: 200, message: 'Notification processed' };

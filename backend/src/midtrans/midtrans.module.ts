@@ -1,11 +1,11 @@
 // midtrans/midtrans.module.ts
 import { Module } from '@nestjs/common';
-import { PrismaModule } from '../prisma/prisma.module';
+import { DatabaseModule } from '../database/database.module';
 import { MidtransService } from './midtrans.service';
 import { MidtransController } from './midtrans.controller';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [DatabaseModule],
   controllers: [MidtransController],
   providers: [MidtransService],
   exports: [MidtransService],

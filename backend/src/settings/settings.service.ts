@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { DatabaseService, genId } from '../database/database.service';
+import { systemSettings } from '../../db/schema';
+import { eq } from 'drizzle-orm';
 
 const DEFAULTS: Record<string, any> = {
   toko: {
@@ -22,7 +24,7 @@ const DEFAULTS: Record<string, any> = {
 
 @Injectable()
 export class SettingsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly database: DatabaseService) {}
 
   // Whitelist key yang bisa dibaca publik — selain ini butuh auth
   private readonly publicKeys = new Set([
@@ -33,9 +35,11 @@ export class SettingsService {
   ]);
 
   async getSetting(key: string) {
-    const setting = await this.prisma.systemSetting.findUnique({
-      where: { key },
-    });
+    const [setting] = await this.database.db
+      .select()
+      .from(systemSettings)
+      .where(eq(systemSettings.key, key));
+
     if (!setting) {
       return DEFAULTS[key] ?? null;
     }
@@ -52,11 +56,14 @@ export class SettingsService {
 
   async saveSetting(key: string, value: any) {
     const valueStr = typeof value === 'string' ? value : JSON.stringify(value);
-    const updated = await this.prisma.systemSetting.upsert({
-      where: { key },
-      create: { key, value: valueStr },
-      update: { value: valueStr },
-    });
+    const [updated] = await this.database.db
+      .insert(systemSettings)
+      .values({ id: genId('set'), key, value: valueStr })
+      .onConflictDoUpdate({
+        target: systemSettings.key,
+        set: { value: valueStr },
+      })
+      .returning();
     try {
       return JSON.parse(updated.value);
     } catch {

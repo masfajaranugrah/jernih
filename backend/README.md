@@ -1,6 +1,6 @@
 # Eccomarket Backend
 
-REST API untuk platform marketplace Eccomarket — dibangun dengan **NestJS**, **PostgreSQL**, dan **Prisma ORM**.
+REST API untuk platform marketplace Eccomarket — dibangun dengan **NestJS**, **PostgreSQL**, dan **Drizzle ORM**.
 
 ## Tech Stack
 
@@ -8,7 +8,7 @@ REST API untuk platform marketplace Eccomarket — dibangun dengan **NestJS**, *
 |-------------|-------------------------------------|
 | Framework   | NestJS 10 (Node.js + TypeScript)   |
 | Database    | PostgreSQL                          |
-| ORM         | Prisma 5                            |
+| ORM         | Drizzle                           |
 | Auth        | JWT (passport-jwt) + bcryptjs      |
 | Validasi    | class-validator + class-transformer |
 
@@ -53,18 +53,20 @@ CORS_ORIGIN=http://localhost:3000
 CREATE DATABASE eccomarket;
 ```
 
-### 4. Jalankan migrasi Prisma
+### 4. Jalankan migrasi Drizzle
 
 ```bash
-npm run prisma:migrate
-# atau jika production:
-npm run prisma:migrate:deploy
+npm run db:generate
+npm run db:migrate
 ```
 
-### 5. Generate Prisma Client
+### 5. Seed data dummy (opsional, idempoten)
 
 ```bash
-npm run prisma:generate
+npm run db:seed            # kategori + admin + mitra + produk
+npm run db:seed:products   # 30 produk
+npm run db:seed:jasa-sewa  # 20 jasa + 20 sewa
+npm run db:seed:admin      # admin
 ```
 
 ---
@@ -88,12 +90,15 @@ Server berjalan di: `http://localhost:3001/api`
 
 ```
 backend/
-├── prisma/
-│   └── schema.prisma          # Database schema
+├── drizzle/                 # Migrasi + meta drizzle-kit
+├── db/
+│   ├── schema.ts            # Schema Drizzle (introspect DB)
+│   ├── relations.ts         # Relasi Drizzle
+│   └── seeds/               # Seed data dummy
 ├── src/
 │   ├── main.ts                # Entry point
 │   ├── app.module.ts          # Root module
-│   ├── prisma/                # Prisma service (global)
+│   ├── database/              # DatabaseService (Drizzle, global)
 │   ├── auth/                  # Register, Login, JWT
 │   ├── users/                 # CRUD User
 │   ├── mitra/                 # CRUD Mitra (seller)
@@ -106,6 +111,7 @@ backend/
 │   ├── chat/                  # Pesan antar user
 │   ├── hero/                  # Hero banner (admin)
 │   └── complaints/            # Komplain / dispute
+├── drizzle.config.ts       # Konfigurasi drizzle-kit
 ├── .env.example
 ├── nest-cli.json
 ├── package.json
@@ -306,10 +312,6 @@ Authorization: Bearer <access_token>
 ## Tools Tambahan
 
 ```bash
-# Buka Prisma Studio (GUI database)
-npm run prisma:studio
-
-# Lihat log query Prisma (tambah di .env):
-# DATABASE_URL="...?schema=public"
-# Dan set di PrismaService: log: ['query']
+# Buka Drizzle Studio (GUI database)
+npm run db:studio
 ```

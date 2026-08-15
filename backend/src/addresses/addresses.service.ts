@@ -1,34 +1,40 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { DatabaseService, genId } from '../database/database.service';
+import { addresses } from '../../db/schema';
+import { eq, desc } from 'drizzle-orm';
 import { CreateAddressDto } from './dto/create-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
 
 @Injectable()
 export class AddressesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly database: DatabaseService) {}
 
   async create(userId: string, dto: CreateAddressDto) {
     // Jika isDefault = true, reset semua address user lainnya
     if (dto.isDefault) {
-      await this.prisma.address.updateMany({
-        where: { userId },
-        data: { isDefault: false },
-      });
+      await this.database.db
+        .update(addresses)
+        .set({ isDefault: false })
+        .where(eq(addresses.userId, userId));
     }
-    return this.prisma.address.create({ data: { userId, ...dto } });
+    const [row] = await this.database.db
+      .insert(addresses)
+      .values({ id: genId('addr'), userId, ...(dto as any) })
+      .returning();
+    return row;
   }
 
   async findAll(userId: string) {
-    return this.prisma.address.findMany({
-      where: { userId },
-      orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+    return this.database.db.query.addresses.findMany({
+      where: eq(addresses.userId, userId),
+      orderBy: [desc(addresses.isDefault), desc(addresses.createdAt)],
     });
   }
 
   async findOne(id: string) {
-    const address = await this.prisma.address.findUnique({ where: { id } });
-    if (!address) throw new NotFoundException('Alamat tidak ditemukan');
-    return address;
+    const [row] = await this.database.db.select().from(addresses).where(eq(addresses.id, id));
+    if (!row) throw new NotFoundException('Alamat tidak ditemukan');
+    return row;
   }
 
   /** findOne dengan IDOR check — hanya pemilik atau ADMIN */
@@ -42,12 +48,17 @@ export class AddressesService {
 
   async update(id: string, userId: string, dto: UpdateAddressDto) {
     if (dto.isDefault) {
-      await this.prisma.address.updateMany({
-        where: { userId },
-        data: { isDefault: false },
-      });
+      await this.database.db
+        .update(addresses)
+        .set({ isDefault: false })
+        .where(eq(addresses.userId, userId));
     }
-    return this.prisma.address.update({ where: { id }, data: dto });
+    const [row] = await this.database.db
+      .update(addresses)
+      .set(dto as any)
+      .where(eq(addresses.id, id))
+      .returning();
+    return row;
   }
 
   /** update dengan IDOR check — hanya pemilik */
@@ -61,7 +72,7 @@ export class AddressesService {
 
   async remove(id: string) {
     await this.findOne(id);
-    await this.prisma.address.delete({ where: { id } });
+    await this.database.db.delete(addresses).where(eq(addresses.id, id));
     return { message: 'Alamat berhasil dihapus' };
   }
 
@@ -71,7 +82,7 @@ export class AddressesService {
     if (address.userId !== requesterId && requesterRole !== 'ADMIN') {
       throw new ForbiddenException('Anda tidak memiliki akses ke alamat ini');
     }
-    await this.prisma.address.delete({ where: { id } });
+    await this.database.db.delete(addresses).where(eq(addresses.id, id));
     return { message: 'Alamat berhasil dihapus' };
   }
 }

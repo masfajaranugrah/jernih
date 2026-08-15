@@ -4,35 +4,38 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { TicketStatus } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
+import { TicketStatus } from '../common/enums';
+import { DatabaseService, genId } from '../database/database.service';
+import { tickets, ticketMessages, users as usersTable } from '../../db/schema';
+import { eq, and, ne, asc, desc, inArray, sql } from 'drizzle-orm';
 import { ChatGateway } from '../chat/chat.gateway';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { SendTicketMessageDto } from './dto/send-ticket-message.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
 
 // Include standar untuk pesan tiket — pengirim ringkas
-const messageInclude = {
-  sender: { select: { id: true, name: true, avatar: true, role: true } },
+const messageWith = {
+  sender: { columns: { id: true, name: true, avatar: true, role: true } },
 } as const;
 
-const ticketInclude = {
-  user: { select: { id: true, name: true, email: true, avatar: true } },
+const ticketWithUser = {
+  user: { columns: { id: true, name: true, email: true, avatar: true } },
 } as const;
 
 @Injectable()
 export class TicketsService {
   constructor(
-    private prisma: PrismaService,
+    private readonly database: DatabaseService,
     private gateway: ChatGateway,
   ) {}
 
   /** Admin tujuan notifikasi tiket (1 akun role ADMIN) */
   private async getAdminId(): Promise<string> {
-    const admin = await this.prisma.user.findFirst({
-      where: { role: 'ADMIN', isActive: true },
-      select: { id: true },
-    });
+    const [admin] = await this.database.db
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(and(eq(usersTable.role, 'ADMIN'), eq(usersTable.isActive, true)))
+      .limit(1);
     if (!admin) throw new NotFoundException('Admin tidak ditemukan');
     return admin.id;
   }
@@ -47,19 +50,32 @@ export class TicketsService {
     const subject =
       description.length > 80 ? `${description.slice(0, 80)}…` : description;
 
-    const ticket = await this.prisma.ticket.create({
-      data: {
-        userId,
-        category: dto.category,
-        priority: dto.priority,
-        subject,
-        messages: {
-          create: { senderId: userId, message: description },
-        },
-      },
-      include: {
-        ...ticketInclude,
-        messages: { include: messageInclude },
+    const ticketId = genId('ticket');
+    await this.database.db.transaction(async (tx) => {
+      await tx
+        .insert(tickets)
+        .values({
+          id: ticketId,
+          userId,
+          category: dto.category,
+          priority: dto.priority,
+          subject,
+        });
+      await tx
+        .insert(ticketMessages)
+        .values({
+          id: genId('tmsg'),
+          ticketId,
+          senderId: userId,
+          message: description,
+        });
+    });
+
+    const ticket = await this.database.db.query.tickets.findFirst({
+      where: eq(tickets.id, ticketId),
+      with: {
+        ...ticketWithUser,
+        messages: { with: messageWith, orderBy: asc(ticketMessages.createdAt) },
       },
     });
 
@@ -70,51 +86,60 @@ export class TicketsService {
 
   /** Daftar tiket milik pelanggan + jumlah pesan belum dibaca */
   async findMine(userId: string) {
-    const tickets = await this.prisma.ticket.findMany({
-      where: { userId },
-      include: ticketInclude,
-      orderBy: { createdAt: 'desc' },
+    const rows = await this.database.db.query.tickets.findMany({
+      where: eq(tickets.userId, userId),
+      with: ticketWithUser,
+      orderBy: desc(tickets.createdAt),
     });
-    return this.withUnreadCounts(tickets, userId);
+    return this.withUnreadCounts(rows, userId);
   }
 
   /** Daftar semua tiket untuk admin, urut nomor (siapa duluan = #1) */
   async findAllAdmin(adminId: string) {
-    const tickets = await this.prisma.ticket.findMany({
-      include: ticketInclude,
-      orderBy: { number: 'asc' },
+    const rows = await this.database.db.query.tickets.findMany({
+      with: ticketWithUser,
+      orderBy: asc(tickets.number),
     });
-    return this.withUnreadCounts(tickets, adminId);
+    return this.withUnreadCounts(rows, adminId);
   }
 
   /** Sisipkan unreadCount (pesan lawan yang belum dibaca) per tiket */
   private async withUnreadCounts<T extends { id: string }>(
-    tickets: T[],
+    ticketsList: T[],
     viewerId: string,
   ) {
-    if (tickets.length === 0) return [];
-    const counts = await this.prisma.ticketMessage.groupBy({
-      by: ['ticketId'],
-      where: {
-        ticketId: { in: tickets.map((t) => t.id) },
-        isRead: false,
-        NOT: { senderId: viewerId },
-      },
-      _count: { id: true },
-    });
-    const map = new Map(counts.map((c) => [c.ticketId, c._count.id]));
-    return tickets.map((t) => ({ ...t, unreadCount: map.get(t.id) ?? 0 }));
+    if (ticketsList.length === 0) return [];
+    const ids = ticketsList.map((t) => t.id);
+
+    // Satu query GROUP BY menggantikan 1 query $count per tiket (sebelumnya N+1).
+    const counts = await this.database.db
+      .select({
+        ticketId: ticketMessages.ticketId,
+        count: sql<number>`count(*)`,
+      })
+      .from(ticketMessages)
+      .where(
+        and(
+          inArray(ticketMessages.ticketId, ids),
+          eq(ticketMessages.isRead, false),
+          ne(ticketMessages.senderId, viewerId),
+        ),
+      )
+      .groupBy(ticketMessages.ticketId);
+
+    const map = new Map(counts.map((c) => [c.ticketId, Number(c.count)]));
+    return ticketsList.map((t) => ({ ...t, unreadCount: map.get(t.id) ?? 0 }));
   }
 
   /** Detail tiket + seluruh pesan. Hanya pemilik atau admin. */
   async findOne(ticketId: string, requesterId: string, requesterRole: string) {
-    const ticket = await this.prisma.ticket.findUnique({
-      where: { id: ticketId },
-      include: {
-        ...ticketInclude,
+    const ticket = await this.database.db.query.tickets.findFirst({
+      where: eq(tickets.id, ticketId),
+      with: {
+        ...ticketWithUser,
         messages: {
-          include: messageInclude,
-          orderBy: { createdAt: 'asc' },
+          with: messageWith,
+          orderBy: asc(ticketMessages.createdAt),
         },
       },
     });
@@ -132,10 +157,10 @@ export class TicketsService {
     senderRole: string,
     dto: SendTicketMessageDto,
   ) {
-    const ticket = await this.prisma.ticket.findUnique({
-      where: { id: ticketId },
-      select: { id: true, userId: true, status: true },
-    });
+    const [ticket] = await this.database.db
+      .select({ id: tickets.id, userId: tickets.userId, status: tickets.status })
+      .from(tickets)
+      .where(eq(tickets.id, ticketId));
     if (!ticket) throw new NotFoundException('Tiket tidak ditemukan');
     if (ticket.userId !== senderId && senderRole !== 'ADMIN') {
       throw new ForbiddenException('Anda tidak memiliki akses ke tiket ini');
@@ -147,21 +172,27 @@ export class TicketsService {
       throw new BadRequestException('Pesan tidak boleh kosong');
     }
 
-    const msg = await this.prisma.ticketMessage.create({
-      data: {
+    const msgId = genId('tmsg');
+    await this.database.db
+      .insert(ticketMessages)
+      .values({
+        id: msgId,
         ticketId,
         senderId,
         message: dto.message,
-        imageUrl: dto.imageUrl,
-      },
-      include: messageInclude,
+        imageUrl: dto.imageUrl ?? null,
+      });
+
+    const msg = await this.database.db.query.ticketMessages.findFirst({
+      where: eq(ticketMessages.id, msgId),
+      with: messageWith,
     });
 
     // Tiket kembali aktif di daftar (updatedAt) saat ada pesan baru
-    await this.prisma.ticket.update({
-      where: { id: ticketId },
-      data: { updatedAt: new Date() },
-    });
+    await this.database.db
+      .update(tickets)
+      .set({ updatedAt: new Date() })
+      .where(eq(tickets.id, ticketId));
 
     const adminId = await this.getAdminId();
     this.gateway.emitTicketEvent('ticket:message', [ticket.userId, adminId], msg);
@@ -170,36 +201,46 @@ export class TicketsService {
 
   /** Tandai semua pesan lawan di tiket sebagai sudah dibaca */
   async markRead(ticketId: string, readerId: string, readerRole: string) {
-    const ticket = await this.prisma.ticket.findUnique({
-      where: { id: ticketId },
-      select: { userId: true },
-    });
+    const [ticket] = await this.database.db
+      .select({ userId: tickets.userId })
+      .from(tickets)
+      .where(eq(tickets.id, ticketId));
     if (!ticket) throw new NotFoundException('Tiket tidak ditemukan');
     if (ticket.userId !== readerId && readerRole !== 'ADMIN') {
       throw new ForbiddenException('Anda tidak memiliki akses ke tiket ini');
     }
-    await this.prisma.ticketMessage.updateMany({
-      where: { ticketId, isRead: false, NOT: { senderId: readerId } },
-      data: { isRead: true },
-    });
+    await this.database.db
+      .update(ticketMessages)
+      .set({ isRead: true })
+      .where(
+        and(
+          eq(ticketMessages.ticketId, ticketId),
+          eq(ticketMessages.isRead, false),
+          ne(ticketMessages.senderId, readerId),
+        ),
+      );
     return { message: 'Pesan ditandai sudah dibaca' };
   }
 
   /** Ubah status/prioritas tiket (khusus admin) */
   async update(ticketId: string, dto: UpdateTicketDto) {
-    const existing = await this.prisma.ticket.findUnique({
-      where: { id: ticketId },
-      select: { userId: true },
-    });
+    const [existing] = await this.database.db
+      .select({ userId: tickets.userId })
+      .from(tickets)
+      .where(eq(tickets.id, ticketId));
     if (!existing) throw new NotFoundException('Tiket tidak ditemukan');
 
-    const ticket = await this.prisma.ticket.update({
-      where: { id: ticketId },
-      data: {
+    await this.database.db
+      .update(tickets)
+      .set({
         ...(dto.status && { status: dto.status }),
         ...(dto.priority && { priority: dto.priority }),
-      },
-      include: ticketInclude,
+      })
+      .where(eq(tickets.id, ticketId));
+
+    const ticket = await this.database.db.query.tickets.findFirst({
+      where: eq(tickets.id, ticketId),
+      with: ticketWithUser,
     });
 
     const adminId = await this.getAdminId();
