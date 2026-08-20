@@ -49,12 +49,17 @@ export async function POST(req: NextRequest) {
 
   let res: Response;
   try {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    };
+    // Teruskan idempotency key dari client → backend (cegah order ganda)
+    const idemKey = req.headers.get("idempotency-key");
+    if (idemKey) headers["Idempotency-Key"] = idemKey;
+
     res = await fetch(`${BACKEND_URL}/orders`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
       body: JSON.stringify(body),
     });
   } catch {

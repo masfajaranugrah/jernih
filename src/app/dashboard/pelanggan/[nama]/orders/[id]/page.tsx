@@ -1,9 +1,17 @@
 "use client";
 
-import { useEffect, useState, use, useRef } from "react";
+import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
-import { compressImage } from "@/lib/imageCompress";
-import { loadSnapScript, payWithSnap } from "@/lib/midtrans";
+import {
+  PAYMENT_METHODS,
+  calculateFee,
+  loadSnapScript,
+  payWithSnap,
+  type PaymentMethodId,
+} from "@/lib/midtrans";
+import { getChatSocket } from "@/lib/chatSocket";
+import { getToken } from "@/lib/auth";
+import { COURIERS, formatEtd, formatWeightKg, preferNonCargo, type ShippingOption } from "@/lib/shipping";
 
 type OrderItem = {
   id: string;
@@ -29,41 +37,76 @@ type Address = {
 type OrderDetail = {
   id: string;
   orderNumber: string;
-  status: "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "REFUNDED";
+  status: "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "REFUNDED" | "EXPIRED";
   subtotal: string;
   discountAmount: string;
+  shippingDiscount: string;
   shippingCost: string;
   total: string;
   notes: string | null;
   paymentMethod: string | null;
   paymentProof: string | null;
   snapToken: string | null;
+  paymentFee: string | null;
   paidAt: string | null;
   createdAt: string;
   shippingCourier: string | null;
   trackingNumber: string | null;
+  addressId: string | null;
+  shippingCourierCode: string | null;
+  shippingService: string | null;
+  shippingServiceDescription: string | null;
+  shippingEtd: string | null;
   items: OrderItem[];
   address: Address | null;
+  shippingName: string | null;
+  shippingPhone: string | null;
+  shippingAddress: string | null;
+  shippingProvince: string | null;
+  shippingCity: string | null;
+  shippingDistrict: string | null;
+  shippingPostalCode: string | null;
+  paymentDeadline: string | null;
+  serverTime: string | null;
+  shippedAt: string | null;
+  receivedProof: string | null;
+  receivedAt: string | null;
+  completedAt: string | null;
+  canConfirmReceived: boolean;
+  confirmReceivedAvailableAt: string | null;
+  payment: { status: string; method: string | null; label: string | null };
+  summary: { subtotal: number; productDiscount: number; shippingCost: number; shippingDiscount: number; grandTotal: number };
 };
 
-const STATUS_LABEL: Record<string, string> = {
+const ORDER_STATUS_LABEL: Record<string, string> = {
+  PENDING: "Menunggu pembayaran",
+  CONFIRMED: "Pembayaran berhasil",
+  PROCESSING: "Pesanan sedang diproses",
+  SHIPPED: "Pesanan sedang dikirim",
+  DELIVERED: "Pesanan telah diterima",
+  CANCELLED: "Pesanan dibatalkan",
+  REFUNDED: "Dana telah dikembalikan",
+  EXPIRED: "Pesanan dibatalkan",
+};
+
+const PAYMENT_STATUS_LABEL: Record<string, string> = {
   PENDING: "Menunggu Pembayaran",
-  CONFIRMED: "Dikonfirmasi",
-  PROCESSING: "Diproses",
-  SHIPPED: "Dikirim",
-  DELIVERED: "Selesai",
-  CANCELLED: "Dibatalkan",
-  REFUNDED: "Dikembalikan",
+  PAID: "Pembayaran Berhasil",
+  FAILED: "Pembayaran Gagal",
+  EXPIRED: "Pembayaran Kadaluarsa",
+  CANCELLED: "Pembayaran Dibatalkan",
+  REFUNDED: "Dana Telah Dikembalikan",
 };
 
-const STATUS_BADGE: Record<string, string> = {
-  PENDING: "bg-[#ffdad6] text-[#93000a]",
-  CONFIRMED: "bg-[#064e3b]/10 text-[#064e3b]",
-  PROCESSING: "bg-[#d9dff5] text-[#5c6274]",
-  SHIPPED: "bg-[#d9dff5] text-[#5c6274]",
-  DELIVERED: "bg-[#e7e8e9] text-[#404944]",
-  CANCELLED: "bg-[#e7e8e9] text-[#707974]",
-  REFUNDED: "bg-[#e7e8e9] text-[#707974]",
+const METHOD_LABEL: Record<string, string> = {
+  bca_va: "BCA Virtual Account",
+  bni_va: "BNI Virtual Account",
+  bri_va: "BRI Virtual Account",
+  mandiri_va: "Mandiri Virtual Account",
+  gopay: "GoPay",
+  ovo: "OVO",
+  shopeepay: "ShopeePay",
+  qris: "QRIS",
 };
 
 function formatRupiah(value: string | number) {
@@ -71,21 +114,40 @@ function formatRupiah(value: string | number) {
   return "Rp " + (isNaN(num) ? 0 : num).toLocaleString("id-ID");
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+function formatDateId(iso: string) {
+  const d = new Date(iso);
+  const date = d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" });
+  const time = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Jakarta" });
+  return { date, time };
 }
 
-/** Nomor rekening perusahaan (bisa diganti via settings nanti) */
-const BANK_ACCOUNTS = [
-  { bank: "BCA", number: "1234567890", name: "Jernih Creatife" },
-  { bank: "Mandiri", number: "9876543210", name: "Jernih Creatife" },
-];
+/** Countdown berdasarkan paymentDeadline dari backend (bukan jam device customer) */
+function useCountdown(deadline?: string | null, serverTime?: string | null) {
+  const [remaining, setRemaining] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!deadline) return;
+    const target = new Date(deadline).getTime();
+    const offset = serverTime ? Date.now() - new Date(serverTime).getTime() : 0;
+
+    const tick = () => {
+      setRemaining(Math.max(0, target - (Date.now() - offset)));
+    };
+    tick();
+    const t = setInterval(tick, 1000);
+    return () => clearInterval(t);
+  }, [deadline, serverTime]);
+
+  return remaining;
+}
+
+function formatCountdown(ms: number) {
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return [h, m, s].map((n) => String(n).padStart(2, "0"));
+}
 
 export default function OrderDetailPage({
   params,
@@ -96,61 +158,299 @@ export default function OrderDetailPage({
   const router = useRouter();
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodId | null>(null);
+  const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState("");
+  const [showPayPanel, setShowPayPanel] = useState(false);
+
+  const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([]);
+  const [selectedShipping, setSelectedShipping] = useState<ShippingOption | null>(null);
+  const [shippingLoading, setShippingLoading] = useState(false);
+  const [shippingError, setShippingError] = useState("");
+  const [shippingTotalWeightKg, setShippingTotalWeightKg] = useState<number | null>(null);
+
+  // ── Konfirmasi pesanan diterima ─────────────────────────────────────────
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmProof, setConfirmProof] = useState("");
+  const [confirmProofFile, setConfirmProofFile] = useState<File | null>(null);
+  const [confirmReviews, setConfirmReviews] = useState<Record<string, { rating: number; comment: string }>>({});
+  const [confirming, setConfirming] = useState(false);
+  const [confirmError, setConfirmError] = useState("");
+
+  async function handleConfirmProofFile(raw: File) {
+    if (!raw.type.startsWith("image/")) {
+      setConfirmError("Hanya file gambar yang diperbolehkan");
+      return;
+    }
+    if (raw.size > 5 * 1024 * 1024) {
+      setConfirmError("Ukuran maksimal 5MB");
+      return;
+    }
+    if (confirmProof.startsWith("blob:")) URL.revokeObjectURL(confirmProof);
+    setConfirmProofFile(raw);
+    setConfirmProof(URL.createObjectURL(raw));
+    setConfirmError("");
+  }
+
+  async function handleConfirmReceived() {
+    if (!order) return;
+    if (!confirmProof) {
+      setConfirmError("Bukti penerimaan wajib diupload");
+      return;
+    }
+    const productItems = (order.items ?? []).filter((item) => item.product?.id);
+    for (const item of productItems) {
+      if (!confirmReviews[item.id]?.rating) {
+        setConfirmError(`Rating untuk ${item.name} wajib diisi`);
+        return;
+      }
+    }
+
+    setConfirming(true);
+    setConfirmError("");
+    try {
+      let proofUrl = confirmProof;
+      if (confirmProofFile) {
+        const formData = new FormData();
+        formData.append("files", confirmProofFile);
+        const upRes = await fetch("/api/upload", { method: "POST", body: formData });
+        const upData = await upRes.json();
+        if (!upRes.ok) throw new Error(upData.message ?? "Gagal upload bukti");
+        proofUrl = upData.urls?.[0];
+        if (!proofUrl) throw new Error("Tidak mendapatkan URL bukti");
+        if (confirmProof.startsWith("blob:")) URL.revokeObjectURL(confirmProof);
+      }
+
+      const res = await fetch(`/api/orders/${order.id}/confirm-received`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          receivedProof: proofUrl,
+          reviews: productItems.map((item) => ({
+            orderItemId: item.id,
+            rating: confirmReviews[item.id]?.rating ?? 0,
+            comment: confirmReviews[item.id]?.comment ?? "",
+          })),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(Array.isArray(data.message) ? data.message.join(", ") : data.message ?? "Gagal konfirmasi penerimaan");
+      }
+      setShowConfirmModal(false);
+      setSuccessMsg("Terima kasih! Pesanan Anda telah diterima. Rating dan ulasan berhasil dikirim.");
+      await refreshOrder();
+    } catch (e) {
+      setConfirmError(e instanceof Error ? e.message : "Terjadi kesalahan saat konfirmasi");
+    } finally {
+      setConfirming(false);
+    }
+  }
+
+  /** Muat ulang detail order dari server */
+  async function refreshOrder() {
+    try {
+      const res = await fetch(`/api/orders/${id}`, { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      setOrder(data);
+    } catch {
+      /* abaikan — polling berikutnya yang menangani */
+    }
+  }
+
+  /** Recovery: cek status pembayaran via endpoint status lalu muat ulang order */
+  async function syncPaymentStatus() {
+    if (!order?.orderNumber) return;
+    try {
+      await fetch(`/api/payments/${order.orderNumber}/status`, { cache: "no-store" });
+    } catch {
+      /* abaikan */
+    }
+    await refreshOrder();
+  }
 
   useEffect(() => {
-    fetch(`/api/orders/${id}`, { cache: "no-store" })
-      .then(async (res) => {
-        if (!res.ok) {
-          if (res.status === 404) throw new Error("Pesanan tidak ditemukan");
-          if (res.status === 403) throw new Error("Anda tidak memiliki akses ke pesanan ini");
-          throw new Error("Gagal memuat pesanan");
-        }
-        return res.json();
-      })
-      .then((data) => setOrder(data))
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
+    refreshOrder().finally(() => setLoading(false));
   }, [id]);
 
-  /** Upload bukti pembayaran */
-  async function handleUploadPayment(imageUrl: string) {
-    if (!imageUrl.trim()) return;
-    setUploading(true);
-    setUploadError("");
-    setSuccessMsg("");
-    try {
-      const res = await fetch(`/api/orders/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentProof: imageUrl }),
-      });
-      if (!res.ok) {
+  // Saat halaman dibuka & order masih PENDING, lakukan satu kali recovery
+  useEffect(() => {
+    if (order?.status === "PENDING") {
+      syncPaymentStatus();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [order?.status]);
+
+  // Saat order dimuat, inisialisasi metode bayar dari yang tersimpan
+  useEffect(() => {
+    if (order?.paymentMethod && !selectedMethod) {
+      const m = PAYMENT_METHODS.find((x) => x.id === order.paymentMethod);
+      if (m) setSelectedMethod(m.id);
+    }
+  }, [order?.paymentMethod]);
+
+  // Muat opsi ongkir utk order PENDING yang punya alamat
+  useEffect(() => {
+    if (order?.status !== "PENDING" || !order.address?.id) return;
+    let cancelled = false;
+    setShippingLoading(true);
+    setShippingError("");
+    setShippingOptions([]);
+    setSelectedShipping(null);
+    setShippingTotalWeightKg(null);
+
+    fetch("/api/shipping/cost", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ addressId: order.address.id }),
+    })
+      .then(async (res) => {
         const data = await res.json();
-        throw new Error(data.message ?? "Gagal upload bukti pembayaran");
+        if (cancelled) return;
+        if (!res.ok) {
+          throw new Error(
+            Array.isArray(data.message) ? data.message.join(", ") : data.message ?? "Gagal memuat ongkir",
+          );
+        }
+        return data;
+      })
+      .then((data) => {
+        if (cancelled || !data) return;
+        const options: ShippingOption[] = Array.isArray(data.options) ? data.options : [];
+        setShippingOptions(options);
+        setShippingTotalWeightKg(Number(data.totalWeightKg) || null);
+        const saved =
+          order.shippingCourierCode && order.shippingService
+            ? options.find(
+                (o) => o.code === order.shippingCourierCode && o.service === order.shippingService,
+              )
+            : undefined;
+        setSelectedShipping(saved ?? preferNonCargo(options));
+      })
+      .catch((e: unknown) => {
+        if (!cancelled) setShippingError(e instanceof Error ? e.message : "Gagal memuat ongkir.");
+      })
+      .finally(() => {
+        if (!cancelled) setShippingLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [order?.status, order?.address?.id]);
+
+  // Auto-refresh saat status masih PENDING — halaman langsung berubah begitu bayar
+  useEffect(() => {
+    if (order?.status !== "PENDING") return;
+    const timer = setInterval(refreshOrder, 5000);
+    return () => clearInterval(timer);
+  }, [order?.status, id]);
+
+  // Realtime via socket — server memberi tahu saat status order berubah
+  useEffect(() => {
+    const socket = getChatSocket(getToken() ?? undefined);
+    const onStatus = (payload: { orderId?: string; status?: string }) => {
+      if (payload?.orderId !== id) return;
+      refreshOrder();
+      if (payload.status === "CONFIRMED") {
+        setSuccessMsg("Pembayaran berhasil dikonfirmasi! Pesanan Anda sedang dikemas.");
       }
-      const updated = await res.json();
-      setOrder(updated);
-      setSuccessMsg("Bukti pembayaran berhasil dikirim! Status pesanan telah diperbarui.");
-    } catch (e: any) {
-      setUploadError(e.message ?? "Terjadi kesalahan");
-    } finally {
-      setUploading(false);
+    };
+    socket.on("order:status", onStatus);
+    return () => {
+      socket.off("order:status", onStatus);
+    };
+  }, [id]);
+
+  // Countdown berdasarkan paymentDeadline backend (sumber kebenaran jam server)
+  const paymentStatusEarly = order?.payment?.status ?? "PENDING";
+  const showCountdownEarly =
+    (paymentStatusEarly === "PENDING" || paymentStatusEarly === "UNPAID") &&
+    order?.status === "PENDING" &&
+    !!order?.paymentDeadline;
+  const remaining = useCountdown(showCountdownEarly ? order?.paymentDeadline : null, order?.serverTime);
+
+  // Saat countdown habis, muat ulang status order (backend yang membatalkan)
+  useEffect(() => {
+    if (showCountdownEarly && remaining === 0) {
+      refreshOrder();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remaining, showCountdownEarly]);
+
+  /** Buat/refresh payment-intent Midtrans utk metode terpilih, lalu buka Snap */
+  async function handlePay() {
+    if (!selectedMethod || !order) return;
+    if (order.addressId && !selectedShipping) return;
+    setPayError("");
+    setPaying(true);
+    try {
+      if (order.addressId && selectedShipping) {
+        const shipRes = await fetch(`/api/orders/${id}/shipping`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            addressId: order.addressId,
+            courier: selectedShipping.code,
+            service: selectedShipping.service,
+          }),
+        });
+        if (shipRes.status === 401) {
+          router.push("/dashboard/pelanggan/login?from=/keranjang");
+          return;
+        }
+        const shipData = await shipRes.json();
+        if (!shipRes.ok) {
+          throw new Error(
+            Array.isArray(shipData.message) ? shipData.message.join(", ") : shipData.message ?? "Gagal menyimpan pengiriman",
+          );
+        }
+        // Response update shipping berupa row orders tanpa relasi items → gabungkan
+        // dgn state lama agar items & data enrich (paymentDeadline dsb) tetap utuh.
+        setOrder((prev) => (prev ? { ...prev, ...shipData } : shipData));
+      }
+
+      const res = await fetch(`/api/orders/${id}/payment-intent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentMethod: selectedMethod }),
+      });
+      if (res.status === 401) {
+        router.push("/dashboard/pelanggan/login?from=/keranjang");
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(
+          Array.isArray(data.message) ? data.message.join(", ") : data.message ?? "Gagal membuat pembayaran",
+        );
+      }
+
+      await loadSnapScript();
+      const resultUrl = `/payment/success?order_id=${encodeURIComponent(order.orderNumber ?? order.id)}`;
+      payWithSnap(data.token, {
+        onSuccess: () => router.push(resultUrl),
+        onPending: () => router.push(resultUrl),
+        onError: () => setPayError("Pembayaran gagal atau dibatalkan. Silakan coba lagi."),
+      });
+      setPaying(false);
+    } catch (e: unknown) {
+      setPayError(e instanceof Error ? e.message : "Terjadi kesalahan saat memproses pembayaran");
+      setPaying(false);
     }
   }
 
   /** Buka chat: kirim pesan dari pelanggan + bot message dari admin */
-  async function handleChatAdmin() {
+  async function handleChatAdmin(e: React.MouseEvent) {
+    e.preventDefault();
     if (!order) return;
 
     const orderNumber = order.orderNumber ?? order.id.slice(0, 8).toUpperCase();
-    const itemList = order.items.map((i) => `• ${i.name} x${i.quantity} = ${formatRupiah(i.subtotal)}`).join("\n");
+    const itemList = (order.items ?? []).map((i) => `• ${i.name} x${i.quantity} = ${formatRupiah(i.subtotal)}`).join("\n");
 
     try {
-      // 0. Dapatkan admin ID untuk receiver chat
       let adminId = "";
       try {
         const adminRes = await fetch("/api/chat/admin-id");
@@ -160,7 +460,6 @@ export default function OrderDetailPage({
         }
       } catch { /* fallback */ }
 
-      // 1. Kirim pesan dari pelanggan berisi detail pesanan
       let customerMsg = `Halo admin, saya ingin konfirmasi pesanan ${orderNumber}:\n\n${itemList}\n\nTotal: ${formatRupiah(order.total)}`;
 
       if (order.paymentProof) {
@@ -175,35 +474,22 @@ export default function OrderDetailPage({
         });
       }
 
-      // 2. Kirim bot message dari admin (auto-generated via backend)
       await fetch(`/api/orders/${order.id}/bot-message`, { method: "POST" });
     } catch {
       // Abaikan error — tidak kritikal
     }
 
-    // 3. Redirect ke halaman chat
     router.push(`/dashboard/pelanggan/${nama}/chat`);
   }
 
-  const [resumingPay, setResumingPay] = useState(false);
-  const [resumePayError, setResumePayError] = useState("");
-
-  /** Buka ulang Snap payment dengan token yang tersimpan di order */
-  async function handleResumePay() {
-    if (!order?.snapToken) return;
-    setResumePayError("");
-    setResumingPay(true);
+  async function copyOrderNumber() {
+    const num = order?.orderNumber ?? order?.id ?? "";
     try {
-      await loadSnapScript();
-      payWithSnap(order.snapToken, {
-        onSuccess: () => router.push(`/dashboard/pelanggan/${nama}/orders/${order.id}`),
-        onPending: () => router.push(`/dashboard/pelanggan/${nama}/orders/${order.id}`),
-        onError: () => setResumePayError("Pembayaran gagal atau dibatalkan."),
-      });
-    } catch (e: any) {
-      setResumePayError(e?.message ?? "Gagal membuka pembayaran");
-    } finally {
-      setResumingPay(false);
+      await navigator.clipboard.writeText(num);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* abaikan */
     }
   }
 
@@ -215,464 +501,672 @@ export default function OrderDetailPage({
     );
   }
 
-  if (error) {
-    return (
-      <div className="rounded-xl bg-[#ffdad6] border border-[#ba1a1a]/20 px-5 py-4 text-sm font-semibold text-[#93000a]">
-        {error}
-      </div>
-    );
-  }
-
   if (!order) return null;
 
-  const isPending = order.status === "PENDING";
-  const isPaid = order.status === "CONFIRMED" || order.status === "PROCESSING" || order.status === "SHIPPED";
+  const paymentStatus = order.payment?.status ?? "PENDING";
+  const isUnpaid = paymentStatus === "PENDING" || paymentStatus === "UNPAID";
+  const isPaid = paymentStatus === "PAID";
+  const isExpired = paymentStatus === "EXPIRED" || order.status === "EXPIRED";
+  const isCancelled = order.status === "CANCELLED" || order.status === "REFUNDED";
+  const showCountdown = isUnpaid && order.status === "PENDING" && !!order.paymentDeadline;
+  const canStillPay = isUnpaid && order.status === "PENDING";
+
+  const methodLabel =
+    order.payment?.label ??
+    (order.paymentMethod ? METHOD_LABEL[order.paymentMethod] ?? order.paymentMethod : null);
+
+  const displayShipping = selectedShipping
+    ? Number(selectedShipping.cost) || 0
+    : Number(order.shippingCost) || 0;
+  const displayTotal = order.address
+    ? Math.max(0, Number(order.subtotal) - Number(order.discountAmount) + displayShipping - Number(order.shippingDiscount || 0))
+    : Number(order.total) || 0;
+  const selectedFee = selectedMethod ? calculateFee(selectedMethod, displayTotal) : 0;
+  const amountToPay = displayTotal + selectedFee;
+  const shippingRequired = !!order.addressId;
+  const canPay =
+    !!selectedMethod && !paying && (!shippingRequired || (!!selectedShipping && !shippingLoading));
+
+  const bankMethods = PAYMENT_METHODS.filter((m) => m.group === "Bank Transfer");
+  const walletMethods = PAYMENT_METHODS.filter((m) => m.group === "E-Wallet / QRIS");
+
+  const addrName = order.shippingName ?? order.address?.recipient ?? "";
+  const addrPhone = order.shippingPhone ?? order.address?.phone ?? "";
+  const addrStreet = order.shippingAddress ?? order.address?.street ?? "";
+  const addrCity = [order.shippingDistrict, order.shippingCity].filter(Boolean).join(", ") || order.address?.city || "";
+  const addrProvince = order.shippingProvince ?? order.address?.province ?? "";
+  const addrPostal = order.shippingPostalCode ?? order.address?.postalCode ?? "";
+
+  const created = formatDateId(order.createdAt);
+
+  const productItemsForReview = (order.items ?? []).filter((item) => item.product?.id);
+  const allRated = productItemsForReview.every((item) => (confirmReviews[item.id]?.rating ?? 0) >= 1);
 
   return (
-    <div className="space-y-6">
-      {/* Header with back */}
-      <div className="flex items-center gap-3">
+    <>
+    <div className="mx-auto w-full max-w-[880px] min-w-0 space-y-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:space-y-5">
+      {/* Header */}
+      <div className="flex min-w-0 items-center gap-3">
         <button
           onClick={() => router.push(`/dashboard/pelanggan/${nama}/orders`)}
           className="flex h-9 w-9 items-center justify-center rounded-full text-[#475569] hover:bg-[#e2e8f0] transition"
+          aria-label="Kembali"
         >
           <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
             <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
           </svg>
         </button>
-        <div>
+        <div className="min-w-0">
           <h1 className="text-xl font-bold text-[#191c1d]">Detail Pesanan</h1>
-          <p className="text-xs text-[#707974]">{order.orderNumber}</p>
+          <p className="break-words text-xs text-[#707974]">{order.orderNumber}</p>
         </div>
       </div>
 
-      {/* Success message */}
       {successMsg && (
-        <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-5 py-3 text-sm font-medium text-[#064e3b]">
+        <div className="rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm font-medium text-[#064e3b] sm:px-5">
           {successMsg}
         </div>
       )}
 
-      {/* Status card */}
-      <div className="rounded-xl border border-[#e2e8f0] bg-white p-5 shadow-sm">
-        <div className="flex items-center justify-between">
+      {/* ── 1. STATUS / METODE PEMBAYARAN ─────────────────────────────────── */}
+      <section className="w-full max-w-full rounded-xl border border-[#e2e8f0] bg-white px-4 py-5 shadow-sm sm:px-5">
+        {isPaid ? (
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#064e3b]/10 text-[#064e3b]">
+              <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+              </svg>
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-[#064e3b]">Pembayaran Berhasil</p>
+              {methodLabel && (
+                <p className="text-xs text-[#707974]">Bayar melalui {methodLabel}</p>
+              )}
+            </div>
+          </div>
+        ) : isExpired || (isCancelled && order.status === "CANCELLED" && !canStillPay) ? (
           <div>
-            <p className="text-xs text-[#707974]">Status</p>
-            <span className={`mt-1 inline-block text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_BADGE[order.status] ?? "bg-[#e7e8e9] text-[#404944]"}`}>
-              {STATUS_LABEL[order.status] ?? order.status}
+            <p className="text-base font-bold text-[#93000a]">Pesanan Dibatalkan</p>
+            <p className="mt-1 text-xs text-[#475569]">
+              Pesanan dibatalkan otomatis karena pembayaran tidak dilakukan dalam batas waktu.
+            </p>
+          </div>
+        ) : isUnpaid && order.status === "PENDING" ? (
+          <div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-xs text-[#707974]">
+                  {methodLabel ? "Bayar melalui" : "Metode pembayaran"}
+                </p>
+                <p className="mt-0.5 break-words text-sm font-bold text-[#191c1d]">
+                  {methodLabel ?? "Belum dipilih"}
+                </p>
+                <p className="mt-1 inline-block rounded-full bg-[#ffdad6] px-2.5 py-1 text-xs font-semibold text-[#93000a]">
+                  Menunggu Pembayaran
+                </p>
+              </div>
+              <button
+                onClick={() => setShowPayPanel((v) => !v)}
+                className="w-full shrink-0 rounded-xl bg-[#064e3b] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#043b2d] sm:w-auto"
+              >
+                {showPayPanel ? "Tutup" : "Bayar Sekarang"}
+              </button>
+            </div>
+
+            {showCountdown && remaining !== null && (
+              <div className="mt-4 overflow-hidden rounded-xl border border-[#fed7aa] bg-[#fff7ed] px-4 py-3">
+                <p className="text-xs font-semibold text-[#c2410c]">Selesaikan pembayaran dalam</p>
+                <p className="mt-1 whitespace-nowrap font-mono text-xl font-bold tabular-nums tracking-tight text-[#9a3412] sm:text-2xl">
+                  {formatCountdown(remaining)[0]}
+                  <span className="mx-0.5 text-[#fdba74]">:</span>
+                  {formatCountdown(remaining)[1]}
+                  <span className="mx-0.5 text-[#fdba74]">:</span>
+                  {formatCountdown(remaining)[2]}
+                </p>
+                <p className="mt-1 text-[11px] leading-snug text-[#c2410c]">
+                  Pesanan akan dibatalkan otomatis jika pembayaran tidak diterima dalam 24 jam.
+                </p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div>
+            <p className="text-base font-bold text-[#93000a]">Pembayaran Gagal</p>
+            {methodLabel && <p className="mt-1 text-xs text-[#475569]">Bayar melalui {methodLabel}</p>}
+            {canStillPay && (
+              <button
+                onClick={() => setShowPayPanel(true)}
+                className="mt-3 rounded-xl bg-[#064e3b] px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-[#043b2d]"
+              >
+                Bayar Sekarang
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Status terpisah: order vs payment */}
+        {(isPaid || order.status === "PROCESSING" || order.status === "SHIPPED" || order.status === "DELIVERED") && (
+          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 border-t border-[#e2e8f0] pt-3 text-[11px] text-[#707974]">
+            <span>
+              Order Status:{" "}
+              <span className="font-semibold text-[#191c1d]">{ORDER_STATUS_LABEL[order.status] ?? order.status}</span>
+            </span>
+            <span>
+              Payment Status:{" "}
+              <span className="font-semibold text-[#064e3b]">{PAYMENT_STATUS_LABEL[paymentStatus] ?? paymentStatus}</span>
             </span>
           </div>
-          <div className="text-right">
-            <p className="text-xs text-[#707974]">Total</p>
-            <p className="text-xl font-bold text-[#003527]">{formatRupiah(order.total)}</p>
-          </div>
-        </div>
-        <p className="mt-3 text-xs text-[#475569]">Dibuat: {formatDate(order.createdAt)}</p>
-      </div>
+        )}
 
-      {/* Tracking Timeline */}
-      <div className="rounded-xl border border-[#e2e8f0] bg-white p-5 shadow-sm">
-        <p className="text-xs font-semibold text-[#707974] uppercase tracking-wider mb-4">Status Pesanan</p>
-        <div className="relative">
-          <div className="absolute left-4 top-2 bottom-2 w-0.5 bg-[#e2e8f0]" />
-          {[
-            { key: "PENDING", label: "Pesanan Dibuat", icon: "🛒" },
-            { key: "CONFIRMED", label: "Pembayaran Dikonfirmasi", icon: "✅" },
-            { key: "PROCESSING", label: "Diproses", icon: "⚙️" },
-            { key: "SHIPPED", label: "Dikirim", icon: "🚚" },
-            { key: "DELIVERED", label: "Selesai", icon: "🎉" },
-          ].map((step, idx) => {
-            const orderIdx = ["PENDING","CONFIRMED","PROCESSING","SHIPPED","DELIVERED"].indexOf(order.status);
-            const isActive = idx <= orderIdx;
-            const isCurrent = idx === orderIdx;
-            return (
-              <div key={step.key} className={`relative flex gap-4 pb-5 ${idx === 4 ? "pb-0" : ""}`}>
-                <div className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm ${
-                  isActive ? "bg-[#064e3b] text-white" : "bg-[#e2e8f0] text-[#94a3b8]"
-                } ${isCurrent ? "ring-2 ring-[#064e3b]/30" : ""}`}>
-                  {isActive ? step.icon : "○"}
-                </div>
-                <div className="min-w-0 pt-0.5">
-                  <p className={`text-sm font-semibold ${isActive ? "text-[#191c1d]" : "text-[#94a3b8]"}`}>
-                    {step.label}
-                    {isCurrent && <span className="ml-2 text-xs text-[#064e3b]">(Saat ini)</span>}
-                  </p>
-                  {isCurrent && step.key === "SHIPPED" && order.shippingCourier && (
-                    <p className="text-xs text-[#064e3b] font-medium mt-0.5">
-                      Kurir: {order.shippingCourier}{order.trackingNumber ? ` • No. Resi: ${order.trackingNumber}` : ""}
+        {/* ── Panel bayar (metode + pengiriman) ─────────────────────────────── */}
+        {canStillPay && showPayPanel && (
+          <div className="mt-4 space-y-4 border-t border-[#e2e8f0] pt-4">
+            {/* Pengiriman */}
+            {order.address && (
+              <div>
+                <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2 sm:gap-3">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#707974]">Pengiriman</p>
+                  {shippingTotalWeightKg != null && (
+                    <p className="text-xs text-[#707974]">
+                      Berat: <span className="font-bold text-[#191c1d]">{formatWeightKg(shippingTotalWeightKg)}</span>
                     </p>
                   )}
                 </div>
+                {shippingLoading ? (
+                  <p className="flex items-center gap-2 text-xs font-semibold text-[#475569]">
+                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-[#064e3b] border-t-transparent" />
+                    Menghitung biaya pengiriman...
+                  </p>
+                ) : shippingError ? (
+                  <p className="text-xs font-semibold text-[#dc2626]">{shippingError}</p>
+                ) : shippingOptions.length === 0 ? (
+                  <p className="text-xs text-[#707974]">Tidak ada layanan pengiriman tersedia untuk alamat ini.</p>
+                ) : (
+                  <ShippingOptionList
+                    options={shippingOptions}
+                    selected={selectedShipping}
+                    onSelect={setSelectedShipping}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Metode pembayaran */}
+            <div>
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-[#707974]">Metode Pembayaran</p>
+              <div className="space-y-2">
+                {bankMethods.map((m) => (
+                  <PaymentOption key={m.id} label={m.label} desc={m.desc} active={selectedMethod === m.id} onClick={() => setSelectedMethod(m.id)} />
+                ))}
+              </div>
+              <div className="mt-2 space-y-2">
+                {walletMethods.map((m) => (
+                  <PaymentOption key={m.id} label={m.label} desc={m.desc} active={selectedMethod === m.id} onClick={() => setSelectedMethod(m.id)} />
+                ))}
+              </div>
+            </div>
+
+            {payError && <p className="text-xs font-semibold text-[#dc2626]">{payError}</p>}
+
+            {/* Ringkasan biaya */}
+            {selectedMethod && (
+              <div className="rounded-lg bg-[#f8f9fa] px-3 py-3 text-sm sm:px-4">
+                <div className="flex min-w-0 justify-between gap-3 text-[#475569]">
+                  <span>Total Pesanan</span>
+                  <span className="text-right">{formatRupiah(displayTotal)}</span>
+                </div>
+                {selectedFee > 0 && (
+                  <div className="mt-1 flex min-w-0 justify-between gap-3 text-[#475569]">
+                    <span>Biaya Admin</span>
+                    <span className="text-right">{formatRupiah(selectedFee)}</span>
+                  </div>
+                )}
+                <div className="mt-1 flex min-w-0 justify-between gap-3 border-t border-[#e1e3e4] pt-1.5 font-bold text-[#191c1d]">
+                  <span>Total Bayar</span>
+                  <span className="text-right">{formatRupiah(amountToPay)}</span>
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={handlePay}
+              disabled={!canPay}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#064e3b] px-5 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#043b2d] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {paying ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Memproses...
+                </>
+              ) : selectedMethod ? (
+                "Bayar Sekarang"
+              ) : (
+                "Pilih Metode Pembayaran"
+              )}
+            </button>
+          </div>
+        )}
+      </section>
+
+      {/* ── KONFIRMASI PENERIMAAN (SHIPPED) ─────────────────────────────── */}
+      {order.status === "SHIPPED" && (
+        <section className="w-full max-w-full rounded-xl border border-[#e2e8f0] bg-white px-4 py-5 shadow-sm sm:px-5">
+          <h2 className="mb-3 text-sm font-bold text-[#191c1d]">Konfirmasi Penerimaan</h2>
+          {order.canConfirmReceived ? (
+            <>
+              <p className="text-sm text-[#475569] leading-relaxed">
+                Pastikan Anda telah menerima barang dengan baik. Konfirmasi penerimaan akan mengakhiri pesanan dan
+                memungkinkan Anda memberikan rating serta ulasan untuk produk yang dibeli.
+              </p>
+              <button
+                onClick={() => {
+                  if (confirmProof.startsWith("blob:")) URL.revokeObjectURL(confirmProof);
+                  setConfirmProof("");
+                  setConfirmProofFile(null);
+                  setConfirmReviews({});
+                  setConfirmError("");
+                  setShowConfirmModal(true);
+                }}
+                className="mt-3 w-full sm:w-auto rounded-xl bg-[#064e3b] px-5 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#043b2d]"
+              >
+                Pesanan Diterima
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-[#475569] leading-relaxed">
+                Pesanan Anda sedang dalam perjalanan. Anda dapat mengkonfirmasi pesanan diterima setelah{" "}
+                <span className="font-semibold text-[#191c1d]">
+                  {order.confirmReceivedAvailableAt
+                    ? new Date(order.confirmReceivedAvailableAt).toLocaleString("id-ID", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        timeZone: "Asia/Jakarta",
+                      })
+                    : "-"}
+                </span>{" "}
+                WIB.
+              </p>
+              <button
+                onClick={() => {
+                  if (confirmProof.startsWith("blob:")) URL.revokeObjectURL(confirmProof);
+                  setConfirmProof("");
+                  setConfirmProofFile(null);
+                  setConfirmReviews({});
+                  setConfirmError("");
+                  setShowConfirmModal(true);
+                }}
+                className="mt-3 w-full sm:w-auto rounded-xl bg-[#064e3b] px-5 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#043b2d]"
+              >
+                Pesanan Diterima
+              </button>
+            </>
+          )}
+        </section>
+      )}
+
+      {/* ── 2. ALAMAT PENGIRIMAN ──────────────────────────────────────────── */}
+      {addrName && (
+        <section className="w-full max-w-full rounded-xl border border-[#e2e8f0] bg-white px-4 py-5 shadow-sm sm:px-5">
+          <h2 className="mb-3 text-sm font-bold text-[#191c1d]">Alamat Pengiriman</h2>
+          <p className="break-words text-sm font-semibold text-[#191c1d]">{addrName}</p>
+          {addrPhone && <p className="mt-0.5 text-xs text-[#475569]">{addrPhone}</p>}
+          <p className="mt-1.5 break-words text-xs leading-relaxed text-[#475569]">
+            {[addrStreet, addrCity, addrProvince, addrPostal].filter(Boolean).join(", ")}
+          </p>
+        </section>
+      )}
+
+      {/* ── 3. PRODUK ─────────────────────────────────────────────────────── */}
+      <section className="w-full max-w-full rounded-xl border border-[#e2e8f0] bg-white px-4 py-5 shadow-sm sm:px-5">
+        <h2 className="mb-2 text-sm font-bold text-[#191c1d]">Produk</h2>
+        <div className="divide-y divide-[#e2e8f0]">
+          {order.items.map((item) => {
+            const imgUrl = item.product?.images?.[0] ?? item.service?.images?.[0] ?? null;
+            return (
+              <div key={item.id} className="flex min-w-0 items-start gap-3 py-3 sm:items-center">
+                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-[#f1f5f9] sm:h-14 sm:w-14">
+                  {imgUrl ? (
+                    <img src={imgUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-xl text-[#94a3b8]">📦</div>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="break-words text-sm font-medium text-[#191c1d] sm:line-clamp-1">{item.name}</p>
+                  <p className="mt-0.5 text-xs text-[#707974]">
+                    Qty {item.quantity} · {formatRupiah(item.price)}
+                  </p>
+                </div>
+                <p className="max-w-[40%] shrink-0 text-right text-sm font-semibold text-[#191c1d] sm:max-w-none">{formatRupiah(item.subtotal)}</p>
               </div>
             );
           })}
         </div>
-      </div>
+        {order.notes && (
+          <div className="mt-2 border-t border-[#e2e8f0] pt-3">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-[#707974]">Catatan</p>
+            <p className="mt-1 break-words text-sm text-[#475569]">{order.notes}</p>
+          </div>
+        )}
+      </section>
 
-      {/* Items */}
-      <div className="rounded-xl border border-[#e2e8f0] bg-white p-5 shadow-sm">
-        <h2 className="mb-3 text-sm font-bold text-[#191c1d]">Item Pesanan</h2>
-        <div className="divide-y divide-[#e2e8f0]">
-          {order.items.map((item) => (
-            <div key={item.id} className="flex items-center gap-3 py-3">
-              <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-[#f1f5f9]">
-                {item.product?.images?.[0] ? (
-                  <img src={item.product.images[0]} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-[#94a3b8] text-xl">📦</div>
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-[#191c1d] truncate">{item.name}</p>
-                <p className="text-xs text-[#707974]">{item.quantity} x {formatRupiah(item.price)}</p>
-              </div>
-              <p className="text-sm font-semibold text-[#191c1d]">{formatRupiah(item.subtotal)}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Totals */}
-        <div className="mt-3 space-y-1.5 border-t border-[#e2e8f0] pt-3 text-sm">
-          <div className="flex justify-between text-[#475569]">
-            <span>Subtotal</span>
-            <span>{formatRupiah(order.subtotal)}</span>
+      {/* ── 4 & 5. DETAIL PEMBAYARAN + TOTAL ─────────────────────────────── */}
+      <section className="w-full max-w-full rounded-xl border border-[#e2e8f0] bg-white px-4 py-5 shadow-sm sm:px-5">
+        <h2 className="mb-3 text-sm font-bold text-[#191c1d]">Detail Pembayaran</h2>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between gap-3 text-[#475569]">
+            <span>Subtotal Produk</span>
+            <span className="text-right">{formatRupiah(order.subtotal)}</span>
           </div>
           {Number(order.discountAmount) > 0 && (
-            <div className="flex justify-between text-[#dc2626]">
-              <span>Diskon</span>
-              <span>-{formatRupiah(order.discountAmount)}</span>
+            <div className="flex justify-between gap-3 text-[#dc2626]">
+              <span>Diskon Produk</span>
+              <span className="text-right">-{formatRupiah(order.discountAmount)}</span>
             </div>
           )}
-          {Number(order.shippingCost) > 0 && (
-            <div className="flex justify-between text-[#475569]">
-              <span>Ongkos Kirim</span>
-              <span>{formatRupiah(order.shippingCost)}</span>
+          {displayShipping > 0 && (
+            <div className="flex justify-between gap-3 text-[#475569]">
+              <span>Pengiriman</span>
+              <span className="text-right">{formatRupiah(displayShipping)}</span>
             </div>
           )}
-          <div className="flex justify-between font-bold text-[#191c1d] pt-1 border-t border-[#e2e8f0]">
-            <span>Total</span>
-            <span>{formatRupiah(order.total)}</span>
+          {Number(order.shippingDiscount) > 0 && (
+            <div className="flex justify-between gap-3 text-[#dc2626]">
+              <span>Diskon Ongkir</span>
+              <span className="text-right">-{formatRupiah(order.shippingDiscount)}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-4 rounded-xl bg-[#f8f9fa] px-3 py-4 sm:px-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-[#707974]">
+              {canStillPay ? "Total yang harus dibayar" : "Total Pembayaran"}
+            </p>
+            {isPaid && (
+              <span className="rounded-full bg-[#064e3b]/10 px-2.5 py-1 text-[11px] font-bold text-[#064e3b]">
+                LUNAS
+              </span>
+            )}
           </div>
+          <p className="mt-1 break-words text-2xl font-bold tabular-nums text-[#003527]">{formatRupiah(displayTotal)}</p>
         </div>
-      </div>
+      </section>
 
-      {/* Alamat pengiriman */}
-      {order.address && (
-        <div className="rounded-xl border border-[#e2e8f0] bg-white p-5 shadow-sm">
-          <h2 className="mb-2 text-sm font-bold text-[#191c1d]">Alamat Pengiriman</h2>
-          <p className="text-sm text-[#191c1d] font-medium">{order.address.recipient}</p>
-          <p className="text-xs text-[#475569]">{order.address.phone}</p>
-          <p className="text-xs text-[#475569] mt-1">
-            {order.address.street}, {order.address.city}, {order.address.province} {order.address.postalCode}
-          </p>
+      {/* ── 6. BANTUAN — CHAT ADMIN ──────────────────────────────────────── */}
+      <section className="w-full max-w-full rounded-xl border border-[#e2e8f0] bg-white px-4 py-5 shadow-sm sm:px-5">
+        <p className="text-sm font-semibold text-[#191c1d]">Butuh bantuan?</p>
+        <a
+          href={`/dashboard/pelanggan/${nama}/chat`}
+          onClick={handleChatAdmin}
+          className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-[#064e3b] underline underline-offset-4 hover:text-[#043b2d]"
+        >
+          Chat dengan Admin
+          <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
+            <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z" />
+          </svg>
+        </a>
+      </section>
+
+      {/* ── 7 & 8. NOMOR PESANAN + WAKTU PESANAN ─────────────────────────── */}
+      <section className="w-full max-w-full rounded-xl border border-[#e2e8f0] bg-white px-4 py-5 shadow-sm sm:px-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-[#707974]">Nomor Pesanan</p>
+            <p className="mt-0.5 break-words text-sm font-bold text-[#191c1d]">#{order.orderNumber}</p>
+          </div>
+          <button
+            onClick={copyOrderNumber}
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#064e3b] hover:bg-[#f3f4f5]"
+          >
+            <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
+              <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
+            </svg>
+            {copied ? "Disalin!" : "Salin"}
+          </button>
         </div>
-      )}
+        <div className="mt-4 border-t border-[#e2e8f0] pt-4">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[#707974]">Waktu Pesanan</p>
+          <p className="mt-1 text-sm font-semibold text-[#191c1d]">{created.date}</p>
+          <p className="text-xs text-[#475569]">{created.time} WIB</p>
+        </div>
+      </section>
+    </div>
 
-      {/* Payment section */}
-      {isPending && (
-        <>
-          {order.snapToken && (
-            <div className="rounded-xl border border-[#e2e8f0] bg-white p-5 shadow-sm">
-              <h2 className="mb-1 text-sm font-bold text-[#191c1d]">Pembayaran Midtrans</h2>
-              <p className="mb-3 text-xs text-[#475569]">
-                Lanjutkan pembayaran online melalui Midtrans untuk pesanan ini.
-              </p>
-              {resumePayError && (
-                <p className="mb-2 text-xs font-semibold text-[#dc2626]">{resumePayError}</p>
+    {/* ── MODAL KONFIRMASI PESANAN DITERIMA ─────────────────────────────── */}
+    {showConfirmModal && (
+      <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4">
+        <div
+          className="w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#e2e8f0] bg-white px-5 py-4">
+            <h2 className="text-base font-bold text-[#191c1d]">Konfirmasi Pesanan Diterima</h2>
+            <button
+              onClick={() => setShowConfirmModal(false)}
+              className="flex h-8 w-8 items-center justify-center rounded-full text-[#707974] hover:bg-[#f3f4f5]"
+              aria-label="Tutup"
+            >
+              <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="space-y-5 px-5 py-5 pb-8">
+            <p className="text-sm text-[#475569] leading-relaxed">
+              Pastikan Anda telah menerima barang dengan baik. Setelah konfirmasi, pesanan akan selesai dan rating/ulasan Anda akan tampil di halaman produk.
+            </p>
+
+            {/* 1. Upload bukti penerimaan */}
+            <div>
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-[#707974]">1. Upload Bukti Penerimaan *</p>
+              {confirmProof ? (
+                <div className="overflow-hidden rounded-lg border border-[#e2e8f0] bg-[#f8f9fa]">
+                  <img src={confirmProof} alt="Bukti penerimaan" className="max-h-48 w-full object-contain" />
+                  <div className="flex items-center justify-between border-t border-[#e2e8f0] px-3 py-2">
+                    <span className="truncate text-xs text-[#475569]">{confirmProofFile?.name ?? "Gambar terupload"}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirmProof.startsWith("blob:")) URL.revokeObjectURL(confirmProof);
+                        setConfirmProof("");
+                        setConfirmProofFile(null);
+                      }}
+                      className="text-xs font-semibold text-[#dc2626] hover:underline"
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[#bfc9c3] px-4 py-8 text-center transition hover:border-[#064e3b] hover:bg-[#f8f9fa]">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleConfirmProofFile(f);
+                    }}
+                  />
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#064e3b]/10 text-[#064e3b]">
+                    <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                      <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z" />
+                    </svg>
+                  </span>
+                  <span className="text-sm font-semibold text-[#191c1d]">Klik untuk pilih gambar</span>
+                  <span className="text-[11px] text-[#94a3b8]">Format: JPG, JPEG, PNG, WEBP. Maks 5MB</span>
+                </label>
               )}
+            </div>
+
+            {/* 2. Rating & ulasan per produk */}
+            <div>
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-[#707974]">2. Rating & Ulasan Produk</p>
+              <div className="space-y-4">
+                {productItemsForReview.map((item) => {
+                  const review = confirmReviews[item.id] ?? { rating: 0, comment: "" };
+                  return (
+                    <div key={item.id} className="rounded-lg border border-[#e2e8f0] p-3">
+                      <p className="mb-2 truncate text-sm font-semibold text-[#191c1d]">{item.name}</p>
+                      <div className="mb-2 flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() =>
+                              setConfirmReviews((prev) => ({
+                                ...prev,
+                                [item.id]: { ...(prev[item.id] ?? { rating: 0, comment: "" }), rating: star },
+                              }))
+                            }
+                            className="text-2xl leading-none transition-transform hover:scale-110"
+                            aria-label={`${star} bintang`}
+                          >
+                            <span className={star <= review.rating ? "text-amber-400" : "text-slate-300"}>★</span>
+                          </button>
+                        ))}
+                      </div>
+                      <textarea
+                        value={review.comment}
+                        onChange={(e) =>
+                          setConfirmReviews((prev) => ({
+                            ...prev,
+                            [item.id]: { ...(prev[item.id] ?? { rating: 0, comment: "" }), comment: e.target.value },
+                          }))
+                        }
+                        maxLength={1000}
+                        placeholder="Bagikan pengalaman Anda menggunakan produk ini"
+                        rows={3}
+                        className="w-full resize-none rounded-lg border border-[#e2e8f0] bg-white p-3 text-sm text-[#191c1d] outline-none transition focus:border-[#064e3b] focus:ring-1 focus:ring-[#064e3b]/30"
+                      />
+                      <p className="mt-1 text-right text-[11px] text-[#94a3b8]">{review.comment.length}/1000</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {confirmError && (
+              <p className="rounded-lg bg-[#ffdad6] px-3 py-2.5 text-sm font-semibold text-[#93000a]">{confirmError}</p>
+            )}
+
+            {/* Aksi */}
+            <div className="flex flex-col gap-2 sm:flex-row">
               <button
-                onClick={handleResumePay}
-                disabled={resumingPay}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#064e3b] px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#043b2d] disabled:opacity-50"
+                onClick={() => setShowConfirmModal(false)}
+                disabled={confirming}
+                className="w-full rounded-xl border border-[#bfc9c3] px-5 py-3 text-sm font-bold text-[#404944] transition hover:bg-[#f3f4f5] sm:w-auto"
               >
-                {resumingPay ? "Memproses..." : "Bayar Sekarang"}
+                Batal
+              </button>
+              <button
+                onClick={handleConfirmReceived}
+                disabled={confirming || !confirmProof || !allRated}
+                className="w-full rounded-xl bg-[#064e3b] px-5 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#043b2d] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+              >
+                {confirming ? "Memproses..." : "Konfirmasi Pesanan Diterima"}
               </button>
             </div>
-          )}
-
-          {/* Bank accounts */}
-          <div className="rounded-xl border border-[#e2e8f0] bg-white p-5 shadow-sm">
-            <h2 className="mb-3 text-sm font-bold text-[#191c1d]">Pembayaran Transfer Bank</h2>
-            <div className="space-y-3">
-              {BANK_ACCOUNTS.map((acc) => (
-                <div key={acc.bank} className="flex items-center justify-between rounded-lg bg-[#f8f9fa] px-4 py-3">
-                  <div>
-                    <p className="text-sm font-bold text-[#191c1d]">{acc.bank}</p>
-                    <p className="text-lg font-black text-[#003527] tracking-wider">{acc.number}</p>
-                    <p className="text-xs text-[#475569]">a.n. {acc.name}</p>
-                  </div>
-                  <button
-                    onClick={() => navigator.clipboard.writeText(acc.number)}
-                    className="shrink-0 rounded-lg bg-[#064e3b] px-3 py-2 text-xs font-bold text-white hover:bg-[#043b2d] transition"
-                  >
-                    Salin
-                  </button>
-                </div>
-              ))}
-            </div>
+            {!allRated && <p className="text-center text-[11px] text-[#94a3b8]">Beri rating pada semua produk untuk melanjutkan.</p>}
           </div>
-
-          {/* Upload payment proof */}
-          <UploadPaymentForm
-            onUpload={handleUploadPayment}
-            uploading={uploading}
-            error={uploadError}
-          />
-        </>
-      )}
-
-      {/* Payment proof already uploaded */}
-      {order.paymentProof && (
-        <div className="rounded-xl border border-[#e2e8f0] bg-white p-5 shadow-sm">
-          <h2 className="mb-2 text-sm font-bold text-[#191c1d]">Bukti Pembayaran</h2>
-          <img
-            src={order.paymentProof}
-            alt="Bukti pembayaran"
-            className="max-h-48 w-full rounded-lg object-contain bg-[#f8f9fa]"
-          />
         </div>
-      )}
-
-      {/* Notes */}
-      {order.notes && (
-        <div className="rounded-xl border border-[#e2e8f0] bg-white p-5 shadow-sm">
-          <h2 className="mb-1 text-sm font-bold text-[#191c1d]">Catatan</h2>
-          <p className="text-sm text-[#475569]">{order.notes}</p>
-        </div>
-      )}
-
-      {/* Action buttons */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <button
-          onClick={handleChatAdmin}
-          className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[#064e3b] px-5 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#043b2d]"
-        >
-          <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
-            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z" />
-          </svg>
-          {isPending ? "Konfirmasi ke Admin" : "Hubungi Admin"}
-        </button>
       </div>
-    </div>
+    )}
+    </>
   );
 }
 
-/** Komponen form upload bukti bayar — pilih file, auto-compress, upload */
-function UploadPaymentForm({
-  onUpload,
-  uploading,
-  error,
+/** Opsi metode pembayaran yang bisa dipilih / diganti */
+function PaymentOption({
+  label,
+  desc,
+  active,
+  onClick,
 }: {
-  onUpload: (url: string) => Promise<void>;
-  uploading: boolean;
-  error: string;
+  label: string;
+  desc: string;
+  active: boolean;
+  onClick: () => void;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string>("");
-  const [compressing, setCompressing] = useState(false);
-  const [uploadingFile, setUploadingFile] = useState(false);
-  const [localError, setLocalError] = useState("");
-
-  const MAX_SIZE = 10 * 1024 * 1024; // 10MB
-
-  /** Handle file selection & compress */
-  async function handleFile(raw: File) {
-    setLocalError("");
-
-    if (!raw.type.startsWith("image/")) {
-      setLocalError("Hanya file gambar yang diperbolehkan");
-      return;
-    }
-    if (raw.size > MAX_SIZE) {
-      setLocalError("Ukuran maksimal 10MB");
-      return;
-    }
-
-    setCompressing(true);
-    try {
-      clearPreview();
-
-      const compressed = await compressImage(raw);
-      setFile(compressed);
-
-      // Preview dari hasil kompresi
-      const objectUrl = URL.createObjectURL(compressed);
-      setPreview(objectUrl);
-
-      const savedKb = Math.round((raw.size - compressed.size) / 1024);
-      if (savedKb > 0) {
-        // Info ukuran (opsional, hanya log)
-        console.log(`Kompresi: ${Math.round(raw.size/1024)}KB → ${Math.round(compressed.size/1024)}KB (hemat ${savedKb}KB)`);
-      }
-    } catch {
-      // Fallback: pakai file asli jika kompresi gagal
-      setFile(raw);
-      setPreview(URL.createObjectURL(raw));
-    } finally {
-      setCompressing(false);
-    }
-  }
-
-  /** Bersihkan object URL lama saat ganti file */
-  function clearPreview() {
-    if (preview) URL.revokeObjectURL(preview);
-    setPreview("");
-    setFile(null);
-    if (inputRef.current) inputRef.current.value = "";
-  }
-
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    if (f) handleFile(f);
-  }
-
-  function handleDrop(e: React.DragEvent) {
-    e.preventDefault();
-    const f = e.dataTransfer.files?.[0];
-    if (f) handleFile(f);
-  }
-
-  function handleDragOver(e: React.DragEvent) {
-    e.preventDefault();
-  }
-
-  function removeFile() {
-    clearPreview();
-  }
-
-  /** Upload file → dapat URL → submit */
-  async function handleSubmit() {
-    if (!file) return;
-    setUploadingFile(true);
-    setLocalError("");
-
-    try {
-      const formData = new FormData();
-      formData.append("files", file);
-
-      const uploadRes = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!uploadRes.ok) {
-        const errData = await uploadRes.json();
-        throw new Error(errData.message ?? "Gagal upload gambar");
-      }
-
-      const uploadData = await uploadRes.json();
-      const url = uploadData.urls?.[0];
-      if (!url) throw new Error("Tidak mendapatkan URL gambar");
-
-      await onUpload(url);
-    } catch (e: any) {
-      setLocalError(e.message ?? "Terjadi kesalahan saat upload");
-    } finally {
-      setUploadingFile(false);
-    }
-  }
-
-  const isBusy = uploading || uploadingFile || compressing;
-
   return (
-    <div className="rounded-xl border border-[#e2e8f0] bg-white p-5 shadow-sm">
-      <h2 className="mb-3 text-sm font-bold text-[#191c1d]">Upload Bukti Pembayaran</h2>
-      <p className="mb-3 text-xs text-[#475569]">
-        Jika sudah transfer, upload bukti pembayaran berupa foto screenshot transfer.
-      </p>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full min-w-0 items-center gap-3 rounded-xl border bg-white p-3 text-left transition ${
+        active ? "border-[#064e3b] ring-1 ring-[#064e3b]/40" : "border-[#e2e8f0] hover:border-[#bfc9c3]"
+      }`}
+    >
+      <span
+        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition ${
+          active ? "border-[#064e3b]" : "border-[#bfc9c3]"
+        }`}
+      >
+        {active && <span className="h-2.5 w-2.5 rounded-full bg-[#064e3b]" />}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block break-words text-sm font-semibold text-[#191c1d]">{label}</span>
+        <span className="block break-words text-xs text-[#707974]">{desc}</span>
+      </span>
+    </button>
+  );
+}
 
-      <div className="space-y-3">
-        {/* Drop zone / input */}
-        {!preview ? (
-          <label
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-8 text-center transition ${
-              compressing
-                ? "border-[#064e3b]/30 bg-[#f0fdf4]"
-                : "border-[#bfc9c3] hover:border-[#064e3b] hover:bg-[#f8f9fa]"
-            }`}
-          >
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleInputChange}
-              disabled={compressing}
-              className="hidden"
-            />
-            {compressing ? (
-              <>
-                <div className="h-8 w-8 animate-spin rounded-full border-3 border-[#064e3b] border-t-transparent" />
-                <span className="text-sm font-medium text-[#064e3b]">Mengompresi gambar...</span>
-              </>
-            ) : (
-              <>
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#064e3b]/10 text-[#064e3b]">
-                  <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
-                    <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-[#191c1d]">
-                    Klik untuk pilih gambar
-                  </p>
-                  <p className="text-xs text-[#707974]">atau drag & drop file di sini</p>
-                </div>
-                <p className="text-[10px] text-[#94a3b8]">Format: JPEG, PNG, WebP. Maks 10MB</p>
-              </>
-            )}
-          </label>
-        ) : (
-          /* Preview setelah pilih file */
-          <div className="overflow-hidden rounded-lg bg-[#f8f9fa]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={preview}
-              alt="Preview bukti bayar"
-              className="max-h-48 w-full object-contain"
-            />
-            <div className="flex items-center justify-between border-t border-[#e2e8f0] px-3 py-2">
-              <span className="truncate text-xs text-[#475569]">
-                {file?.name ?? "Gambar"} ({file ? Math.round(file.size / 1024) : 0}KB)
-              </span>
-              <button
-                type="button"
-                onClick={removeFile}
-                disabled={isBusy}
-                className="text-xs font-semibold text-[#dc2626] hover:underline disabled:opacity-50"
-              >
-                Hapus
-              </button>
-            </div>
+/** Daftar pilihan ongkir, dikelompokkan per kurir sesuai urutan COURIERS */
+function ShippingOptionList({
+  options,
+  selected,
+  onSelect,
+}: {
+  options: ShippingOption[];
+  selected: ShippingOption | null;
+  onSelect: (opt: ShippingOption) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      {COURIERS.map((c) => {
+        const courierOptions = options.filter((o) => o.code === c.code);
+        if (!courierOptions.length) return null;
+        return (
+          <div key={c.code} className="space-y-2">
+            <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wider text-[#94a3b8]">{c.name}</p>
+            {courierOptions.map((opt) => {
+              const active = selected?.code === opt.code && selected?.service === opt.service;
+              return (
+                <button
+                  key={`${opt.code}-${opt.service}`}
+                  type="button"
+                  onClick={() => onSelect(opt)}
+                  className={`flex w-full min-w-0 items-start gap-3 rounded-xl border bg-white p-3 text-left transition sm:items-center ${
+                    active ? "border-[#064e3b] ring-1 ring-[#064e3b]/40" : "border-[#e2e8f0] hover:border-[#bfc9c3]"
+                  }`}
+                >
+                  <span
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition ${
+                      active ? "border-[#064e3b]" : "border-[#bfc9c3]"
+                    }`}
+                  >
+                    {active && <span className="h-2.5 w-2.5 rounded-full bg-[#064e3b]" />}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block break-words text-sm font-semibold text-[#191c1d]">
+                      {opt.service} <span className="font-medium text-[#707974]">· {opt.description}</span>
+                    </span>
+                    <span className="block text-xs text-[#707974]">Estimasi {formatEtd(opt.etd)}</span>
+                  </span>
+                  <span className="max-w-[38%] shrink-0 text-right text-sm font-bold text-[#191c1d] sm:max-w-none">{formatRupiah(opt.cost)}</span>
+                </button>
+              );
+            })}
           </div>
-        )}
-
-        {(error || localError) && (
-          <p className="text-xs font-medium text-[#dc2626]">{error || localError}</p>
-        )}
-
-        <button
-          onClick={handleSubmit}
-          disabled={!file || isBusy}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#064e3b] px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-[#043b2d] disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {compressing ? (
-            <>
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              Mengompresi...
-            </>
-          ) : uploading || uploadingFile ? (
-            <>
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              Mengupload...
-            </>
-          ) : (
-            "Sudah Bayar"
-          )}
-        </button>
-      </div>
+        );
+      })}
     </div>
   );
 }

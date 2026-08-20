@@ -30,11 +30,17 @@ type ApiOrderItem = {
 type ApiOrder = {
   id: string;
   orderNumber: string | null;
-  status: "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "REFUNDED";
+  status: "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "REFUNDED" | "EXPIRED";
   total: string;
   subtotal: string;
   createdAt: string;
   items: ApiOrderItem[];
+  paymentDeadline: string | null;
+  serverTime: string | null;
+  shippedAt: string | null;
+  canConfirmReceived: boolean;
+  confirmReceivedAvailableAt: string | null;
+  payment: { status: string; method: string | null; label: string | null };
 };
 
 /** Map status backend → label tab bahasa Indonesia */
@@ -46,6 +52,7 @@ const statusLabel: Record<ApiOrder["status"], string> = {
   DELIVERED: "Selesai",
   CANCELLED: "Dibatalkan",
   REFUNDED: "Dibatalkan",
+  EXPIRED: "Dibatalkan",
 };
 
 const statusBadge: Record<string, string> = {
@@ -69,27 +76,66 @@ function formatDate(iso: string) {
   });
 }
 
-function OrderCard({ order, nama }: { order: ApiOrder; nama: string }) {
+/** Countdown berdasarkan paymentDeadline dari backend */
+function useCountdown(deadline?: string | null, serverTime?: string | null) {
+  const [remaining, setRemaining] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!deadline) return;
+    const target = new Date(deadline).getTime();
+    const offset = serverTime ? Date.now() - new Date(serverTime).getTime() : 0;
+
+    const tick = () => {
+      setRemaining(Math.max(0, target - (Date.now() - offset)));
+    };
+    tick();
+    const t = setInterval(tick, 1000);
+    return () => clearInterval(t);
+  }, [deadline, serverTime]);
+
+  return remaining;
+}
+
+function formatCountdown(ms: number) {
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return [h, m, s].map((n) => String(n).padStart(2, "0"));
+}
+
+function OrderCard({ order, nama, onExpired }: { order: ApiOrder; nama: string; onExpired?: () => void }) {
   const router = useRouter();
   const label = statusLabel[order.status];
   const displayNumber = order.orderNumber ?? order.id.slice(0, 8).toUpperCase();
 
+  const paymentStatus = order.payment?.status ?? "PENDING";
+  const isUnpaid = paymentStatus === "PENDING" || paymentStatus === "UNPAID";
+  const showCountdown = isUnpaid && order.status === "PENDING" && !!order.paymentDeadline;
+  const remaining = useCountdown(showCountdown ? order.paymentDeadline : null, order.serverTime);
+
+  // Saat countdown habis, muat ulang list (backend yang membatalkan order)
+  useEffect(() => {
+    if (showCountdown && remaining === 0) onExpired?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remaining, showCountdown]);
+
   return (
     <div
       onClick={() => router.push(`/dashboard/pelanggan/${nama}/orders/${order.id}`)}
-      className="bg-white p-6 rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] border border-transparent hover:border-[#bfc9c3] hover:shadow-md transition-all cursor-pointer group"
+      className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-transparent bg-white p-4 shadow-[0px_4px_20px_rgba(0,0,0,0.04)] transition-all hover:border-[#bfc9c3] hover:shadow-md sm:p-6 cursor-pointer group"
     >
       <div>
-        <div className="flex justify-between items-center mb-5 border-b border-[#e1e3e4] pb-3">
-          <div className="min-w-0">
-            <span className="text-sm font-bold text-[#191c1d]">#{displayNumber}</span>
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-[#e1e3e4] pb-3">
+          <div className="min-w-0 flex-1">
+            <span className="block break-words text-sm font-bold text-[#191c1d]">#{displayNumber}</span>
             <span className="text-xs text-[#475569] block mt-0.5">{formatDate(order.createdAt)}</span>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex shrink-0 items-center gap-2">
             <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusBadge[label] ?? "bg-[#e7e8e9] text-[#404944]"}`}>
               {label}
             </span>
-            <svg className="h-4 w-4 text-[#94a3b8] group-hover:text-[#003527] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="hidden h-4 w-4 text-[#94a3b8] transition-colors group-hover:text-[#003527] min-[360px]:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </div>
@@ -98,8 +144,8 @@ function OrderCard({ order, nama }: { order: ApiOrder; nama: string }) {
           {order.items.slice(0, 2).map((item) => {
             const imgUrl = item.product?.images?.[0] ?? item.service?.images?.[0] ?? null;
             return (
-              <div key={item.id} className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-lg bg-[#f1f5f9] overflow-hidden shrink-0">
+              <div key={item.id} className="flex min-w-0 items-center gap-3">
+                <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-[#f1f5f9] sm:h-12 sm:w-12">
                   {imgUrl ? (
                     <img src={imgUrl} alt={item.name} className="h-full w-full object-cover" />
                   ) : (
@@ -120,11 +166,35 @@ function OrderCard({ order, nama }: { order: ApiOrder; nama: string }) {
           )}
         </div>
       </div>
-      <div className="flex justify-between items-end pt-3 border-t border-[#e1e3e4]">
-        <div>
-          <p className="text-[11px] text-[#475569]">Total Belanja</p>
-          <p className="text-[#003527] font-semibold text-xl">{formatRupiah(order.total)}</p>
+
+      {showCountdown && remaining !== null && (
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#fed7aa] bg-[#fff7ed] px-3 py-2">
+          <p className="text-[11px] font-semibold text-[#c2410c]">Selesaikan pembayaran dalam</p>
+          <p className="font-mono text-sm font-bold tabular-nums text-[#9a3412]">
+            {formatCountdown(remaining)[0]} : {formatCountdown(remaining)[1]} : {formatCountdown(remaining)[2]}
+          </p>
         </div>
+      )}
+
+      <div className="flex flex-wrap items-end justify-between gap-2 border-t border-[#e1e3e4] pt-3">
+        <div className="min-w-0">
+          <p className="text-[11px] text-[#475569]">Total Belanja</p>
+          <p className="break-words text-lg font-semibold text-[#003527] sm:text-xl">{formatRupiah(order.total)}</p>
+        </div>
+        {order.status === "SHIPPED" && (
+          <div className="shrink-0">
+            {order.canConfirmReceived ? (
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#064e3b]/10 px-3 py-1.5 text-xs font-bold text-[#064e3b]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#064e3b]" />
+                Konfirmasi Diterima
+              </span>
+            ) : (
+              <span className="inline-flex items-center rounded-lg bg-[#fff7ed] px-3 py-1.5 text-xs font-semibold text-[#c2410c]">
+                Menunggu konfirmasi
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -143,6 +213,7 @@ export default function OrdersPelangganPage({
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -170,7 +241,15 @@ export default function OrdersPelangganPage({
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [activeTab, page]);
+  }, [activeTab, page, reloadKey]);
+
+  // Polling ringan: saat ada order PENDING, muat ulang list tiap 30 detik
+  // supaya status (lunas/dibatalkan) & countdown selalu segar dari backend.
+  useEffect(() => {
+    if (!orders.some((o) => o.status === "PENDING")) return;
+    const timer = setInterval(() => setReloadKey((k) => k + 1), 30_000);
+    return () => clearInterval(timer);
+  }, [orders]);
 
   const filtered =
     activeTab === "Semua"
@@ -178,9 +257,9 @@ export default function OrdersPelangganPage({
       : orders.filter((o) => statusLabel[o.status] === activeTab);
 
   return (
-    <>
+    <div className="mx-auto w-full max-w-[calc(100vw-3rem)] min-w-0 pb-[calc(1rem+env(safe-area-inset-bottom))] md:max-w-full">
       {/* Page heading */}
-      <div className="mb-10">
+      <div className="mb-8 sm:mb-10">
         <div className="mb-1 flex items-center gap-4">
           {/* Back button — mobile only */}
           <div className="md:hidden">
@@ -205,23 +284,25 @@ export default function OrdersPelangganPage({
       </div>
 
       {/* Tabs */}
-      <div
-        className="flex overflow-x-auto gap-6 border-b border-[#bfc9c3] mb-8"
-        style={{ scrollbarWidth: "none" }}
-      >
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => { setActiveTab(tab); setPage(1); }}
-            className={`pb-3 text-sm font-semibold whitespace-nowrap transition-colors border-b-2 ${
-              activeTab === tab
-                ? "border-[#003527] text-[#003527]"
-                : "border-transparent text-[#707974] hover:text-[#003527]"
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+      <div className="mb-8 max-w-full min-w-0 overflow-hidden border-b border-[#bfc9c3]">
+        <div
+          className="flex max-w-full min-w-0 gap-5 overflow-x-auto sm:gap-6"
+          style={{ scrollbarWidth: "none" }}
+        >
+          {tabs.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => { setActiveTab(tab); setPage(1); }}
+              className={`shrink-0 whitespace-nowrap border-b-2 pb-3 text-sm font-semibold transition-colors ${
+                activeTab === tab
+                  ? "border-[#003527] text-[#003527]"
+                  : "border-transparent text-[#707974] hover:text-[#003527]"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Content */}
@@ -246,19 +327,19 @@ export default function OrdersPelangganPage({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="grid w-full min-w-0 max-w-full grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-2">
           {filtered.map((order) => (
-            <OrderCard key={order.id} order={order} nama={nama} />
+            <OrderCard key={order.id} order={order} nama={nama} onExpired={() => setReloadKey((k) => k + 1)} />
           ))}
         </div>
       )}
 
       {totalPages > 1 && !loading && !error && (
-        <div className="flex items-center justify-between mt-8 pt-4 border-t border-[#e1e3e4]">
+        <div className="mt-8 flex flex-col gap-3 border-t border-[#e1e3e4] pt-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-[#707974]">
             Menampilkan {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} dari {total} pesanan
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
@@ -277,6 +358,6 @@ export default function OrdersPelangganPage({
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

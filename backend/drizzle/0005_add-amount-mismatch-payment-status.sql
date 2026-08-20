@@ -1,0 +1,1 @@
+ALTER TYPE "public"."PaymentStatus" ADD VALUE 'AMOUNT_MISMATCH';

@@ -1,6 +1,6 @@
 // midtrans/midtrans.service.ts
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { createHmac, timingSafeEqual } from 'crypto';
+import { createHash, timingSafeEqual } from 'crypto';
 
 const SANDBOX_BASE = 'https://app.sandbox.midtrans.com/snap/v1/transactions';
 const PROD_BASE = 'https://app.midtrans.com/snap/v1/transactions';
@@ -20,6 +20,9 @@ export interface SnapOrderInput {
   items?: Array<{ id: string; name: string; price: string | number; quantity: number }>;
   user?: { email?: string | null; name?: string | null; phone?: string | null } | null;
   paymentMethod?: string | null;
+  shippingCost?: string | number;
+  discountAmount?: string | number;
+  shippingDiscount?: string | number;
 }
 
 /** Order snapshot minimal yang dibutuhkan Snap — dari Order (dgn items & user) */
@@ -47,13 +50,18 @@ export class MidtransService {
     order: SnapOrderLike,
     channel: string,
     fee = 0,
+    orderIdOverride?: string,
   ): Promise<{ token: string; redirect_url: string }> {
     if (!this.serverKey) {
       throw new BadRequestException('MIDTRANS_SERVER_KEY belum dikonfigurasi');
     }
 
-    const orderId = order.orderNumber ?? order.id.slice(0, 9).toUpperCase();
+    // order_id harus UNIK per transaksi — Midtrans menolak order_id yang pernah
+    // dipakai (termasuk yang belum dibayar). Caller boleh mengirim nilai unik
+    // (mis. orderNumber + suffix percobaan) lewat orderIdOverride.
+    const orderId = orderIdOverride ?? order.orderNumber ?? order.id.slice(0, 9).toUpperCase();
     const grossAmount = Number(order.total) + fee;
+    const shippingCost = Number(order.shippingCost ?? 0);
 
     const itemDetails: SnapItem[] = Array.isArray(order.items)
       ? order.items.map((i) => ({
@@ -65,12 +73,44 @@ export class MidtransService {
       : [];
 
     // Midtrans mensyaratkan sum(item_details) === gross_amount.
-    // Karena gross_amount = total produk + fee, tambahkan fee sebagai item "Biaya Admin".
+    // Karena gross_amount = total produk + ongkir + fee, tambahkan ongkir
+    // sebagai item "Ongkos Kirim" agar jumlahnya konsisten.
+    if (shippingCost > 0) {
+      itemDetails.push({
+        id: 'SHIPPING',
+        name: 'Ongkos Kirim',
+        price: shippingCost,
+        quantity: 1,
+      });
+    }
+
+    // Karena gross_amount = total produk + ongkir + fee, tambahkan fee sebagai item "Biaya Admin".
     if (fee > 0) {
       itemDetails.push({
         id: 'FEE-ADMIN',
         name: 'Biaya Admin Pembayaran',
         price: fee,
+        quantity: 1,
+      });
+    }
+
+    // Voucher: tambahkan diskon produk & ongkir sebagai item bernilai NEGATIF agar
+    // sum(item_details) === gross_amount (subtotal − diskonProduk + ongkir − diskonOngkir + fee).
+    const productDiscount = Number(order.discountAmount ?? 0);
+    const shippingDiscount = Number(order.shippingDiscount ?? 0);
+    if (productDiscount > 0) {
+      itemDetails.push({
+        id: 'DISCOUNT-PRODUK',
+        name: 'Diskon Produk',
+        price: -productDiscount,
+        quantity: 1,
+      });
+    }
+    if (shippingDiscount > 0) {
+      itemDetails.push({
+        id: 'DISCOUNT-ONGKIR',
+        name: 'Diskon Ongkir',
+        price: -shippingDiscount,
         quantity: 1,
       });
     }
@@ -116,8 +156,11 @@ export class MidtransService {
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
+      const midtransMsg = Array.isArray(data.error_messages)
+        ? data.error_messages.join('; ')
+        : data.status_message;
       throw new BadRequestException(
-        `Midtrans gagal membuat pembayaran: ${data.status_message ?? res.statusText}`,
+        `Midtrans gagal membuat pembayaran (${res.status}): ${midtransMsg ?? res.statusText ?? 'respons kosong'}`,
       );
     }
 
@@ -138,13 +181,59 @@ export class MidtransService {
     if (!this.serverKey) return false;
     if (!payload.signature_key || !payload.order_id || !payload.gross_amount) return false;
 
-    // Gunakan server key sesuai environment (Midtrans menghitung signature dgn server key yang sama)
+    // Midtrans: signature_key = SHA512(order_id + status_code + gross_amount + ServerKey)
+    // (hash biasa dari string gabungan, BUKAN HMAC)
     const raw = `${payload.order_id}${payload.status_code}${payload.gross_amount}${this.serverKey}`;
-    const hash = createHmac('sha512', this.serverKey).update(raw).digest('hex');
+    const hash = createHash('sha512').update(raw).digest('hex');
     // Timing-safe comparison — hindari timing attack
     const hashBuf = Buffer.from(hash, 'hex');
     const keyBuf = Buffer.from(payload.signature_key, 'hex');
     if (hashBuf.length !== keyBuf.length) return false;
     return timingSafeEqual(hashBuf, keyBuf);
+  }
+
+  /**
+   * Cek status transaksi ke Midtrans (fallback/recovery).
+   * Dipakai saat webhook telat/gagal atau customer kembali ke halaman
+   * pembayaran sementara database masih PENDING.
+   * GET /{order_id}/status
+   */
+  async getTransactionStatus(orderId: string): Promise<any> {
+    if (!this.serverKey) {
+      throw new BadRequestException('MIDTRANS_SERVER_KEY belum dikonfigurasi');
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
+
+    let res: Response;
+    try {
+      res = await fetch(`${this.baseUrl}/${encodeURIComponent(orderId)}/status`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Basic ${Buffer.from(`${this.serverKey}:`).toString('base64')}`,
+        },
+        signal: controller.signal,
+      });
+    } catch (e: any) {
+      if (e?.name === 'AbortError') {
+        throw new BadRequestException('Midtrans timeout — coba lagi');
+      }
+      throw new BadRequestException('Gagal terhubung ke Midtrans');
+    } finally {
+      clearTimeout(timer);
+    }
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const midtransMsg = Array.isArray(data.error_messages)
+        ? data.error_messages.join('; ')
+        : data.status_message;
+      throw new BadRequestException(
+        `Midtrans gagal mengambil status (${res.status}): ${midtransMsg ?? res.statusText ?? 'respons kosong'}`,
+      );
+    }
+    return data;
   }
 }

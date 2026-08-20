@@ -48,6 +48,13 @@ export default function AddressesContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Halaman asal setelah simpan alamat (mis. kembali ke halaman pembayaran).
+  // Dibaca dari URL — value mis. "/keranjang?step=payment".
+  const [from] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return new URLSearchParams(window.location.search).get("from");
+  });
+
   // Form
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -124,6 +131,16 @@ export default function AddressesContent() {
           Array.isArray(data.message) ? data.message.join(", ") : data.message ?? "Gagal menyimpan alamat"
         );
       }
+
+      // Setelah berhasil menambah alamat dari halaman lain (mis. checkout),
+      // otomatis kembali + pilih alamat baru itu (selectedAddressId = alamat baru).
+      if (from && !editingId) {
+        const createdId = (data as { id?: string })?.id ?? "";
+        const sep = from.includes("?") ? "&" : "?";
+        window.location.href = `${from}${sep}addr=${encodeURIComponent(createdId)}`;
+        return;
+      }
+
       setFormOpen(false);
       setEditingId(null);
       setForm(emptyForm);

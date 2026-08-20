@@ -3,6 +3,7 @@ import { getHeroDataFromBackend } from "@/lib/hero-store";
 import { getHomepageSections } from "@/lib/homepage-settings";
 import { HeroSkeleton, PromoSkeleton } from "./components/Skeletons";
 import PromoSection from "./components/PromoSection";
+import PromoBanner from "./components/PromoBanner";
 import ProductSection from "./components/ProductSection";
 import JasaSection from "./components/JasaSection";
 import SewaSection from "./components/SewaSection";
@@ -33,9 +34,14 @@ async function MainContent() {
 
       <main className="flex w-full flex-col gap-14 px-4 md:px-8">
         {sections.showPromo && (
-          <Suspense fallback={<PromoSkeleton />}>
-            <PromoSection />
-          </Suspense>
+          <>
+            <Suspense fallback={<PromoSkeleton />}>
+              <PromoBanner />
+            </Suspense>
+            <Suspense fallback={<PromoSkeleton />}>
+              <PromoSection />
+            </Suspense>
+          </>
         )}
 
         {/* Keunggulan & Grid Kategori Produk (di atas Produk Populer) */}

@@ -1,14 +1,17 @@
-import { pgTable, uniqueIndex, text, timestamp, foreignKey, numeric, integer, boolean, serial, index, varchar, doublePrecision, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, uniqueIndex, text, timestamp, foreignKey, numeric, integer, boolean, serial, index, varchar, doublePrecision, pgEnum, jsonb } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const complaintStatus = pgEnum("ComplaintStatus", ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'])
-export const orderStatus = pgEnum("OrderStatus", ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED'])
+export const orderStatus = pgEnum("OrderStatus", ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED', 'EXPIRED'])
 export const rentalStatus = pgEnum("RentalStatus", ['PENDING', 'ACTIVE', 'RETURNED', 'CANCELLED'])
 export const role = pgEnum("Role", ['CUSTOMER', 'MITRA', 'ADMIN'])
 export const ticketCategory = pgEnum("TicketCategory", ['PEMBELIAN', 'PENGIRIMAN', 'LAINNYA'])
 export const ticketPriority = pgEnum("TicketPriority", ['URGENT', 'SEDANG', 'LOW'])
 export const ticketStatus = pgEnum("TicketStatus", ['OPEN', 'RESOLVED', 'CLOSED'])
 export const voucherType = pgEnum("VoucherType", ['PERCENTAGE', 'FIXED'])
+export const voucherCategory = pgEnum("VoucherCategory", ['DISCOUNT', 'SHIPPING'])
+export const paymentStatus = pgEnum("PaymentStatus", ['PENDING', 'PAID', 'FAILED', 'EXPIRED', 'CANCELLED', 'REFUNDED', 'PARTIALLY_REFUNDED', 'AMOUNT_MISMATCH'])
+export const promoStatus = pgEnum("PromoStatus", ['SCHEDULED', 'ACTIVE', 'EXPIRED', 'DISABLED'])
 
 
 export const systemSettings = pgTable("system_settings", {
@@ -154,6 +157,68 @@ export const products = pgTable("products", {
 			foreignColumns: [categories.id],
 			name: "products_categoryId_fkey"
 		}).onUpdate("cascade").onDelete("set null"),
+]);
+
+export const productPromos = pgTable("product_promos", {
+	id: text().primaryKey().notNull(),
+	productId: text().notNull(),
+	title: text().notNull(),
+	subtitle: text(),
+	bannerImage: text(),
+	bannerBg: text().default('#064e3b').notNull(),
+	promoPrice: numeric({ precision: 12, scale: 2 }).notNull(),
+	discountPercent: numeric({ precision: 5, scale: 2 }).default('0').notNull(),
+	status: promoStatus().default('ACTIVE').notNull(),
+	quota: integer(),
+	soldCount: integer().default(0).notNull(),
+	startDate: timestamp({ precision: 3, mode: 'date' }).notNull(),
+	endDate: timestamp({ precision: 3, mode: 'date' }).notNull(),
+	createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'date' }).$defaultFn(() => new Date()).$onUpdate(() => new Date()).notNull(),
+}, (table) => [
+	index("product_promos_productId_idx").using("btree", table.productId.asc().nullsLast().op("text_ops")),
+	index("product_promos_status_idx").using("btree", table.status.asc().nullsLast()),
+	foreignKey({
+			columns: [table.productId],
+			foreignColumns: [products.id],
+			name: "product_promos_productId_fkey"
+		}).onUpdate("cascade").onDelete("cascade"),
+]);
+
+export const productReviews = pgTable("product_reviews", {
+	id: text().primaryKey().notNull(),
+	productId: text().notNull(),
+	userId: text().notNull(),
+	orderId: text().notNull(),
+	orderItemId: text().notNull(),
+	rating: integer().notNull(),
+	comment: text(),
+	createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'date' }).$defaultFn(() => new Date()).$onUpdate(() => new Date()).notNull(),
+}, (table) => [
+	uniqueIndex("product_reviews_orderItemId_key").using("btree", table.orderItemId.asc().nullsLast().op("text_ops")),
+	index("product_reviews_productId_idx").using("btree", table.productId.asc().nullsLast().op("text_ops")),
+	index("product_reviews_userId_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	foreignKey({
+			columns: [table.productId],
+			foreignColumns: [products.id],
+			name: "product_reviews_productId_fkey"
+		}).onUpdate("cascade").onDelete("cascade"),
+	foreignKey({
+			columns: [table.userId],
+			foreignColumns: [users.id],
+			name: "product_reviews_userId_fkey"
+		}).onUpdate("cascade").onDelete("restrict"),
+	foreignKey({
+			columns: [table.orderId],
+			foreignColumns: [orders.id],
+			name: "product_reviews_orderId_fkey"
+		}).onUpdate("cascade").onDelete("cascade"),
+	foreignKey({
+			columns: [table.orderItemId],
+			foreignColumns: [orderItems.id],
+			name: "product_reviews_orderItemId_fkey"
+		}).onUpdate("cascade").onDelete("cascade"),
 ]);
 
 export const categories = pgTable("categories", {
@@ -319,10 +384,37 @@ export const orderItems = pgTable("order_items", {
 		}).onUpdate("cascade").onDelete("set null"),
 ]);
 
+// Voucher yang dipakai pada sebuah order (maksimal 1 DISCOUNT + 1 SHIPPING).
+// Menyimpan snapshot voucher agar histori order tetap benar walau voucher diubah.
+export const orderVouchers = pgTable("order_vouchers", {
+	id: text().primaryKey().notNull(),
+	orderId: text().notNull(),
+	voucherId: text().notNull(),
+	voucherCode: text().notNull(),
+	voucherCategory: voucherCategory().notNull(),
+	discountAmount: numeric({ precision: 12, scale:  2 }).default('0').notNull(),
+	createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+}, (table) => [
+	index("order_vouchers_orderId_idx").using("btree", table.orderId.asc().nullsLast().op("text_ops")),
+	foreignKey({
+			columns: [table.orderId],
+			foreignColumns: [orders.id],
+			name: "order_vouchers_orderId_fkey"
+		}).onUpdate("cascade").onDelete("cascade"),
+	foreignKey({
+			columns: [table.voucherId],
+			foreignColumns: [vouchers.id],
+			name: "order_vouchers_voucherId_fkey"
+		}).onUpdate("cascade").onDelete("restrict"),
+]);
+
 export const vouchers = pgTable("vouchers", {
 	id: text().primaryKey().notNull(),
 	code: text().notNull(),
+	name: text(),
 	description: text(),
+	// Kategori voucher: DISCOUNT → potongan harga barang, SHIPPING → potongan ongkir
+	category: voucherCategory().default('DISCOUNT').notNull(),
 	type: voucherType().default('PERCENTAGE').notNull(),
 	value: numeric({ precision: 10, scale:  2 }).notNull(),
 	minPurchase: numeric({ precision: 12, scale:  2 }).default('0').notNull(),
@@ -448,6 +540,7 @@ export const orders = pgTable("orders", {
 	status: orderStatus().default('PENDING').notNull(),
 	subtotal: numeric({ precision: 12, scale:  2 }).notNull(),
 	discountAmount: numeric({ precision: 12, scale:  2 }).default('0').notNull(),
+	shippingDiscount: numeric({ precision: 12, scale:  2 }).default('0').notNull(),
 	shippingCost: numeric({ precision: 12, scale:  2 }).default('0').notNull(),
 	total: numeric({ precision: 12, scale:  2 }).notNull(),
 	notes: text(),
@@ -459,12 +552,31 @@ export const orders = pgTable("orders", {
 	orderNumber: text(),
 	shippingCourier: text(),
 	trackingNumber: text(),
+	shippedAt: timestamp({ precision: 3, mode: 'date' }),
+	receivedProof: text(),
+	receivedAt: timestamp({ precision: 3, mode: 'date' }),
+	completedAt: timestamp({ precision: 3, mode: 'date' }),
+	// ── Snapshot alamat saat checkout (agar order lama tidak berubah walau alamat diedit) ──
+	shippingName: text(),
+	shippingPhone: text(),
+	shippingAddress: text(),
+	shippingProvince: text(),
+	shippingCity: text(),
+	shippingDistrict: text(),
+	shippingPostalCode: text(),
+	// ── Pilihan pengiriman (RajaOngkir) yang dipilih customer saat checkout ──
+	shippingCourierCode: text(),
+	shippingService: text(),
+	shippingServiceDescription: text(),
+	shippingEtd: text(),
 	midtransTransactionId: text(),
 	snapToken: text(),
 	paymentFee: numeric({ precision: 12, scale:  2 }),
+	idempotencyKey: text(),
 }, (table) => [
 	uniqueIndex("orders_orderNumber_key").using("btree", table.orderNumber.asc().nullsLast().op("text_ops")),
 	uniqueIndex("orders_voucherUseId_key").using("btree", table.voucherUseId.asc().nullsLast().op("text_ops")),
+	uniqueIndex("orders_idempotencyKey_key").using("btree", table.idempotencyKey.asc().nullsLast().op("text_ops")).where(sql`${table.idempotencyKey} IS NOT NULL`),
 	index("orders_userId_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
 	index("orders_status_idx").using("btree", table.status.asc().nullsLast()),
 	foreignKey({
@@ -482,4 +594,52 @@ export const orders = pgTable("orders", {
 			foreignColumns: [voucherUses.id],
 			name: "orders_voucherUseId_fkey"
 		}).onUpdate("cascade").onDelete("set null"),
+]);
+
+export const payments = pgTable("payments", {
+	id: text().primaryKey().notNull(),
+	orderId: text().notNull(),
+	provider: text().default('MIDTRANS').notNull(),
+	transactionId: text(),
+	midtransOrderId: text().notNull(),
+	paymentType: text(),
+	status: paymentStatus().default('PENDING').notNull(),
+	fraudStatus: text(),
+	grossAmount: numeric({ precision: 12, scale:  2 }).notNull(),
+	signatureKey: text(),
+	settlementTime: timestamp({ precision: 3, mode: 'date' }),
+	expiredAt: timestamp({ precision: 3, mode: 'date' }),
+	rawResponse: jsonb(),
+	createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'date' }).$defaultFn(() => new Date()).$onUpdate(() => new Date()).notNull(),
+}, (table) => [
+	index("payments_orderId_idx").using("btree", table.orderId.asc().nullsLast().op("text_ops")),
+	// Satu transaksi Midtrans hanya boleh punya satu payment row (idempotency webhook)
+	uniqueIndex("payments_transactionId_key").using("btree", table.transactionId.asc().nullsLast().op("text_ops")).where(sql`${table.transactionId} IS NOT NULL`),
+	foreignKey({
+			columns: [table.orderId],
+			foreignColumns: [orders.id],
+			name: "payments_orderId_fkey"
+		}).onUpdate("cascade").onDelete("cascade"),
+]);
+
+export const paymentWebhookLogs = pgTable("payment_webhook_logs", {
+	id: text().primaryKey().notNull(),
+	provider: text().default('MIDTRANS').notNull(),
+	eventType: text(),
+	orderId: text(),
+	transactionId: text(),
+	transactionStatus: text(),
+	dedupKey: text(),
+	payload: jsonb(),
+	signature: text(),
+	processed: boolean().default(false).notNull(),
+	processedAt: timestamp({ precision: 3, mode: 'date' }),
+	error: text(),
+	createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+}, (table) => [
+	index("payment_webhook_logs_orderId_idx").using("btree", table.orderId.asc().nullsLast().op("text_ops")),
+	index("payment_webhook_logs_transactionId_idx").using("btree", table.transactionId.asc().nullsLast().op("text_ops")),
+	// Cegah webhook yang sama (transaksi + status) diproses/dilog lebih dari sekali
+	uniqueIndex("payment_webhook_logs_dedup_key").using("btree", table.dedupKey.asc().nullsLast().op("text_ops")),
 ]);

@@ -1,9 +1,25 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService, genId } from '../database/database.service';
-import { products, productTypes } from '../../db/schema';
-import { eq, and, or, ilike, gte, lte, desc } from 'drizzle-orm';
+import { products, productTypes, productReviews } from '../../db/schema';
+import { eq, and, or, ilike, gte, lte, desc, sql } from 'drizzle-orm';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { buildPromo, pickActivePromo } from '../promos/promo.helper';
+
+const PROMO_COLUMNS = {
+  id: true,
+  title: true,
+  subtitle: true,
+  bannerImage: true,
+  bannerBg: true,
+  promoPrice: true,
+  discountPercent: true,
+  status: true,
+  quota: true,
+  soldCount: true,
+  startDate: true,
+  endDate: true,
+} as const;
 
 @Injectable()
 export class ProductsService {
@@ -83,7 +99,10 @@ export class ProductsService {
               totalSold: true,
               images: true,
             },
-            with: { category: { columns: { id: true, name: true, slug: true } } },
+            with: {
+              category: { columns: { id: true, name: true, slug: true } },
+              promos: { columns: PROMO_COLUMNS },
+            },
             orderBy: desc(products.createdAt),
             limit,
             offset: skip,
@@ -93,6 +112,7 @@ export class ProductsService {
             with: {
               category: { columns: { id: true, name: true, slug: true } },
               types: { where: eq(productTypes.isActive, true) },
+              promos: { columns: PROMO_COLUMNS },
             },
             orderBy: desc(products.createdAt),
             limit,
@@ -101,13 +121,23 @@ export class ProductsService {
       this.database.db.$count(products, where),
     ]);
 
-    // Kartu list hanya butuh gambar pertama — kirim maksimal 1 saja.
-    const shaped = query?.light
-      ? data.map((p: any) => ({
-          ...p,
-          images: Array.isArray(p.images) ? p.images.slice(0, 1) : [],
-        }))
-      : data;
+    const now = new Date();
+    // Kartu list hanya butuh gambar pertama — kirim maksimal 1 saja (light mode).
+    const shaped = data.map((p: any) => {
+      const promo = pickActivePromo(p.promos ?? [], now);
+      const { promos, ...rest } = p;
+      return {
+        ...rest,
+        images: query?.light
+          ? Array.isArray(p.images)
+            ? p.images.slice(0, 1)
+            : []
+          : Array.isArray(p.images)
+            ? p.images
+            : [],
+        promo: promo ? buildPromo({ ...promo, normalPrice: Number(p.price ?? 0) }, now) : null,
+      };
+    });
 
     return {
       data: shaped,
@@ -121,10 +151,11 @@ export class ProductsService {
       with: {
         category: true,
         types: { where: eq(productTypes.isActive, true) },
+        promos: { columns: PROMO_COLUMNS },
       },
     });
     if (!product) throw new NotFoundException('Produk tidak ditemukan');
-    return product;
+    return this.attachPromo(product as any);
   }
 
   async findBySlug(slug: string) {
@@ -133,10 +164,81 @@ export class ProductsService {
       with: {
         category: true,
         types: { where: eq(productTypes.isActive, true) },
+        promos: { columns: PROMO_COLUMNS },
+        reviews: {
+          with: {
+            user: { columns: { id: true, name: true, avatar: true } },
+            order: { columns: { receivedProof: true } },
+          },
+          orderBy: (reviews: any, { desc }: any) => [desc(reviews.createdAt)],
+        },
       },
     });
     if (!product) throw new NotFoundException('Produk tidak ditemukan');
-    return product;
+    const shaped = this.attachPromo(product as any);
+    if (Array.isArray(shaped.reviews)) {
+      shaped.reviews = shaped.reviews.map((r: any) => ({
+        id: r.id,
+        productId: r.productId,
+        userId: r.userId,
+        orderId: r.orderId,
+        orderItemId: r.orderItemId,
+        rating: r.rating,
+        comment: r.comment,
+        userName: r.user?.name ?? 'Pelanggan',
+        userAvatar: r.user?.avatar ?? null,
+        image: r.order?.receivedProof ?? null,
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+      }));
+    }
+    return shaped;
+  }
+
+  /** Sisipkan objek `promo` (harga promo aktif) ke payload produk */
+  private attachPromo(p: any) {
+    const { promos, ...rest } = p;
+    const promo = pickActivePromo(promos ?? []);
+    return {
+      ...rest,
+      promo: promo ? buildPromo({ ...promo, normalPrice: Number(p.price ?? 0) }) : null,
+    };
+  }
+
+  async findReviews(productId: string) {
+    const [avgRow] = await this.database.db
+      .select({ avg: sql<string>`avg(${productReviews.rating})`, count: sql<string>`count(*)` })
+      .from(productReviews)
+      .where(eq(productReviews.productId, productId));
+
+    const reviews = await this.database.db.query.productReviews.findMany({
+      where: eq(productReviews.productId, productId),
+      with: {
+        user: { columns: { id: true, name: true, avatar: true } },
+        order: { columns: { receivedProof: true } },
+      },
+      orderBy: (r: any, { desc }: any) => [desc(r.createdAt)],
+    });
+
+    const breakdown: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    for (const r of reviews) {
+      breakdown[r.rating] = (breakdown[r.rating] ?? 0) + 1;
+    }
+
+    return {
+      average: Number(avgRow?.avg ?? 0),
+      total: Number(avgRow?.count ?? 0),
+      breakdown,
+      reviews: reviews.map((r) => ({
+        id: r.id,
+        rating: r.rating,
+        comment: r.comment,
+        userName: r.user?.name ?? 'Pelanggan',
+        userAvatar: r.user?.avatar ?? null,
+        image: r.order?.receivedProof ?? null,
+        createdAt: r.createdAt,
+      })),
+    };
   }
 
   async update(id: string, dto: UpdateProductDto) {

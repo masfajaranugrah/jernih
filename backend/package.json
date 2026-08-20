@@ -17,7 +17,8 @@
     "db:seed": "ts-node db/seeds/seed.ts",
     "db:seed:admin": "ts-node db/seeds/seed-admin.ts",
     "db:seed:products": "ts-node db/seeds/seed-products.ts",
-    "db:seed:jasa-sewa": "ts-node db/seeds/seed-jasa-sewa.ts"
+    "db:seed:jasa-sewa": "ts-node db/seeds/seed-jasa-sewa.ts",
+    "db:seed:vouchers": "ts-node db/seeds/seed-vouchers.ts"
   },
   "dependencies": {
     "@nestjs/common": "10.4.15",

@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { MitraModule } from './mitra/mitra.module';
 import { ProductsModule } from './products/products.module';
+import { PromosModule } from './promos/promos.module';
 import { ServicesModule } from './services/services.module';
 import { RentalsModule } from './rentals/rentals.module';
 import { OrdersModule } from './orders/orders.module';
@@ -21,6 +22,8 @@ import { SettingsModule } from './settings/settings.module';
 import { CategoriesModule } from './categories/categories.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 import { MidtransModule } from './midtrans/midtrans.module';
+import { PaymentsModule } from './payments/payments.module';
+import { ShippingModule } from './shipping/shipping.module';
 import { CsrfOriginMiddleware } from './common/middleware/csrf-origin.middleware';
 
 @Module({
@@ -36,6 +39,7 @@ import { CsrfOriginMiddleware } from './common/middleware/csrf-origin.middleware
     UsersModule,
     MitraModule,
     ProductsModule,
+    PromosModule,
     ServicesModule,
     RentalsModule,
     OrdersModule,
@@ -50,6 +54,8 @@ import { CsrfOriginMiddleware } from './common/middleware/csrf-origin.middleware
     CategoriesModule,
     WishlistModule,
     MidtransModule,
+    PaymentsModule,
+    ShippingModule,
   ],
   providers: [
     {
@@ -60,6 +66,15 @@ import { CsrfOriginMiddleware } from './common/middleware/csrf-origin.middleware
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(CsrfOriginMiddleware).forRoutes('*');
+    // Exclude webhook Midtrans — dipanggil server Midtrans (tanpa Origin/Referer
+    // dari domain kita), jadi tidak boleh dihambat middleware anti-CSRF.
+    consumer
+      .apply(CsrfOriginMiddleware)
+      .exclude(
+        'midtrans/notification',
+        'payments/midtrans/notification',
+        'payments/midtrans/webhook',
+      )
+      .forRoutes('*');
   }
 }

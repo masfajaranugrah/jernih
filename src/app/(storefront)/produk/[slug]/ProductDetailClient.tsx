@@ -7,6 +7,41 @@ import { useRouter } from "next/navigation";
 import { addToCart, emitWishlistChange } from "@/lib/cart";
 import { getToken } from "@/lib/auth";
 import { useAuth } from "@/lib/auth-context";
+import { resolveImageUrl } from "@/lib/image-url";
+
+function maskName(name: string): string {
+  return (name || "")
+    .trim()
+    .split(/\s+/)
+    .map((word) => {
+      if (word.length <= 2) return word;
+      return word.charAt(0) + "*".repeat(word.length - 2) + word.charAt(word.length - 1);
+    })
+    .join(" ");
+}
+
+function PromoCountdown({ endDate }: { endDate: string }) {
+  const [left, setLeft] = useState(() => new Date(endDate).getTime() - Date.now());
+  useEffect(() => {
+    const t = setInterval(() => {
+      setLeft(new Date(endDate).getTime() - Date.now());
+    }, 1000);
+    return () => clearInterval(t);
+  }, [endDate]);
+  const diff = Math.max(0, left);
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return (
+    <span className="inline-flex items-center gap-0.5 tabular-nums" title="Sisa waktu promo">
+      <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7z" />
+      </svg>
+      {pad(h)}:{pad(m)}:{pad(s)}
+    </span>
+  );
+}
 
 type ProductType = {
   id: string;
@@ -14,6 +49,24 @@ type ProductType = {
   price: string;
   oldPrice: string | null;
   stock: number;
+};
+
+type ProductReview = {
+  id: string;
+  rating: number;
+  comment: string | null;
+  userName: string;
+  userAvatar: string | null;
+  image?: string | null;
+  createdAt: string;
+};
+
+type ProductPromo = {
+  title: string;
+  promoPrice: string;
+  discountPercent: number;
+  endsAt: string;
+  quotaLeft: number | null;
 };
 
 type Product = {
@@ -33,6 +86,8 @@ type Product = {
   specs?: Record<string, string> | null;
   gallery: string[];
   types?: ProductType[];
+  reviews?: ProductReview[];
+  promo?: ProductPromo | null;
 };
 
 export default function ProductDetailClient({ product }: { product: Product }) {
@@ -58,10 +113,22 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     return m ? Number(m[0]) : 10;
   })();
 
-  const priceNum = Number(displayPrice.replace(/[^0-9]/g, ""));
-  const oldPriceNum = displayOldPrice ? Number(String(displayOldPrice).replace(/[^0-9]/g, "")) : 0;
+  // Harga promo berlaku untuk produk tanpa varian (harga tunggal)
+  const promoActive = !hasTypes && product.promo ? product.promo : null;
+  const priceNum = promoActive
+    ? Number(promoActive.promoPrice)
+    : Number(displayPrice.replace(/[^0-9]/g, ""));
+  const oldPriceNum = promoActive
+    ? Number(product.price.replace(/[^0-9]/g, ""))
+    : displayOldPrice
+      ? Number(String(displayOldPrice).replace(/[^0-9]/g, ""))
+      : 0;
+  const discountPercent = promoActive
+    ? promoActive.discountPercent
+    : oldPriceNum > priceNum
+      ? Math.round(((oldPriceNum - priceNum) / oldPriceNum) * 100)
+      : 0;
   const discountAmount = oldPriceNum > priceNum ? oldPriceNum - priceNum : 0;
-  const discountPercent = oldPriceNum > priceNum ? Math.round(((oldPriceNum - priceNum) / oldPriceNum) * 100) : 0;
   const subtotalNum = priceNum * quantity;
   const oldSubtotalNum = oldPriceNum * quantity;
 
@@ -139,6 +206,13 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       price: priceNum,
       quantity,
       typeName: activeType?.name ?? null,
+      ...(promoActive
+        ? {
+            basePrice: oldPriceNum > priceNum ? oldPriceNum : priceNum,
+            promoEndsAt: promoActive.endsAt,
+            promoTitle: promoActive.title,
+          }
+        : {}),
     });
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
@@ -158,8 +232,15 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       price: priceNum,
       quantity,
       typeName: activeType?.name ?? null,
+      ...(promoActive
+        ? {
+            basePrice: oldPriceNum > priceNum ? oldPriceNum : priceNum,
+            promoEndsAt: promoActive.endsAt,
+            promoTitle: promoActive.title,
+          }
+        : {}),
     });
-    router.push("/keranjang");
+    router.push("/keranjang?step=payment");
   }
 
   /** Tanya produk via chat in-app — bawa context produk ke halaman chat */
@@ -189,6 +270,29 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         customSpecsList.push([k, String(v).trim()]);
       }
     });
+  }
+
+  // Rating & ulasan produk (dari backend)
+  const reviews = Array.isArray(product.reviews) ? product.reviews : [];
+  const avgRating =
+    reviews.length > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+      : 0;
+  const breakdown = [5, 4, 3, 2, 1].map((star) => ({
+    star,
+    count: reviews.filter((r) => r.rating === star).length,
+  }));
+  function formatReviewDate(iso: string) {
+    try {
+      return new Date(iso).toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "Asia/Jakarta",
+      });
+    } catch {
+      return "";
+    }
   }
 
   return (
@@ -260,18 +364,24 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             {/* Baris Rating & Status Stok (Match Screenshot 1 & 2) */}
             <div className="flex items-center justify-between sm:justify-start gap-2 flex-wrap text-xs sm:text-sm">
               <div className="flex items-center gap-1.5">
-                <span className="font-bold text-slate-900">(4.9)</span>
-                
+                <span className="font-bold text-slate-900">
+                  {avgRating > 0 ? avgRating.toFixed(1) : "(Belum ada rating)"}
+                </span>
+
                 {/* 5 Bintang Emas */}
                 <div className="flex items-center gap-0.5 text-amber-400">
                   {[...Array(5)].map((_, i) => (
-                    <svg key={i} className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <svg
+                      key={i}
+                      className={`w-4 h-4 ${i < Math.round(avgRating) ? "fill-current" : "fill-slate-200"}`}
+                      viewBox="0 0 24 24"
+                    >
                       <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
                     </svg>
                   ))}
                 </div>
 
-                <span className="text-slate-500 font-medium">(0 review produk)</span>
+                <span className="text-slate-500 font-medium">({reviews.length} ulasan)</span>
               </div>
 
               {/* Status In Stock / Stok Tersedia (Match Screenshot 2) */}
@@ -285,9 +395,20 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
             {/* Harga Produk & Diskon Badge Pill (Match Screenshot 2) */}
             <div className="pt-1">
+              {promoActive && (
+                <div className="mb-2 inline-flex max-w-full items-center gap-2 rounded-full bg-gradient-to-r from-[#064e3b] to-[#0d7a5f] px-3 py-1.5 text-xs font-bold text-white shadow-sm">
+                  <span className="shrink-0">🔥 {promoActive.title}</span>
+                  {promoActive.quotaLeft !== null && (
+                    <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold">
+                      Sisa {promoActive.quotaLeft}
+                    </span>
+                  )}
+                  <PromoCountdown endDate={promoActive.endsAt} />
+                </div>
+              )}
               <div className="flex items-baseline gap-2.5 flex-wrap">
                 <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                  {displayPrice}
+                  {formatPrice(priceNum)}
                 </span>
 
                 {oldPriceNum > priceNum && oldPriceNum > 0 && (
@@ -518,6 +639,98 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* ── ULASAN PELANGGAN ── */}
+            <div className="pt-4 border-t border-slate-200 mt-2">
+              <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-slate-900 mb-3">
+                Ulasan Pelanggan
+              </h3>
+
+              {reviews.length === 0 ? (
+                <p className="text-xs sm:text-sm text-slate-500">
+                  Belum ada ulasan untuk produk ini. Jadilah yang pertama memberi ulasan setelah pesanan selesai.
+                </p>
+              ) : (
+                <>
+                  {/* Ringkasan rating */}
+                  <div className="flex items-center gap-4 flex-wrap mb-4">
+                    <div className="text-center">
+                      <p className="text-3xl font-black text-slate-900">{avgRating.toFixed(1)}</p>
+                      <div className="flex items-center gap-0.5 text-amber-400 mt-0.5">
+                        {[...Array(5)].map((_, i) => (
+                          <svg
+                            key={i}
+                            className={`w-3.5 h-3.5 ${i < Math.round(avgRating) ? "fill-current" : "fill-slate-200"}`}
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                          </svg>
+                        ))}
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-0.5">{reviews.length} ulasan</p>
+                    </div>
+
+                    {/* Breakdown bar */}
+                    <div className="flex-1 min-w-[140px] space-y-1">
+                      {breakdown.map(({ star, count }) => (
+                        <div key={star} className="flex items-center gap-2 text-[11px] text-slate-500">
+                          <span className="w-3 shrink-0 text-right">{star}</span>
+                          <div className="flex-1 h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-amber-400"
+                              style={{ width: `${reviews.length ? (count / reviews.length) * 100 : 0}%` }}
+                            />
+                          </div>
+                          <span className="w-5 shrink-0 text-right">{count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Daftar ulasan */}
+                  <div className="space-y-4">
+                    {reviews.map((review) => (
+                      <div key={review.id} className="border border-slate-200/80 bg-white rounded-xl p-3.5 shadow-2xs">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="h-8 w-8 shrink-0 rounded-full bg-[#5E3CF6]/10 text-[#5E3CF6] flex items-center justify-center text-sm font-black">
+                              {(review.userName ?? "P").charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs sm:text-sm font-bold text-slate-900 truncate">{maskName(review.userName)}</p>
+                              <div className="flex items-center gap-0.5 text-amber-400">
+                                {[...Array(5)].map((_, i) => (
+                                  <svg
+                                    key={i}
+                                    className={`w-3 h-3 ${i < review.rating ? "fill-current" : "fill-slate-200"}`}
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                                  </svg>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                          <span className="text-[11px] text-slate-400">{formatReviewDate(review.createdAt)}</span>
+                        </div>
+                        {review.comment && (
+                          <p className="mt-2 text-xs sm:text-sm text-slate-700 leading-relaxed break-words">{review.comment}</p>
+                        )}
+                        {review.image && (
+                          <div className="mt-2.5">
+                            <img
+                              src={resolveImageUrl(review.image)}
+                              alt="Foto bukti penerimaan"
+                              className="max-h-52 w-full rounded-lg border border-slate-200 object-contain bg-slate-50"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
 
           </div>

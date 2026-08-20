@@ -44,6 +44,12 @@ export class ProductsController {
     return this.productsService.findBySlug(slug);
   }
 
+  /** GET /api/products/:id/reviews — ulasan + rating produk */
+  @Get(':id/reviews')
+  findReviews(@Param('id') id: string) {
+    return this.productsService.findReviews(id);
+  }
+
   /** GET /api/products/:id */
   @Get(':id')
   findOne(@Param('id') id: string) {

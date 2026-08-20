@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useMemo, useEffect, useRef } from "react";
-import { formatRupiah, type ApiProduct } from "@/lib/api";
+import { formatRupiah, getProductPricing, type ApiProduct } from "@/lib/api";
 import { emitWishlistChange } from "@/lib/cart";
 import { resolveImageUrl } from "@/lib/image-url";
 
@@ -51,6 +51,12 @@ function getBadgeText(product: ApiProduct, idx?: number): string | null {
     if (m) return m[1].trim().toUpperCase();
   }
 
+  if (product.promo && product.promo.status === "active") {
+    const pct = product.promo.discountPercent;
+    if (pct > 0) return `-${Math.round(pct)}%`;
+    return "PROMO";
+  }
+
   const oldP = product.oldPrice ? Number(product.oldPrice) : 0;
   const curP = Number(product.price);
   const discountPercent = oldP > curP ? Math.round(((oldP - curP) / oldP) * 100) : 0;
@@ -78,6 +84,7 @@ function ProductCard({
 }) {
   const badgeText = getBadgeText(product, index);
   const ratingValue = (product.rating && product.rating > 0) ? product.rating.toFixed(1) : (4.5 + ((index || 0) % 5) * 0.1).toFixed(1);
+  const { basePrice, displayPrice, hasDiscount } = getProductPricing(product);
 
   return (
     <div className="group relative flex flex-col rounded-[28px] border border-neutral-100 bg-white p-3.5 shadow-xs sm:rounded-[32px] sm:p-4 hover:shadow-md transition-all h-auto">
@@ -132,11 +139,11 @@ function ProductCard({
 
           <div className="mt-1 flex flex-col items-start">
             <span className="font-extrabold text-sm sm:text-base text-neutral-900">
-              {formatRupiah(product.price)}
+              {formatRupiah(displayPrice)}
             </span>
-            {product.oldPrice && Number(product.oldPrice) > Number(product.price) && (
+            {hasDiscount && (
               <span className="text-xs text-neutral-400 line-through">
-                {formatRupiah(product.oldPrice)}
+                {formatRupiah(basePrice)}
               </span>
             )}
           </div>

@@ -27,6 +27,13 @@ export async function GET(req: NextRequest) {
 
   const data = await res.json();
 
+  if (res.status === 401) {
+    // Token basi/invalid — hapus cookie supaya request berikutnya berhenti (hindari 401 berulang)
+    const cleared = NextResponse.json(data, { status: 401 });
+    cleared.cookies.set("mh_token", "", { path: "/", maxAge: 0 });
+    return cleared;
+  }
+
   if (!res.ok) {
     return bffResponse(data, res.status);
   }

@@ -94,6 +94,25 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       oldPrice: t.oldPrice ? formatRupiah(t.oldPrice) : null,
       stock: t.stock,
     })),
+    reviews: (apiProduct.reviews ?? []).map((r) => ({
+      id: r.id,
+      rating: r.rating,
+      comment: r.comment,
+      userName: r.userName,
+      userAvatar: r.userAvatar,
+      image: r.image ?? null,
+      createdAt: r.createdAt,
+    })),
+    promo:
+      apiProduct.promo && apiProduct.promo.status === "active"
+        ? {
+            title: apiProduct.promo.title,
+            promoPrice: apiProduct.promo.promoPrice,
+            discountPercent: apiProduct.promo.discountPercent,
+            endsAt: apiProduct.promo.endsAt,
+            quotaLeft: apiProduct.promo.quotaLeft,
+          }
+        : null,
   };
 
   return <ProductDetailClient product={product} />;

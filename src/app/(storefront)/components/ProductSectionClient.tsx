@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { formatRupiah, type ApiProduct } from "@/lib/api";
+import { formatRupiah, getProductPricing, type ApiProduct } from "@/lib/api";
 import { emitWishlistChange } from "@/lib/cart";
 import { resolveImageUrl } from "@/lib/image-url";
 
@@ -46,6 +46,12 @@ function getBadgeText(product: ApiProduct, idx?: number): string | null {
     if (m) return m[1].trim().toUpperCase();
   }
 
+  if (product.promo && product.promo.status === "active") {
+    const pct = product.promo.discountPercent;
+    if (pct > 0) return `-${Math.round(pct)}%`;
+    return "PROMO";
+  }
+
   const oldP = product.oldPrice ? Number(product.oldPrice) : 0;
   const curP = Number(product.price);
   const discountPercent = oldP > curP ? Math.round(((oldP - curP) / oldP) * 100) : 0;
@@ -70,6 +76,7 @@ function ProductCard({
 }) {
   if (!product) return null;
   const badgeText = getBadgeText(product, index);
+  const { basePrice, displayPrice, hasDiscount } = getProductPricing(product);
 
   return (
     <Link
@@ -127,11 +134,11 @@ function ProductCard({
         {/* Harga tersusun vertikal: harga jual di atas, harga coret di bawah */}
         <div className="mt-1.5 flex flex-col items-start">
           <span className="font-bold text-sm sm:text-base text-neutral-900">
-            {formatRupiah(product.price)}
+            {formatRupiah(displayPrice)}
           </span>
-          {product.oldPrice && Number(product.oldPrice) > Number(product.price) && (
+          {hasDiscount && (
             <span className="text-xs sm:text-[13px] text-neutral-400 line-through">
-              {formatRupiah(product.oldPrice)}
+              {formatRupiah(basePrice)}
             </span>
           )}
         </div>

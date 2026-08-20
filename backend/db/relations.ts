@@ -4,12 +4,15 @@ import {
   mitras,
   categories,
   products,
+  productReviews,
+  productPromos,
   productTypes,
   services,
   rentalItems,
   rentals,
   orders,
   orderItems,
+  orderVouchers,
   addresses,
   vouchers,
   voucherUses,
@@ -20,6 +23,8 @@ import {
   heroBanners,
   wishlists,
   systemSettings,
+  payments,
+  paymentWebhookLogs,
 } from './schema';
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -37,6 +42,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   ticketMessages: many(ticketMessages),
   chatsSent: many(chats, { relationName: 'SentMessages' }),
   chatsRecv: many(chats, { relationName: 'ReceivedMessages' }),
+  productReviews: many(productReviews),
 }));
 
 export const mitrasRelations = relations(mitras, ({ one, many }) => ({
@@ -63,6 +69,34 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   orderItems: many(orderItems),
   wishlists: many(wishlists),
   chats: many(chats),
+  reviews: many(productReviews),
+  promos: many(productPromos),
+}));
+
+export const productPromosRelations = relations(productPromos, ({ one }) => ({
+  product: one(products, {
+    fields: [productPromos.productId],
+    references: [products.id],
+  }),
+}));
+
+export const productReviewsRelations = relations(productReviews, ({ one }) => ({
+  product: one(products, {
+    fields: [productReviews.productId],
+    references: [products.id],
+  }),
+  user: one(users, {
+    fields: [productReviews.userId],
+    references: [users.id],
+  }),
+  order: one(orders, {
+    fields: [productReviews.orderId],
+    references: [orders.id],
+  }),
+  orderItem: one(orderItems, {
+    fields: [productReviews.orderItemId],
+    references: [orderItems.id],
+  }),
 }));
 
 export const productTypesRelations = relations(productTypes, ({ one }) => ({
@@ -118,7 +152,19 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
   }),
   items: many(orderItems),
   complaint: many(complaints),
+  payments: many(payments),
+  orderVouchers: many(orderVouchers),
+  productReviews: many(productReviews),
 }));
+
+export const paymentsRelations = relations(payments, ({ one }) => ({
+  order: one(orders, {
+    fields: [payments.orderId],
+    references: [orders.id],
+  }),
+}));
+
+export const paymentWebhookLogsRelations = relations(paymentWebhookLogs, () => ({}));
 
 export const orderItemsRelations = relations(orderItems, ({ one }) => ({
   order: one(orders, {
@@ -133,6 +179,10 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
     fields: [orderItems.serviceId],
     references: [services.id],
   }),
+  review: one(productReviews, {
+    fields: [orderItems.id],
+    references: [productReviews.orderItemId],
+  }),
 }));
 
 export const addressesRelations = relations(addresses, ({ one, many }) => ({
@@ -145,6 +195,18 @@ export const addressesRelations = relations(addresses, ({ one, many }) => ({
 
 export const vouchersRelations = relations(vouchers, ({ many }) => ({
   uses: many(voucherUses),
+  orderUses: many(orderVouchers),
+}));
+
+export const orderVouchersRelations = relations(orderVouchers, ({ one }) => ({
+  order: one(orders, {
+    fields: [orderVouchers.orderId],
+    references: [orders.id],
+  }),
+  voucher: one(vouchers, {
+    fields: [orderVouchers.voucherId],
+    references: [vouchers.id],
+  }),
 }));
 
 export const voucherUsesRelations = relations(voucherUses, ({ one, many }) => ({

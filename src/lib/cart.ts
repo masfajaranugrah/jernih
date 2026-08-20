@@ -11,6 +11,12 @@ export type CartItem = {
   quantity: number;
   /** Nama tipe/varian jika dipilih */
   typeName?: string | null;
+  /** Harga normal saat item dimasukkan (untuk deteksi promo berakhir) */
+  basePrice?: number;
+  /** Waktu berakhir promo yang dipakai saat add-to-cart */
+  promoEndsAt?: string | null;
+  /** Judul promo yang dipakai saat add-to-cart */
+  promoTitle?: string | null;
 };
 
 const CART_KEY = "mh_cart";
@@ -42,6 +48,11 @@ export function getCart(): CartItem[] {
 function saveCart(items: CartItem[]) {
   localStorage.setItem(CART_KEY, JSON.stringify(items));
   emitCartChange();
+}
+
+/** Simpan daftar item keranjang (dipakai saat harga item diperbarui) */
+export function replaceCart(items: CartItem[]) {
+  saveCart(items);
 }
 
 /** Total jumlah item (akumulasi quantity) — untuk badge navbar */
