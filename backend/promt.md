@@ -1,228 +1,74 @@
-# Perbaiki Error React Order Detail dan Lanjutkan Fitur Promo
+Buatkan fitur **Detail Riwayat Pesanan** pada halaman detail pesanan pelanggan dengan desain modern, clean, profesional, dan konsisten dengan tampilan dashboard/e-commerce yang sudah ada.
 
-Perbaiki seluruh error pada halaman **OrderDetailPage**, khususnya error:
+Pada bagian informasi pesanan terdapat data berikut:
 
-`React has detected a change in the order of Hooks called by OrderDetailPage`
+### Informasi Pembayaran
 
-dan:
+**Pembayaran Berhasil**
+Bayar melalui **BNI Virtual Account**
 
-`Rendered more hooks than during the previous render`
+### Informasi Status
 
-Error terjadi karena hook `useCountdown` dipanggil secara kondisional atau setelah kemungkinan `return` sehingga jumlah dan urutan hooks berubah antar render. Log menunjukkan hook tambahan muncul pada render berikutnya dan `useCountdown` dipanggil dari `page.tsx` sekitar baris 540.
+**Order Status:** Pesanan sedang dikirim
+**Payment Status:** Pembayaran Berhasil
 
-## Aturan Perbaikan Hooks
+Saya ingin bagian status tersebut dapat **diklik**, terutama:
 
-* Semua `useState`, `useEffect`, `useMemo`, `useCallback`, dan custom hook seperti `useCountdown` harus selalu dipanggil di level paling atas component.
-* Jangan pernah memanggil hook di dalam:
+* **Pesanan sedang dikirim**
+* **Pembayaran Berhasil**
 
-  * `if`
-  * `switch`
-  * loop
-  * function callback
-  * conditional return
-* Jangan lakukan pola seperti:
+Ketika user mengklik salah satu status tersebut, tampilkan sebuah **modal popup** yang berisi detail riwayat pesanan dalam bentuk **timeline vertikal**.
 
-```tsx
-if (order) {
-  const countdown = useCountdown(order.expired_at);
-}
-```
+### Isi Modal
 
-Perbaiki menjadi:
+Judul modal:
 
-```tsx
-const countdown = useCountdown(order?.expired_at ?? null);
+**Detail Pengiriman**
 
-if (!order) {
-  return <Loading />;
-}
-```
+Tampilkan timeline seperti berikut:
 
-Pastikan `useCountdown` tetap aman ketika parameter `null` atau data order belum tersedia.
+**22 Agu 2026 — 10:30**
+● **Pesanan sedang dikirim**
+Pesanan sedang dalam perjalanan
 
-## Perbaiki Custom Hook useCountdown
+**22 Agu 2026 — 08:15**
+● **Pesanan diproses**
+Pesanan sedang dipersiapkan
 
-Buat `useCountdown` dapat menerima tanggal nullable:
+**21 Agu 2026 — 19:42**
+● **Pembayaran berhasil**
+Pembayaran melalui BNI Virtual Account telah dikonfirmasi
 
-```tsx
-function useCountdown(targetDate: string | null) {
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-    expired: false,
-  });
+**21 Agu 2026 — 19:40**
+● **Pesanan dibuat**
+Pesanan berhasil dibuat
 
-  useEffect(() => {
-    if (!targetDate) {
-      setTimeLeft({
-        days: 0,
-        hours: 0,
-        minutes: 0,
-        seconds: 0,
-        expired: false,
-      });
+### Ketentuan UI/UX
 
-      return;
-    }
+* Gunakan desain timeline vertikal.
+* Tampilkan tanggal dan jam di sisi kiri.
+* Gunakan garis vertikal sebagai penghubung setiap status.
+* Status terbaru berada paling atas.
+* Status terbaru menggunakan indikator yang lebih menonjol.
+* Modal memiliki tombol close/X di bagian kanan atas.
+* Modal bisa ditutup ketika klik area di luar modal.
+* Tambahkan animasi fade dan scale saat modal dibuka maupun ditutup.
+* Desain harus responsive untuk desktop dan mobile.
+* Gunakan style yang clean, modern, dan profesional.
+* Status **Pesanan sedang dikirim** dan **Pembayaran Berhasil** tampil seperti elemen interaktif, misalnya menggunakan cursor pointer, hover effect, dan icon chevron/arrow agar user mengetahui bahwa status tersebut dapat diklik.
+* Jangan mengubah struktur atau desain halaman detail pesanan yang sudah ada secara berlebihan.
+* Integrasikan fitur ini dengan data pesanan yang sudah ada.
+* Buat komponen modal yang reusable agar nantinya dapat digunakan untuk pesanan lainnya.
+* Jika memungkinkan, data timeline dibuat dinamis dari array/object seperti `orderHistory` agar mudah diambil dari API/database.
 
-    const updateCountdown = () => {
-      const difference =
-        new Date(targetDate).getTime() - new Date().getTime();
+Pastikan ketika user mengklik:
 
-      if (difference <= 0) {
-        setTimeLeft({
-          days: 0,
-          hours: 0,
-          minutes: 0,
-          seconds: 0,
-          expired: true,
-        });
+**Order Status: Pesanan sedang dikirim**
 
-        return;
-      }
+atau
 
-      setTimeLeft({
-        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-        hours: Math.floor(
-          (difference / (1000 * 60 * 60)) % 24
-        ),
-        minutes: Math.floor(
-          (difference / (1000 * 60)) % 60
-        ),
-        seconds: Math.floor(
-          (difference / 1000) % 60
-        ),
-        expired: false,
-      });
-    };
+**Payment Status: Pembayaran Berhasil**
 
-    updateCountdown();
+maka modal **Detail Pengiriman / Riwayat Pesanan** langsung terbuka dan menampilkan timeline lengkap sesuai data pesanan tersebut.
 
-    const interval = setInterval(updateCountdown, 1000);
-
-    return () => clearInterval(interval);
-  }, [targetDate]);
-
-  return timeLeft;
-}
-```
-
-## Lanjutkan Pembuatan Fitur Promo
-
-Setelah error hooks diperbaiki, buat fitur promo yang profesional dan responsif untuk desktop dan mobile.
-
-Fitur promo harus memiliki:
-
-### 1. Banner Promo
-
-* Banner promo menarik di halaman utama.
-* Bisa menampilkan judul promo.
-* Subtitle/deskripsi.
-* Gambar banner.
-* Tombol `Belanja Sekarang`.
-* Countdown jika promo memiliki waktu berakhir.
-* Responsif untuk mobile dan desktop.
-* Jangan sampai gambar atau teks terpotong.
-
-Contoh:
-
-**PROMO SPESIAL HARI INI 🔥**
-
-Diskon hingga 50% untuk produk pilihan.
-
-`[ Belanja Sekarang ]`
-
-### 2. Halaman Daftar Promo
-
-Buat halaman khusus promo dengan:
-
-* Promo aktif.
-* Promo akan datang.
-* Promo telah berakhir.
-* Filter kategori promo.
-* Search produk promo.
-* Sorting harga termurah, harga tertinggi, dan diskon terbesar.
-
-Setiap card promo menampilkan:
-
-* Badge `PROMO`.
-* Persentase diskon.
-* Harga normal dicoret.
-* Harga setelah diskon.
-* Countdown promo.
-* Stok tersedia.
-* Tombol `Beli Sekarang`.
-
-### 3. Sistem Promo Produk
-
-Promo harus terhubung ke produk dan mendukung:
-
-```text
-Harga Normal
-Harga Promo
-Persentase Diskon
-Tanggal Mulai
-Tanggal Berakhir
-Status Promo
-Kuota/Stok Promo
-```
-
-Status promo:
-
-```text
-scheduled
-active
-expired
-disabled
-```
-
-Harga yang tampil ke pelanggan harus otomatis menggunakan harga promo jika:
-
-```text
-status === active
-tanggal sekarang >= tanggal mulai
-tanggal sekarang <= tanggal berakhir
-stok promo masih tersedia
-```
-
-Jika promo berakhir, sistem otomatis kembali ke harga normal.
-
-### 4. Tampilan Promo yang Menarik
-
-Gunakan desain modern e-commerce:
-
-* Badge diskon.
-* Countdown timer.
-* Card produk dengan hover effect.
-* Skeleton loading.
-* Empty state jika tidak ada promo.
-* Responsive grid.
-* Mobile-first design.
-* Dark mode jika aplikasi mendukung.
-* Animasi ringan dan tidak berlebihan.
-
-### 5. Integrasi dengan Keranjang
-
-Jika pelanggan membeli produk promo:
-
-* Harga promo harus tersimpan saat checkout.
-* Jangan mengambil ulang harga normal jika promo berakhir setelah produk masuk cart.
-* Simpan snapshot harga saat item ditambahkan ke cart.
-* Saat checkout lakukan validasi ulang promo.
-* Jika promo sudah habis atau expired sebelum pembayaran, tampilkan informasi kepada pelanggan dan update harga secara jelas.
-
-### 6. Prioritas
-
-Kerjakan dengan urutan:
-
-1. Perbaiki error `Rendered more hooks than during the previous render`.
-2. Pastikan halaman OrderDetailPage kembali normal.
-3. Pastikan tidak ada hook yang dipanggil secara conditional.
-4. Perbaiki warning yang menyebabkan aplikasi crash.
-5. Baru implementasikan sistem promo.
-6. Pastikan seluruh fitur responsive.
-7. Jangan merusak fitur order, pembayaran, pengiriman, konfirmasi barang diterima, rating, dan ulasan yang sudah ada.
-
-Gunakan struktur kode yang bersih, TypeScript type-safe, reusable component, dan jangan mengubah fitur existing yang tidak berkaitan.
+Gunakan kode yang rapi, reusable, dan mudah dikembangkan.

@@ -12,6 +12,7 @@ import {
 import { getChatSocket } from "@/lib/chatSocket";
 import { getToken } from "@/lib/auth";
 import { COURIERS, formatEtd, formatWeightKg, preferNonCargo, type ShippingOption } from "@/lib/shipping";
+import OrderHistoryModal, { type OrderHistoryEvent } from "@/components/OrderHistoryModal";
 
 type OrderItem = {
   id: string;
@@ -171,6 +172,9 @@ export default function OrderDetailPage({
   const [shippingLoading, setShippingLoading] = useState(false);
   const [shippingError, setShippingError] = useState("");
   const [shippingTotalWeightKg, setShippingTotalWeightKg] = useState<number | null>(null);
+
+  // ── Riwayat pesanan modal ────────────────────────────────────────────────
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
 
   // ── Konfirmasi pesanan diterima ─────────────────────────────────────────
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -493,6 +497,180 @@ export default function OrderDetailPage({
     }
   }
 
+  /**
+   * Bangun array timeline riwayat pesanan secara dinamis dari data order.
+   *
+   * Aturan:
+   * - Setiap event punya timestamp yang mencerminkan waktu kejadian sebenarnya.
+   * - Untuk event yang tidak punya timestamp eksplisit di backend, gunakan
+   *   estimasi bertahap (t+1 detik dari event sebelumnya) agar sort konsisten.
+   * - isCurrent = true hanya pada status yang sedang aktif saat ini.
+   * - Hasil diurutkan dari terbaru (atas) ke terlama (bawah).
+   */
+  function buildOrderHistory(o: OrderDetail): OrderHistoryEvent[] {
+    type RawEvent = OrderHistoryEvent & { _order: number };
+    const raw: RawEvent[] = [];
+
+    const payStatus = o.payment?.status ?? "PENDING";
+    const methodLbl =
+      o.payment?.label ??
+      (o.paymentMethod ? (METHOD_LABEL[o.paymentMethod] ?? o.paymentMethod) : null);
+
+    // Tentukan status aktif saat ini
+    const currentStatus = o.status;
+
+    // Helper: tambah event ke list
+    function push(
+      event: { ts?: string | null; title: string; description: string; isCurrent?: boolean },
+      order: number,
+    ) {
+      raw.push({
+        timestamp: event.ts ?? o.createdAt,
+        title: event.title,
+        description: event.description,
+        isCurrent: event.isCurrent ?? false,
+        _order: order,
+      });
+    }
+
+    // ── 1. Pesanan dibuat (selalu ada) ───────────────────────────────────
+    push(
+      {
+        ts: o.createdAt,
+        title: "Pesanan dibuat",
+        description: "Pesanan berhasil dibuat",
+        isCurrent: currentStatus === "PENDING" && payStatus !== "PAID",
+      },
+      1,
+    );
+
+    // ── 2. Pembayaran ────────────────────────────────────────────────────
+    if (payStatus === "PAID" || o.paidAt) {
+      push(
+        {
+          ts: o.paidAt ?? o.createdAt,
+          title: "Pembayaran berhasil",
+          description: methodLbl
+            ? `Pembayaran melalui ${methodLbl} telah dikonfirmasi`
+            : "Pembayaran telah dikonfirmasi",
+          isCurrent: currentStatus === "CONFIRMED",
+        },
+        2,
+      );
+    } else if (payStatus === "FAILED") {
+      push(
+        {
+          ts: o.paidAt ?? o.createdAt,
+          title: "Pembayaran gagal",
+          description: "Pembayaran tidak dapat diproses",
+          isCurrent: true,
+        },
+        2,
+      );
+    } else if (payStatus === "EXPIRED" || currentStatus === "EXPIRED") {
+      push(
+        {
+          ts: o.paidAt ?? o.createdAt,
+          title: "Pembayaran kadaluarsa",
+          description: "Batas waktu pembayaran telah habis",
+          isCurrent: true,
+        },
+        2,
+      );
+    }
+
+    // ── 3. Pesanan diproses ──────────────────────────────────────────────
+    if (
+      currentStatus === "PROCESSING" ||
+      currentStatus === "SHIPPED" ||
+      currentStatus === "DELIVERED"
+    ) {
+      // Backend tidak punya field "processedAt", pakai paidAt + 1 detik sebagai estimasi
+      const processedTs = o.paidAt
+        ? new Date(new Date(o.paidAt).getTime() + 1000).toISOString()
+        : o.createdAt;
+      push(
+        {
+          ts: processedTs,
+          title: "Pesanan diproses",
+          description: "Pesanan sedang dipersiapkan",
+          isCurrent: currentStatus === "PROCESSING",
+        },
+        3,
+      );
+    }
+
+    // ── 4. Pesanan dikirim ───────────────────────────────────────────────
+    if (currentStatus === "SHIPPED" || currentStatus === "DELIVERED") {
+      const shippedTs =
+        o.shippedAt ??
+        (o.paidAt
+          ? new Date(new Date(o.paidAt).getTime() + 2000).toISOString()
+          : o.createdAt);
+      const courierDesc = o.shippingCourier
+        ? `Pesanan sedang dalam perjalanan via ${o.shippingCourier}${o.trackingNumber ? ` (No. Resi: ${o.trackingNumber})` : ""}`
+        : "Pesanan sedang dalam perjalanan";
+      push(
+        {
+          ts: shippedTs,
+          title: "Pesanan sedang dikirim",
+          description: courierDesc,
+          isCurrent: currentStatus === "SHIPPED",
+        },
+        4,
+      );
+    }
+
+    // ── 5. Pesanan diterima ──────────────────────────────────────────────
+    if (currentStatus === "DELIVERED") {
+      push(
+        {
+          ts: o.receivedAt ?? o.completedAt ?? o.createdAt,
+          title: "Pesanan diterima",
+          description: "Pesanan telah diterima oleh pelanggan",
+          isCurrent: true,
+        },
+        5,
+      );
+    }
+
+    // ── 5b. Dibatalkan ───────────────────────────────────────────────────
+    if (currentStatus === "CANCELLED") {
+      push(
+        {
+          ts: o.createdAt,
+          title: "Pesanan dibatalkan",
+          description: "Pesanan telah dibatalkan",
+          isCurrent: true,
+        },
+        5,
+      );
+    }
+
+    // ── 5c. Refunded ─────────────────────────────────────────────────────
+    if (currentStatus === "REFUNDED") {
+      push(
+        {
+          ts: o.completedAt ?? o.createdAt,
+          title: "Dana dikembalikan",
+          description: "Dana telah dikembalikan ke metode pembayaran Anda",
+          isCurrent: true,
+        },
+        5,
+      );
+    }
+
+    // Urutkan berdasarkan _order descending (status terbaru/aktif di atas)
+    // Jika _order sama, gunakan timestamp sebagai tiebreaker
+    raw.sort((a, b) => {
+      if (b._order !== a._order) return b._order - a._order;
+      return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+    });
+
+    // Buang field internal _order sebelum return
+    return raw.map(({ _order: _o, ...rest }) => rest);
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -573,12 +751,33 @@ export default function OrderDetailPage({
         {isPaid ? (
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#064e3b]/10 text-[#064e3b]">
-              <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
-                <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-              </svg>
+              {/* Icon sesuai status order */}
+              {order.status === "DELIVERED" ? (
+                /* Bintang / selesai */
+                <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                  <path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                </svg>
+              ) : order.status === "SHIPPED" ? (
+                /* Truk pengiriman */
+                <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                  <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9 1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
+                </svg>
+              ) : order.status === "PROCESSING" ? (
+                /* Gear / proses */
+                <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                  <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
+                </svg>
+              ) : (
+                /* Centang default (CONFIRMED / PAID) */
+                <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                  <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                </svg>
+              )}
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-bold text-[#064e3b]">Pembayaran Berhasil</p>
+              <p className="text-sm font-bold text-[#064e3b]">
+                {ORDER_STATUS_LABEL[order.status] ?? "Pembayaran Berhasil"}
+              </p>
               {methodLabel && (
                 <p className="text-xs text-[#707974]">Bayar melalui {methodLabel}</p>
               )}
@@ -644,17 +843,29 @@ export default function OrderDetailPage({
           </div>
         )}
 
-        {/* Status terpisah: order vs payment */}
+        {/* Status terpisah: order */}
         {(isPaid || order.status === "PROCESSING" || order.status === "SHIPPED" || order.status === "DELIVERED") && (
-          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 border-t border-[#e2e8f0] pt-3 text-[11px] text-[#707974]">
-            <span>
-              Order Status:{" "}
-              <span className="font-semibold text-[#191c1d]">{ORDER_STATUS_LABEL[order.status] ?? order.status}</span>
-            </span>
-            <span>
-              Payment Status:{" "}
-              <span className="font-semibold text-[#064e3b]">{PAYMENT_STATUS_LABEL[paymentStatus] ?? paymentStatus}</span>
-            </span>
+          <div className="mt-3 border-t border-[#e2e8f0] pt-3 text-[11px] text-[#707974]">
+            <button
+              type="button"
+              onClick={() => setShowHistoryModal(true)}
+              className="group flex items-center gap-1 rounded-lg px-2 py-1.5 transition hover:bg-[#f0fdf4] cursor-pointer -ml-2"
+              title="Lihat riwayat pesanan"
+            >
+              <span>
+                Order Status:{" "}
+                <span className="font-semibold text-[#191c1d] group-hover:text-[#064e3b] transition-colors">
+                  {ORDER_STATUS_LABEL[order.status] ?? order.status}
+                </span>
+              </span>
+              <svg
+                className="h-3.5 w-3.5 shrink-0 text-[#94a3b8] transition-colors group-hover:text-[#064e3b]"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
+              </svg>
+            </button>
           </div>
         )}
 
@@ -1079,6 +1290,14 @@ export default function OrderDetailPage({
         </div>
       </div>
     )}
+
+    {/* ── MODAL RIWAYAT PESANAN ──────────────────────────────────────────── */}
+    <OrderHistoryModal
+      open={showHistoryModal}
+      onClose={() => setShowHistoryModal(false)}
+      events={buildOrderHistory(order)}
+      title="Detail Pengiriman"
+    />
     </>
   );
 }
