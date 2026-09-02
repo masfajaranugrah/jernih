@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname, join } from 'path';
+import { extname, join, basename } from 'path';
 import { existsSync, mkdirSync, unlinkSync, readFileSync } from 'fs';
 import { Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -132,8 +132,15 @@ export class UploadController {
   /** GET /api/upload/:filename — Public static stream fallback */
   @Get(':filename')
   getFile(@Param('filename') filename: string, @Res() res: Response) {
+    // Sanitasi: ambil hanya nama file tanpa path apapun (cegah path traversal)
+    // Contoh: "../../.env" → ".env" → tidak akan match file upload yang valid
+    const safeFilename = basename(filename);
+    if (!safeFilename || safeFilename !== filename || safeFilename.startsWith('.')) {
+      throw new BadRequestException('Nama file tidak valid');
+    }
+
     const dir = getUploadDir();
-    const filePath = join(dir, filename);
+    const filePath = join(dir, safeFilename);
     if (!existsSync(filePath)) {
       throw new NotFoundException('File tidak ditemukan');
     }
@@ -148,8 +155,14 @@ export class UploadController {
 export class UploadsPublicController {
   @Get(':filename')
   getFile(@Param('filename') filename: string, @Res() res: Response) {
+    // Sanitasi: ambil hanya nama file tanpa path apapun (cegah path traversal)
+    const safeFilename = basename(filename);
+    if (!safeFilename || safeFilename !== filename || safeFilename.startsWith('.')) {
+      throw new BadRequestException('Nama file tidak valid');
+    }
+
     const dir = getUploadDir();
-    const filePath = join(dir, filename);
+    const filePath = join(dir, safeFilename);
     if (!existsSync(filePath)) {
       throw new NotFoundException('File tidak ditemukan');
     }

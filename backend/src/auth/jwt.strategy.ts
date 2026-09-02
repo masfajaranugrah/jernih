@@ -21,6 +21,7 @@ type CachedUser = {
 };
 const userCache = new Map<string, { user: CachedUser; expiry: number }>();
 const CACHE_TTL = 5_000; // 5 detik — tidak perlu realtime untuk data user
+const CACHE_MAX_SIZE = 5_000; // Batas maksimum entri — cegah memory leak
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -69,6 +70,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     // Simpan ke cache untuk request berikutnya
+    // Jika cache sudah penuh, hapus entri terlama (LRU sederhana)
+    if (userCache.size >= CACHE_MAX_SIZE) {
+      const firstKey = userCache.keys().next().value;
+      if (firstKey !== undefined) userCache.delete(firstKey);
+    }
     userCache.set(payload.sub, {
       user: {
         id: user.id, email: user.email, name: user.name, role: user.role,

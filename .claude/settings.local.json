@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(curl -s \"http://localhost:3001/api/products?limit=50\")",
+      "Bash(python3 -c ' *)",
+      "Bash(curl -s \"http://localhost:3001/api/products/slug/wqeqweq\")",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s \"http://localhost:3000/produk/wqeqweq\")",
+      "Bash(npm run *)",
+      "Bash(grep -E \"Compiled|error|Error|Failed|○ /$|ƒ /$|├ ○ /  |Route \\\\\\(app\\\\\\)\")",
+      "Read(//private/tmp/**)",
+      "Bash(break)",
+      "Bash(python -c ' *)"
+    ]
+  }
+}

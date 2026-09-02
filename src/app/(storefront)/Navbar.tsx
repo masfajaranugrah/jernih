@@ -63,7 +63,7 @@ function IconWithBadge({ count, children }: { count: number; children: React.Rea
     <span className="relative inline-flex">
       {children}
       {count > 0 && (
-        <span className="absolute -right-1.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-black px-1 text-[10px] font-black leading-none text-white border border-white">
+        <span className="absolute -right-1.5 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#EF4444] px-1 text-[10px] font-black leading-none text-white border border-white">
           {count > 99 ? "99+" : count}
         </span>
       )}
@@ -90,7 +90,7 @@ function LogoutIcon() {
 /* ───────── Shared styles ───────── */
 
 const DESKTOP_ICON_BTN =
-  "flex h-10 w-10 items-center justify-center rounded-full text-neutral-800 transition hover:bg-neutral-100 hover:text-black";
+  "flex h-10 w-10 items-center justify-center rounded-full text-[#334155] transition-all duration-150 hover:bg-[#F8FAFC] hover:text-[#0F172A]";
 
 /* ───────── Navbar component ───────── */
 
@@ -203,10 +203,10 @@ export default function Navbar({ initialSlug }: { initialSlug?: string | null })
           {/* Beranda */}
           <Link
             href="/"
-            className={`rounded-xl px-3 py-2 text-sm font-semibold tracking-wide transition-all hover:bg-neutral-100 hover:text-black lg:px-4 ${
+            className={`rounded-xl px-3 py-2 text-sm font-semibold tracking-wide transition-all lg:px-4 ${
               isActive("/")
-                ? "bg-black text-white"
-                : "text-neutral-700"
+                ? "bg-[#EFF6FF] text-[#2563EB]"
+                : "text-[#475569] hover:bg-[#F8FAFC] hover:text-[#0F172A]"
             }`}
           >
             Beranda
@@ -217,10 +217,10 @@ export default function Navbar({ initialSlug }: { initialSlug?: string | null })
             <Link
               key={link.href}
               href={link.href}
-              className={`rounded-xl px-3 py-2 text-sm font-semibold tracking-wide transition-all hover:bg-neutral-100 hover:text-black lg:px-4 ${
+              className={`rounded-xl px-3 py-2 text-sm font-semibold tracking-wide transition-all lg:px-4 ${
                 isActive(link.href)
-                  ? "bg-black text-white"
-                  : "text-neutral-700"
+                  ? "bg-[#EFF6FF] text-[#2563EB]"
+                  : "text-[#475569] hover:bg-[#F8FAFC] hover:text-[#0F172A]"
               }`}
             >
               {link.label}
@@ -244,7 +244,7 @@ export default function Navbar({ initialSlug }: { initialSlug?: string | null })
               <div className="relative ml-3" ref={dropdownRef}>
                 <button
                   onClick={() => setDropdownOpen((v) => !v)}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-black text-sm font-bold text-white shadow-sm transition hover:bg-neutral-800"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[#2563EB] text-sm font-bold text-white shadow-sm transition hover:bg-[#1D4ED8]"
                 >
                   {getInitial(user.name)}
                 </button>
@@ -272,13 +272,13 @@ export default function Navbar({ initialSlug }: { initialSlug?: string | null })
               <div className="ml-3 flex items-center gap-1 lg:gap-2">
                 <Link
                   href="/dashboard/pelanggan/login"
-                  className="rounded-xl border border-black px-3.5 py-1.5 text-xs font-bold text-black transition hover:bg-black hover:text-white lg:px-4 lg:py-2 lg:text-sm"
+                  className="rounded-xl border border-[#CBD5E1] px-3.5 py-1.5 text-xs font-semibold text-[#0F172A] transition hover:border-[#94A3B8] hover:bg-[#F8FAFC] lg:px-4 lg:py-2 lg:text-sm"
                 >
                   Masuk
                 </Link>
                 <Link
                   href="/dashboard/pelanggan/register"
-                  className="rounded-xl bg-black px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-neutral-800 hover:shadow-md lg:px-4 lg:py-2 lg:text-sm"
+                  className="rounded-xl bg-[#2563EB] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#1D4ED8] lg:px-4 lg:py-2 lg:text-sm"
                 >
                   Daftar
                 </Link>
@@ -349,10 +349,10 @@ export default function Navbar({ initialSlug }: { initialSlug?: string | null })
               key={link.href}
               href={link.href}
               onClick={handleLinkClick}
-              className={`flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-bold transition-all ${
+              className={`flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-semibold transition-all ${
                 isActive(link.href)
-                  ? "bg-black text-white shadow-xs"
-                  : "text-neutral-700 hover:bg-neutral-100 hover:text-black"
+                  ? "bg-[#EFF6FF] text-[#2563EB]"
+                  : "text-[#475569] hover:bg-[#F8FAFC] hover:text-[#0F172A]"
               }`}
             >
               <svg className="h-5 w-5 shrink-0 fill-current" viewBox="0 0 24 24" aria-hidden="true">
@@ -367,14 +367,14 @@ export default function Navbar({ initialSlug }: { initialSlug?: string | null })
           <Link
             href={wishlistHref}
             onClick={handleLinkClick}
-            className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold text-neutral-700 transition-all hover:bg-neutral-100 hover:text-black"
+            className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold text-[#475569] transition-all hover:bg-[#F8FAFC] hover:text-[#0F172A]"
           >
             <span className="flex items-center gap-4">
               <HeartIcon />
               Wishlist
             </span>
             {wishlistCount > 0 && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-black px-1.5 text-[11px] font-black text-white">
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#EF4444] px-1.5 text-[11px] font-black text-white">
                 {wishlistCount > 99 ? "99+" : wishlistCount}
               </span>
             )}
@@ -382,14 +382,14 @@ export default function Navbar({ initialSlug }: { initialSlug?: string | null })
           <Link
             href="/keranjang"
             onClick={handleLinkClick}
-            className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold text-neutral-700 transition-all hover:bg-neutral-100 hover:text-black"
+            className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold text-[#475569] transition-all hover:bg-[#F8FAFC] hover:text-[#0F172A]"
           >
             <span className="flex items-center gap-4">
               <CartIcon />
               Keranjang
             </span>
             {cartCount > 0 && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-black px-1.5 text-[11px] font-black text-white">
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#EF4444] px-1.5 text-[11px] font-black text-white">
                 {cartCount > 99 ? "99+" : cartCount}
               </span>
             )}
@@ -401,15 +401,15 @@ export default function Navbar({ initialSlug }: { initialSlug?: string | null })
           {user ? (
             <div className="space-y-2">
               <div className="flex items-center gap-3 px-1">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-sm font-bold text-white">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#2563EB] text-sm font-bold text-white">
                   {getInitial(user.name)}
                 </div>
-                <span className="truncate text-sm font-semibold text-neutral-900">{user.name}</span>
+                <span className="truncate text-sm font-semibold text-[#0F172A]">{user.name}</span>
               </div>
               <Link
                 href={`/dashboard/pelanggan/${user.slug}/`}
                 onClick={handleLinkClick}
-                className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-100"
+                className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold text-[#475569] transition hover:bg-[#F8FAFC] hover:text-[#0F172A]"
               >
                 <DashboardIcon />
                 Dashboard saya
@@ -419,7 +419,7 @@ export default function Navbar({ initialSlug }: { initialSlug?: string | null })
                   handleLogout();
                   handleLinkClick();
                 }}
-                className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm font-semibold text-neutral-900 transition hover:bg-neutral-100"
+                className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm font-semibold text-[#475569] transition hover:bg-[#F8FAFC] hover:text-[#0F172A]"
               >
                 <LogoutIcon />
                 Logout
@@ -430,14 +430,14 @@ export default function Navbar({ initialSlug }: { initialSlug?: string | null })
               <Link
                 href="/dashboard/pelanggan/login"
                 onClick={handleLinkClick}
-                className="flex-1 rounded-xl border border-black py-2.5 text-center text-sm font-bold text-black transition hover:bg-black hover:text-white"
+                className="flex-1 rounded-xl border border-[#CBD5E1] py-2.5 text-center text-sm font-semibold text-[#0F172A] transition hover:border-[#94A3B8] hover:bg-[#F8FAFC]"
               >
                 Masuk
               </Link>
               <Link
                 href="/dashboard/pelanggan/register"
                 onClick={handleLinkClick}
-                className="flex-1 rounded-xl bg-black py-2.5 text-center text-sm font-bold text-white transition hover:bg-neutral-800"
+                className="flex-1 rounded-xl bg-[#2563EB] py-2.5 text-center text-sm font-semibold text-white transition hover:bg-[#1D4ED8]"
               >
                 Daftar
               </Link>

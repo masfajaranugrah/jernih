@@ -63,14 +63,36 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return null;
   }
 
+  // Batas koneksi unauthenticated per IP — cegah DoS
+  private readonly MAX_GUEST_CONNECTIONS_PER_IP = 5;
+  private readonly guestIpCount = new Map<string, number>();
+
   async handleConnection(client: Socket) {
     const token = this.extractToken(client);
+
     if (!token) {
-      // Guest connection — tetap izinkan, dengan ID guest
+      // Guest connection — izinkan untuk fitur publik (mis. realtime review produk)
+      // tapi batasi per IP untuk cegah DoS dari guest tak terbatas.
+      const ip = (client.handshake.address as string) ?? 'unknown';
+      const count = this.guestIpCount.get(ip) ?? 0;
+      if (count >= this.MAX_GUEST_CONNECTIONS_PER_IP) {
+        client.emit('error', { message: 'Too many unauthenticated connections' });
+        client.disconnect(true);
+        return;
+      }
+      this.guestIpCount.set(ip, count + 1);
+      // Bersihkan counter setelah 60 detik
+      setTimeout(() => {
+        const cur = this.guestIpCount.get(ip) ?? 0;
+        if (cur <= 1) this.guestIpCount.delete(ip);
+        else this.guestIpCount.set(ip, cur - 1);
+      }, 60_000);
+
+      client.data.isGuest = true;
       client.data.userId = 'guest-' + client.id.slice(0, 8);
-      client.join('guests');
       return;
     }
+
     try {
       const payload = this.jwtService.verify(token);
       const userId = payload.sub as string;
@@ -83,9 +105,25 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.server.emit('presence:update', { userId, online: true });
       }
     } catch {
-      // Token invalid — tetap izinkan sebagai guest
-      client.data.userId = 'guest-' + client.id.slice(0, 8);
-      client.join('guests');
+      // Token invalid atau expired — tolak koneksi
+      // Rate-limit per IP untuk mengurangi serangan flooding dengan token palsu
+      const ip = (client.handshake.address as string) ?? 'unknown';
+      const count = this.guestIpCount.get(ip) ?? 0;
+      if (count >= this.MAX_GUEST_CONNECTIONS_PER_IP) {
+        client.emit('error', { message: 'Too many unauthenticated connections' });
+        client.disconnect(true);
+        return;
+      }
+      this.guestIpCount.set(ip, count + 1);
+      // Bersihkan counter setelah 60 detik
+      setTimeout(() => {
+        const cur = this.guestIpCount.get(ip) ?? 0;
+        if (cur <= 1) this.guestIpCount.delete(ip);
+        else this.guestIpCount.set(ip, cur - 1);
+      }, 60_000);
+
+      client.emit('error', { message: 'Invalid or expired token' });
+      client.disconnect(true);
     }
   }
 
@@ -211,5 +249,73 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     for (const id of new Set(userIds)) {
       this.server.to(id).emit(event, payload);
     }
+  }
+
+  /**
+   * Broadcast perubahan status order ke room customer yang memiliki order tersebut.
+   * Hanya diterima oleh user yang sudah join room userId-nya sendiri (saat connect).
+   */
+  emitOrderStatusUpdated(payload: {
+    orderId: string;
+    userId: string;
+    status: string;
+    statusLabel: string;
+    updatedAt: string;
+  }) {
+    this.server.to(payload.userId).emit('order:status', {
+      orderId: payload.orderId,
+      status: payload.status,
+      statusLabel: payload.statusLabel,
+      updatedAt: payload.updatedAt,
+    });
+  }
+
+  /**
+   * Client join room produk agar bisa menerima review baru secara realtime.
+   * Room: 'product:{productId}' — publik, tidak butuh auth.
+   */
+  @SubscribeMessage('product:join')
+  handleProductJoin(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { productId?: string },
+  ) {
+    const productId = body?.productId;
+    if (!productId || typeof productId !== 'string') return;
+    // Batasi prefix agar tidak bisa join room sembarang (cegah abuse)
+    client.join(`product:${productId}`);
+  }
+
+  /**
+   * Client leave room produk (cleanup saat unmount).
+   */
+  @SubscribeMessage('product:leave')
+  handleProductLeave(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { productId?: string },
+  ) {
+    const productId = body?.productId;
+    if (!productId || typeof productId !== 'string') return;
+    client.leave(`product:${productId}`);
+  }
+
+  /**
+   * Broadcast review baru ke semua pengunjung halaman produk.
+   * Dipanggil dari OrdersService setelah confirmReceived berhasil.
+   */
+  emitProductReviewNew(payload: {
+    productId: string;
+    review: {
+      id: string;
+      rating: number;
+      comment: string | null;
+      userName: string;
+      userAvatar: string | null;
+      image: string | null;
+      createdAt: string;
+    };
+    newAvgRating: number;
+    newTotalReviews: number;
+  }) {
+    this.server.to(`product:${payload.productId}`).emit('product:review:new', payload);
   }
 }

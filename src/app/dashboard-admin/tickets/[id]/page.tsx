@@ -30,7 +30,7 @@ async function apiFetch(path: string, init?: RequestInit) {
  });
  if (res.status === 401) {
   await fetch("/api/auth/logout", { method: "POST" });
-  window.location.href = "/dashboard-admin/admin/login";
+  window.location.href = "/dashboard-admin/auth/login";
   throw new Error("Sesi berakhir");
  }
  return res;

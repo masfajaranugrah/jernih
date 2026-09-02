@@ -94,6 +94,7 @@ export default function KeranjangPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [mounted, setMounted] = useState(false);
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -101,6 +102,9 @@ export default function KeranjangPage() {
 
   // Step alur: 'cart' (ringkasan) | 'payment' (detail + pilih metode bayar)
   const [step, setStep] = useState<"cart" | "payment">("cart");
+  // Asal navigasi ke step payment — untuk tombol kembali
+  // "cart" = dari halaman keranjang, "product" = dari Beli Sekarang detail produk
+  const [backRoute, setBackRoute] = useState<string>("/keranjang");
   const [createdOrder, setCreatedOrder] = useState<CreatedOrder | null>(null);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethodId | null>(null);
   const [paying, setPaying] = useState(false);
@@ -124,6 +128,10 @@ export default function KeranjangPage() {
   // Beli Sekarang → ?step=payment tanpa draft → checkout otomatis (buat order, langsung ke step bayar)
   const autoCheckoutPending = useRef(false);
   const autoCheckoutStarted = useRef(false);
+  // Key item khusus Beli Sekarang — hanya checkout item ini (bukan semua keranjang)
+  const buyNowKeyRef = useRef<string | null>(null);
+  // Item yang akan di-checkout — disimpan saat masuk step payment, dipakai saat Bayar Sekarang
+  const itemsToCheckoutRef = useRef<typeof selectedItems>([]);
   // Seleksi alamat otomatis sudah selesai diputuskan (sebelum auto-checkout)
   const addressSelectionSettled = useRef(false);
   // Refs agar alamat terpilih bisa dibaca aman dari efek async (bukan stale closure)
@@ -155,9 +163,37 @@ export default function KeranjangPage() {
   const [priceNotices, setPriceNotices] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    setItems(getCart());
+    const loaded = getCart();
+    setItems(loaded);
+    setSelectedIds((prev) => {
+      // Pertahankan pilihan yang sudah ada, tambahkan item baru sebagai terpilih
+      const next = new Set(prev);
+      loaded.forEach((i) => {
+        const k = `${i.productId}:${i.typeName ?? ""}`;
+        if (!next.has(k)) next.add(k);
+      });
+      // Buang key yang itemnya sudah tidak ada di keranjang
+      next.forEach((k) => {
+        if (!loaded.some((i) => `${i.productId}:${i.typeName ?? ""}` === k)) next.delete(k);
+      });
+      return next;
+    });
     setMounted(true);
-    const sync = () => setItems(getCart());
+    const sync = () => {
+      const updated = getCart();
+      setItems(updated);
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        updated.forEach((i) => {
+          const k = `${i.productId}:${i.typeName ?? ""}`;
+          if (!next.has(k)) next.add(k);
+        });
+        next.forEach((k) => {
+          if (!updated.some((i) => `${i.productId}:${i.typeName ?? ""}` === k)) next.delete(k);
+        });
+        return next;
+      });
+    };
     window.addEventListener(CART_EVENT, sync);
     return () => window.removeEventListener(CART_EVENT, sync);
   }, []);
@@ -169,6 +205,22 @@ export default function KeranjangPage() {
       const addr = params.get("addr");
       if (addr) pendingAddrRef.current = addr;
       if (params.get("step") !== "payment") return;
+
+      // Tentukan asal navigasi — untuk tombol kembali yang kontekstual
+      const from = params.get("from");
+      if (from) setBackRoute(from);
+
+      // Cek apakah ini dari alur Beli Sekarang (ada buyNowKey)
+      const buyNowKey = sessionStorage.getItem("mh_buy_now_key");
+      if (buyNowKey) {
+        // Hapus key segera agar tidak dipakai ulang
+        sessionStorage.removeItem("mh_buy_now_key");
+        // Simpan ke ref (synchronous) dan state (untuk UI)
+        buyNowKeyRef.current = buyNowKey;
+        setSelectedIds(new Set([buyNowKey]));
+        autoCheckoutPending.current = true;
+        return;
+      }
 
       const raw = sessionStorage.getItem(PAYMENT_DRAFT_KEY);
       if (raw) {
@@ -190,7 +242,7 @@ export default function KeranjangPage() {
           return;
         }
       }
-      // Beli Sekarang (atau URL ?step=payment) tanpa draft valid → buat order lalu step bayar
+      // ?step=payment tanpa draft valid → buat order lalu step bayar
       autoCheckoutPending.current = true;
     } catch {
       autoCheckoutPending.current = true;
@@ -317,7 +369,8 @@ export default function KeranjangPage() {
     return () => { cancelled = true; };
   }, [step, selectedAddressId, shippingReloadKey]);
 
-  const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const selectedItems = items.filter((i) => selectedIds.has(`${i.productId}:${i.typeName ?? ""}`));
+  const subtotal = selectedItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const discount = appliedVoucher?.discount ?? 0;
   const total = Math.max(0, subtotal - discount);
 
@@ -434,105 +487,55 @@ export default function KeranjangPage() {
     }
   }
 
-  /** Buka modal voucher step pembayaran — ambil daftar voucher aktif utk user */
-  async function openVoucherModal() {
-    setVoucherApplyError(null);
-    setVoucherModalOpen(true);
-    if (availableVouchers.length) return;
-    setVouchersLoading(true);
-    try {
-      const res = await fetch("/api/vouchers");
-      if (res.status === 401) {
-        router.push("/dashboard/pelanggan/login?from=/keranjang");
-        return;
-      }
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message ?? "Gagal memuat voucher");
-      setAvailableVouchers(Array.isArray(data) ? data : data.data ?? []);
-    } catch {
-      setAvailableVouchers([]);
-    } finally {
-      setVouchersLoading(false);
-    }
-  }
-
-  /** Terapkan voucher ke order — POST /api/orders/:id/vouchers */
-  async function handleApplyOrderVoucher(v: AvailableVoucher) {
-    if (!createdOrder) return;
-    setVoucherBusy(v.code);
-    setVoucherApplyError(null);
-    try {
-      // Pastikan ongkir sudah tersimpan di backend sebelum hitung diskon ongkir
-      // (voucher SHIPPING dihitung dari shippingCost order di DB, bukan dari UI).
-      if (selectedAddressIdRef.current && selectedShipping) {
-        const ship = await persistSelectedShipping();
-        if (ship === null) return; // 401 → sudah redirect
-      }
-      const res = await fetch(`/api/orders/${createdOrder.id}/vouchers`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ voucherCode: v.code }),
-      });
-      if (res.status === 401) {
-        router.push("/dashboard/pelanggan/login?from=/keranjang");
-        return;
-      }
-      const data = await res.json();
-      if (!res.ok) {
-        setVoucherApplyError(data?.message ?? "Voucher tidak dapat digunakan");
-        return;
-      }
-      setCreatedOrder(data);
-      setVoucherModalOpen(false);
-    } catch (e: unknown) {
-      setVoucherApplyError(e instanceof Error ? e.message : "Terjadi kesalahan saat memakai voucher");
-    } finally {
-      setVoucherBusy(null);
-    }
-  }
-
-  /** Hapus voucher dari order — DELETE /api/orders/:id/vouchers/:voucherId */
-  async function handleRemoveOrderVoucher(orderVoucherId: string) {
-    if (!createdOrder) return;
-    setVoucherBusy(orderVoucherId);
-    setVoucherApplyError(null);
-    try {
-      const res = await fetch(
-        `/api/orders/${createdOrder.id}/vouchers/${orderVoucherId}`,
-        { method: "DELETE" },
-      );
-      if (res.status === 401) {
-        router.push("/dashboard/pelanggan/login?from=/keranjang");
-        return;
-      }
-      const data = await res.json();
-      if (!res.ok) {
-        setVoucherApplyError(data?.message ?? "Gagal menghapus voucher");
-        return;
-      }
-      setCreatedOrder(data);
-    } catch {
-      setVoucherApplyError("Terjadi kesalahan saat menghapus voucher");
-    } finally {
-      setVoucherBusy(null);
-    }
-  }
-
-  /** Buat order (POST /api/orders) lalu lanjut ke step pembayaran. Dipakai tombol
-   *  "Buat Pesanan" dan auto-checkout alur Beli Sekarang. */
+  /** Masuk ke step pembayaran — simpan item yang akan di-checkout, belum buat order.
+   *  Order baru dibuat saat user klik "Bayar Sekarang" (handlePay). */
   async function startCheckout() {
     setError(null);
 
-    // Wajib login dulu — arahkan ke halaman login pelanggan
     if (!user) {
       router.push("/dashboard/pelanggan/login?from=/keranjang");
       return;
     }
 
-    setSubmitting(true);
+    const buyNowKey = buyNowKeyRef.current;
+    const itemsToCheckout = buyNowKey
+      ? items.filter((i) => `${i.productId}:${i.typeName ?? ""}` === buyNowKey)
+      : selectedItems;
+
+    if (itemsToCheckout.length === 0) {
+      setError("Pilih item terlebih dahulu");
+      return;
+    }
+
+    // Simpan item ke ref — dipakai saat Bayar Sekarang
+    itemsToCheckoutRef.current = itemsToCheckout;
+    // Reset idempotency key agar handlePay bisa generate baru
+    sessionIdRef.current = null;
+
+    if (!buyNowKey) setBackRoute("/keranjang");
+    setStep("payment");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function handleCheckout() {
+    void startCheckout();
+  }
+
+  /** Klik Bayar Sekarang: buat order → simpan ongkir → buat payment-intent → buka Snap */
+  async function handlePay() {
+    if (!selectedMethod) return;
+    if (!selectedAddressId || !selectedShipping) return;
+    setPayError(null);
+    setPaying(true);
     try {
-      // Idempotency key — mencegah order ganda akibat double-click / retry.
-      // Key konsisten untuk satu sesi checkout (dihasilkan sekali per komponen).
+      const itemsToCheckout = itemsToCheckoutRef.current;
+      if (itemsToCheckout.length === 0) {
+        setPayError("Tidak ada item yang dipilih");
+        setPaying(false);
+        return;
+      }
+
+      // 1) Buat order
       let idempotencyKey = sessionIdRef.current;
       if (!idempotencyKey) {
         idempotencyKey =
@@ -541,126 +544,80 @@ export default function KeranjangPage() {
             : `co_${Date.now()}_${Math.random().toString(36).slice(2)}`;
         sessionIdRef.current = idempotencyKey;
       }
-      const res = await fetch("/api/orders", {
+      const orderRes = await fetch("/api/orders", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Idempotency-Key": idempotencyKey,
         },
         body: JSON.stringify({
-          items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+          items: itemsToCheckout.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+          addressId: selectedAddressIdRef.current,
           ...(appliedVoucher ? { voucherCode: appliedVoucher.code } : {}),
-          ...(selectedAddressIdRef.current ? { addressId: selectedAddressIdRef.current } : {}),
           notes: notes.trim()
             ? notes.trim()
-            : items.some((i) => i.typeName)
-              ? items.filter((i) => i.typeName).map((i) => `${i.name}: ${i.typeName}`).join("; ")
+            : itemsToCheckout.some((i) => i.typeName)
+              ? itemsToCheckout.filter((i) => i.typeName).map((i) => `${i.name}: ${i.typeName}`).join("; ")
               : undefined,
         }),
       });
-
-      if (res.status === 401) {
+      if (orderRes.status === 401) {
         router.push("/dashboard/pelanggan/login?from=/keranjang");
         return;
       }
-
-      const data = await res.json();
-      if (!res.ok) {
+      const orderData = await orderRes.json();
+      if (!orderRes.ok) {
         throw new Error(
-          Array.isArray(data.message) ? data.message.join(", ") : data.message ?? "Gagal membuat pesanan"
+          Array.isArray(orderData.message) ? orderData.message.join(", ") : orderData.message ?? "Gagal membuat pesanan"
         );
       }
+      const newOrder: CreatedOrder = orderData;
+      setCreatedOrder(newOrder);
 
-      // Sukses — kosongkan keranjang & tampilkan step pembayaran
-      clearCart();
-      setCreatedOrder(data);
-      setStep("payment");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Terjadi kesalahan");
-      setSubmitting(false);
-    }
-  }
-
-  function handleCheckout() {
-    void startCheckout();
-  }
-
-  /** Simpan pilihan pengiriman ke backend (hitung ulang ongkir + diskon ongkir).
-   *  Backend adalah sumber kebenaran: shippingCost divalidasi ulang via RajaOngkir.
-   *  Return order row saat sukses, null saat 401 (sudah redirect), throw saat error. */
-  async function persistSelectedShipping(option?: ShippingOption) {
-    const sel = option ?? selectedShipping;
-    if (!createdOrder || !selectedAddressIdRef.current || !sel) return null;
-    const res = await fetch(`/api/orders/${createdOrder.id}/shipping`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        addressId: selectedAddressIdRef.current,
-        courier: sel.code,
-        service: sel.service,
-      }),
-    });
-    if (res.status === 401) {
-      router.push("/dashboard/pelanggan/login?from=/keranjang");
-      return null;
-    }
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(
-        Array.isArray(data.message) ? data.message.join(", ") : data.message ?? "Gagal menyimpan pengiriman"
-      );
-    }
-    // Backend bisa menghitung ulang ongkir & diskon ongkir — sinkronkan angka
-    // total lokal tanpa menghilangkan relasi items/orderVouchers utk tampilan.
-    setCreatedOrder((prev) =>
-      prev
-        ? {
-            ...prev,
-            subtotal: data.subtotal ?? prev.subtotal,
-            discountAmount: data.discountAmount ?? prev.discountAmount,
-            shippingDiscount: data.shippingDiscount ?? prev.shippingDiscount,
-            shippingCost: data.shippingCost ?? prev.shippingCost,
-            total: data.total ?? prev.total,
-          }
-        : prev
-    );
-    return data;
-  }
-
-  /** Simpan pengiriman lalu buka Snap payment untuk metode terpilih */
-  async function handlePay() {
-    if (!createdOrder || !selectedMethod) return;
-    if (selectedAddressId && !selectedShipping) return;
-    setPayError(null);
-    setPaying(true);
-    try {
-      // 1) Simpan pilihan pengiriman — backend hitung ulang ongkir + snapshot alamat
-      if (selectedAddressId && selectedShipping) {
-        const ship = await persistSelectedShipping();
-        if (ship === null) return; // 401 → sudah redirect
+      // 2) Simpan pilihan ongkir ke order yang baru dibuat
+      const shipRes = await fetch(`/api/orders/${newOrder.id}/shipping`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          addressId: selectedAddressIdRef.current,
+          courier: selectedShipping.code,
+          service: selectedShipping.service,
+        }),
+      });
+      if (shipRes.status === 401) {
+        router.push("/dashboard/pelanggan/login?from=/keranjang");
+        return;
+      }
+      if (!shipRes.ok) {
+        const shipData = await shipRes.json().catch(() => ({}));
+        throw new Error(shipData.message ?? "Gagal menyimpan pengiriman");
       }
 
-      // 2) Buat payment-intent Midtrans
-      const res = await fetch(`/api/orders/${createdOrder.id}/payment-intent`, {
+      // 3) Buat payment-intent Midtrans
+      const payRes = await fetch(`/api/orders/${newOrder.id}/payment-intent`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paymentMethod: selectedMethod }),
       });
-      if (res.status === 401) {
+      if (payRes.status === 401) {
         router.push("/dashboard/pelanggan/login?from=/keranjang");
         return;
       }
-      const data = await res.json();
-      if (!res.ok) {
+      const payData = await payRes.json();
+      if (!payRes.ok) {
         throw new Error(
-          Array.isArray(data.message) ? data.message.join(", ") : data.message ?? "Gagal membuat pembayaran"
+          Array.isArray(payData.message) ? payData.message.join(", ") : payData.message ?? "Gagal membuat pembayaran"
         );
       }
 
+      // 4) Hapus item dari keranjang setelah order berhasil dibuat
+      itemsToCheckout.forEach((i) => removeFromCart(i.productId, i.typeName ?? null));
+      buyNowKeyRef.current = null;
+
+      // 5) Buka Snap
       await loadSnapScript();
-      const resultUrl = `/payment/success?order_id=${encodeURIComponent(createdOrder.orderNumber ?? createdOrder.id)}`;
-      payWithSnap(data.token, {
+      const resultUrl = `/payment/success?order_id=${encodeURIComponent(newOrder.orderNumber ?? newOrder.id)}`;
+      payWithSnap(payData.token, {
         onSuccess: () => {
           sessionStorage.removeItem(PAYMENT_DRAFT_KEY);
           router.push(resultUrl);
@@ -671,10 +628,11 @@ export default function KeranjangPage() {
         },
         onError: () => setPayError("Pembayaran gagal atau dibatalkan. Silakan coba lagi."),
       });
-      // onClose (user menutup popup) → biarkan tetap di halaman agar bisa pilih metode lain
       setPaying(false);
     } catch (e: unknown) {
       setPayError(e instanceof Error ? e.message : "Terjadi kesalahan saat memproses pembayaran");
+      // Reset idempotency key agar bisa coba lagi dengan order baru
+      sessionIdRef.current = null;
       setPaying(false);
     }
   }
@@ -683,11 +641,6 @@ export default function KeranjangPage() {
     setSelectedShipping(option);
     setShippingCost(Number(option.cost) || 0);
     setShippingModalOpen(false);
-    // Persist agar diskon ongkir (voucher SHIPPING) langsung terhitung terhadap
-    // ongkir yang dipilih — backend hitung ulang & sinkronkan shippingDiscount.
-    if (step === "payment" && createdOrder && selectedAddressIdRef.current) {
-      persistSelectedShipping(option).catch(() => {});
-    }
   }
 
   function handleSelectPayment(m: (typeof PAYMENT_METHODS)[number]) {
@@ -696,12 +649,12 @@ export default function KeranjangPage() {
   }
 
   // ── Step pembayaran: alamat + ongkir + ringkasan + metode bayar ──
-  if (step === "payment" && createdOrder) {
-    const orderSubtotal = Number(createdOrder.subtotal) || 0;
-    const orderDiscount = Number(createdOrder.discountAmount) || 0;
-    const orderShippingDiscount = Number(createdOrder.shippingDiscount) || 0;
-    const orderTotal = Math.max(0, orderSubtotal - orderDiscount + shippingCost - orderShippingDiscount);
-    const appliedOrderVouchers = createdOrder.orderVouchers ?? [];
+  if (step === "payment") {
+    const checkoutItems = itemsToCheckoutRef.current;
+    // Subtotal dari item yang akan di-checkout (hitung dari data keranjang lokal)
+    const orderSubtotal = checkoutItems.reduce((s, i) => s + i.price * i.quantity, 0);
+    const orderDiscount = appliedVoucher?.discount ?? 0;
+    const orderTotal = Math.max(0, orderSubtotal - orderDiscount + shippingCost);
 
     // Fee admin utk metode yg dipilih (0 jika belum pilih)
     const selectedFee = selectedMethod ? calculateFee(selectedMethod, orderTotal) : 0;
@@ -722,11 +675,21 @@ export default function KeranjangPage() {
 
     return (
       <div className="min-h-screen bg-[#f8f9fb] text-neutral-900">
-        <main className="mx-auto max-w-2xl px-4 py-8 md:px-6">
+        <main className="mx-auto max-w-2xl px-4 pt-8 pb-32 md:px-6 md:py-8">
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => setStep("cart")}
+              onClick={() => {
+                // Hapus draft agar tidak di-restore saat Beli Sekarang produk lain
+                try { sessionStorage.removeItem(PAYMENT_DRAFT_KEY); } catch {}
+                // Navigasi balik sesuai asal: detail produk atau keranjang
+                if (backRoute === "/keranjang") {
+                  window.history.replaceState(null, "", "/keranjang");
+                  setStep("cart");
+                } else {
+                  router.push(backRoute);
+                }
+              }}
               className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-600 hover:bg-neutral-100 transition"
               aria-label="Kembali"
             >
@@ -740,24 +703,17 @@ export default function KeranjangPage() {
           {/* ── Ringkasan Pesanan ── */}
           <div className="mt-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="divide-y divide-gray-100">
-              {createdOrder.items.map((item) => (
-                <div key={item.id} className="flex items-center gap-3 py-3">
+              {checkoutItems.map((item) => (
+                <div key={`${item.productId}-${item.typeName ?? ""}`} className="flex items-center gap-3 py-3">
                   <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-gray-50">
-                    {item.product?.images?.[0] || item.service?.images?.[0] ? (
-                      <img
-                        src={resolveImageUrl(item.product?.images?.[0] ?? item.service?.images?.[0])}
-                        alt={item.name}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-lg text-gray-300">📦</div>
-                    )}
+                    <Image src={item.image} alt={item.name} width={48} height={48} className="h-full w-full object-contain p-0.5" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold text-gray-950">{item.name}</p>
-                    <p className="text-xs text-gray-500">{item.quantity} x {formatPrice(Number(item.price))}</p>
+                    {item.typeName && <p className="text-xs text-gray-400">Tipe: {item.typeName}</p>}
+                    <p className="text-xs text-gray-500">{item.quantity} x {formatPrice(item.price)}</p>
                   </div>
-                  <p className="text-sm font-semibold text-gray-950">{formatPrice(Number(item.subtotal))}</p>
+                  <p className="text-sm font-semibold text-gray-950">{formatPrice(item.price * item.quantity)}</p>
                 </div>
               ))}
             </div>
@@ -769,7 +725,7 @@ export default function KeranjangPage() {
               </div>
               {orderDiscount > 0 && (
                 <div className="flex justify-between text-gray-500">
-                  <span>Diskon Produk</span>
+                  <span>Diskon Voucher</span>
                   <span className="font-bold text-green-700">-{formatPrice(orderDiscount)}</span>
                 </div>
               )}
@@ -779,12 +735,6 @@ export default function KeranjangPage() {
                   {shippingLoading ? "..." : selectedShipping ? formatPrice(shippingCost) : "—"}
                 </span>
               </div>
-              {orderShippingDiscount > 0 && (
-                <div className="flex justify-between text-gray-500">
-                  <span>Diskon Ongkir</span>
-                  <span className="font-bold text-green-700">-{formatPrice(orderShippingDiscount)}</span>
-                </div>
-              )}
               <div className="flex justify-between border-t border-gray-100 pt-2 font-bold text-gray-950">
                 <span>Total Bayar</span>
                 <span className="text-lg font-black">{formatPrice(amountToPay)}</span>
@@ -914,32 +864,19 @@ export default function KeranjangPage() {
           </div>
 
           {/* ── Voucher ── */}
+          {appliedVoucher && (
           <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            <button
-              type="button"
-              onClick={openVoucherModal}
-              disabled={voucherBusy !== null}
-              className="flex w-full items-center gap-3 text-left disabled:cursor-not-allowed"
-            >
+            <div className="flex items-center gap-3">
               <span className="text-xl" aria-hidden>🎟</span>
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-black text-gray-950">Voucher</span>
-                {appliedOrderVouchers.length > 0 ? (
-                  appliedOrderVouchers.map((ov) => (
-                    <span key={ov.id} className="mt-1 block text-sm font-bold text-[#064e3b]">
-                      {ov.voucher?.name ?? ov.voucherCode} · Hemat {formatPrice(Number(ov.discountAmount) || 0)}
-                    </span>
-                  ))
-                ) : (
-                  <span className="mt-1 block text-sm text-gray-500">Tambahkan Voucher</span>
-                )}
+                <span className="block text-sm font-black text-gray-950">Voucher Dipakai</span>
+                <span className="mt-1 block text-sm font-bold text-[#064e3b]">
+                  {appliedVoucher.code} · Hemat {formatPrice(appliedVoucher.discount)}
+                </span>
               </span>
-              <span className="text-lg text-gray-400">›</span>
-            </button>
-            {voucherApplyError && (
-              <p className="mt-2 text-xs font-semibold text-red-600">{voucherApplyError}</p>
-            )}
+            </div>
           </div>
+          )}
 
           {/* ── Metode Pembayaran ── */}
           <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -987,123 +924,6 @@ export default function KeranjangPage() {
             Anda akan diarahkan ke halaman pembayaran yang aman untuk menyelesaikan transaksi.
           </p>
         </main>
-
-        {/* ── Modal pilih voucher ── */}
-        <Modal open={voucherModalOpen} onClose={() => setVoucherModalOpen(false)} title="Pilih Voucher">
-          {vouchersLoading ? (
-            <p className="flex items-center gap-2 text-xs font-semibold text-gray-500">
-              <span className="h-3 w-3 animate-spin rounded-full border-2 border-[#064e3b] border-t-transparent" />
-              Memuat voucher...
-            </p>
-          ) : (
-            <div className="space-y-5">
-              {appliedOrderVouchers.length > 0 && (
-                <div>
-                  <p className="mb-2 text-[11px] font-black uppercase tracking-wider text-gray-400">Voucher Dipakai</p>
-                  <div className="space-y-2">
-                    {appliedOrderVouchers.map((ov) => (
-                      <div
-                        key={ov.id}
-                        className="flex items-center justify-between rounded-xl border border-green-200 bg-green-50 px-3 py-2.5"
-                      >
-                        <div className="min-w-0">
-                          <p className="text-sm font-black text-[#064e3b]">
-                            {ov.voucher?.name ?? ov.voucherCode}
-                            <span className="ml-2 rounded-full bg-[#064e3b]/10 px-2 py-0.5 text-[10px] font-bold text-[#064e3b]">
-                              {ov.voucherCategory === "SHIPPING" ? "Diskon Ongkir" : "Diskon Produk"}
-                            </span>
-                          </p>
-                          <p className="text-xs font-semibold text-green-700">
-                            Hemat {formatPrice(Number(ov.discountAmount) || 0)}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveOrderVoucher(ov.id)}
-                          disabled={voucherBusy !== null}
-                          className="ml-3 shrink-0 rounded-lg px-2 py-1 text-xs font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
-                        >
-                          {voucherBusy === ov.id ? "..." : "Hapus"}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {availableVouchers.length === 0 ? (
-                <p className="text-sm text-gray-500">Belum ada voucher yang tersedia untuk Anda.</p>
-              ) : (
-                <div className="space-y-5">
-                  {(() => {
-                    const discount = availableVouchers.filter((v) => v.category === "DISCOUNT");
-                    const shipping = availableVouchers.filter((v) => v.category === "SHIPPING");
-                    const groups: Array<{ title: string; vouchers: AvailableVoucher[] }> = [
-                      ...(discount.length ? [{ title: "Diskon Produk", vouchers: discount }] : []),
-                      ...(shipping.length ? [{ title: "Potongan Ongkir", vouchers: shipping }] : []),
-                    ];
-                    return groups.map((g) => (
-                      <div key={g.title}>
-                        <p className="mb-2 text-[11px] font-black uppercase tracking-wider text-gray-400">{g.title}</p>
-                        <div className="space-y-2.5">
-                          {g.vouchers.map((v) => {
-                            const categoryUsed = appliedOrderVouchers.some(
-                              (ov) => ov.voucherCategory === v.category,
-                            );
-                            const disabled = v.used || categoryUsed;
-                            return (
-                              <div
-                                key={v.id}
-                                className={`rounded-xl border p-3.5 ${
-                                  disabled ? "border-gray-200 bg-gray-50" : "border-gray-200 bg-white"
-                                }`}
-                              >
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="min-w-0">
-                                    <p className="flex flex-wrap items-center gap-1.5 text-sm font-black text-gray-950">
-                                      {v.name ?? v.code}
-                                      <span className="rounded-full bg-[#064e3b]/10 px-2 py-0.5 text-[10px] font-bold text-[#064e3b]">
-                                        {v.category === "SHIPPING" ? "Potongan Ongkir" : "Diskon Produk"}
-                                      </span>
-                                    </p>
-                                    {v.description && (
-                                      <p className="mt-0.5 text-xs text-gray-500">{v.description}</p>
-                                    )}
-                                  </div>
-                                  {disabled ? (
-                                    <span className="shrink-0 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-black text-gray-400">
-                                      {v.used ? "✓ Digunakan" : "Terpakai"}
-                                    </span>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      disabled={voucherBusy !== null}
-                                      onClick={() => handleApplyOrderVoucher(v)}
-                                      className="shrink-0 rounded-lg bg-[#064e3b] px-3 py-1.5 text-xs font-black text-white transition hover:bg-[#065f46] disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                      {voucherBusy === v.code ? "..." : "Gunakan ›"}
-                                    </button>
-                                  )}
-                                </div>
-                                {disabled && (
-                                  <p className="mt-1.5 text-[11px] font-semibold text-gray-400">
-                                    {v.used
-                                      ? "Voucher sudah pernah digunakan."
-                                      : "Anda sudah menggunakan voucher kategori ini. Maksimal 1 voucher diskon."}
-                                  </p>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ));
-                  })()}
-                </div>
-              )}
-            </div>
-          )}
-        </Modal>
 
         {/* ── Modal pilih pengiriman ── */}
         <Modal open={shippingModalOpen} onClose={() => setShippingModalOpen(false)} title="Pilih Pengiriman">
@@ -1248,11 +1068,68 @@ export default function KeranjangPage() {
           <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
             {/* Daftar item */}
             <div className="space-y-4">
-              {items.map((item) => (
+              {/* ── Pilih Semua ── */}
+              <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3">
+                <label className="flex cursor-pointer items-center gap-3">
+                  <span
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+                      items.length > 0 && items.every((i) => selectedIds.has(`${i.productId}:${i.typeName ?? ""}`))
+                        ? "border-black bg-black"
+                        : "border-gray-300 bg-white"
+                    }`}
+                    onClick={() => {
+                      if (items.every((i) => selectedIds.has(`${i.productId}:${i.typeName ?? ""}`))) {
+                        setSelectedIds(new Set());
+                      } else {
+                        setSelectedIds(new Set(items.map((i) => `${i.productId}:${i.typeName ?? ""}`)));
+                      }
+                    }}
+                  >
+                    {items.length > 0 && items.every((i) => selectedIds.has(`${i.productId}:${i.typeName ?? ""}`)) && (
+                      <svg className="h-3 w-3 fill-white" viewBox="0 0 12 12">
+                        <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                      </svg>
+                    )}
+                  </span>
+                  <span className="text-sm font-bold text-gray-950">Pilih Semua</span>
+                </label>
+                {selectedIds.size > 0 && (
+                  <span className="text-xs font-semibold text-gray-500">
+                    {selectedIds.size} dari {items.length} item dipilih
+                  </span>
+                )}
+              </div>
+
+              {items.map((item) => {
+                const itemKey = `${item.productId}:${item.typeName ?? ""}`;
+                const isSelected = selectedIds.has(itemKey);
+                return (
                 <div
                   key={`${item.productId}-${item.typeName ?? ""}`}
-                  className="flex gap-4 rounded-2xl border border-gray-200 bg-white p-4"
+                  className={`flex gap-3 rounded-2xl border bg-white p-4 transition-colors ${isSelected ? "border-black/20" : "border-gray-200 opacity-60"}`}
                 >
+                  {/* Checkbox */}
+                  <div className="flex shrink-0 items-start pt-1">
+                    <span
+                      className={`flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 transition-colors ${
+                        isSelected ? "border-black bg-black" : "border-gray-300 bg-white"
+                      }`}
+                      onClick={() => {
+                        setSelectedIds((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(itemKey)) next.delete(itemKey);
+                          else next.add(itemKey);
+                          return next;
+                        });
+                      }}
+                    >
+                      {isSelected && (
+                        <svg className="h-3 w-3" viewBox="0 0 12 12">
+                          <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                        </svg>
+                      )}
+                    </span>
+                  </div>
                   <Link href={`/produk/${item.slug}`} className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-gray-50">
                     <Image src={item.image} alt={item.name} fill sizes="80px" className="object-contain p-1" />
                   </Link>
@@ -1306,7 +1183,8 @@ export default function KeranjangPage() {
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Ringkasan */}
@@ -1394,7 +1272,7 @@ export default function KeranjangPage() {
                 {/* Rincian */}
                 <div className="mt-4 space-y-2 border-t border-gray-100 pt-4 text-sm">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500">Subtotal ({items.reduce((s, i) => s + i.quantity, 0)} item)</span>
+                    <span className="text-gray-500">Subtotal ({selectedItems.reduce((s, i) => s + i.quantity, 0)} item dipilih)</span>
                     <span className="font-bold text-gray-950">{formatPrice(subtotal)}</span>
                   </div>
                   {discount > 0 && (
@@ -1431,10 +1309,10 @@ export default function KeranjangPage() {
 
                 <button
                   onClick={handleCheckout}
-                  disabled={submitting || (!!user && !addressesLoading && addresses.length === 0)}
+                  disabled={submitting || selectedItems.length === 0 || (!!user && !addressesLoading && addresses.length === 0)}
                   className="mt-4 flex h-11 w-full items-center justify-center rounded-xl bg-black text-sm font-black text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {submitting ? "Memproses..." : "Buat Pesanan"}
+                  {submitting ? "Memproses..." : selectedItems.length === 0 ? "Pilih item terlebih dahulu" : "Buat Pesanan"}
                 </button>
                 <p className="mt-2 text-center text-[11px] text-gray-400">
                   Setelah pesanan dibuat, Anda akan memilih alamat, ongkir, dan metode pembayaran.
@@ -1513,14 +1391,14 @@ function Modal({
   if (!open) return null;
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center sm:p-4"
+      className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 sm:items-center sm:p-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label={title}
     >
       <div
-        className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:rounded-2xl"
+        className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:rounded-2xl sm:max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 py-4">
@@ -1534,7 +1412,8 @@ function Modal({
             ✕
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto p-5">{children}</div>
+        {/* pb-24 di mobile beri ruang agar konten tidak tertutup navbar bawah */}
+        <div className="min-h-0 flex-1 overflow-y-auto p-5 pb-24 sm:pb-5">{children}</div>
       </div>
     </div>
   );

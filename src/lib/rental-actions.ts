@@ -101,7 +101,7 @@ export async function createRentalItem(data: CreateRentalItemInput): Promise<Api
   try {
     headers = await authHeaders();
   } catch {
-    throw new Error("Session tidak valid. Silakan login ulang ke /dashboard-admin/admin/login");
+    throw new Error("Session tidak valid. Silakan login ulang ke /dashboard-admin/auth/login");
   }
 
   const res = await fetch(`${API_URL}/rentals/items`, {
@@ -141,7 +141,7 @@ export async function editRentalItem(
   try {
     headers = await authHeaders();
   } catch {
-    throw new Error("Session tidak valid. Silakan login ulang ke /dashboard-admin/admin/login");
+    throw new Error("Session tidak valid. Silakan login ulang ke /dashboard-admin/auth/login");
   }
 
   const res = await fetch(`${API_URL}/rentals/items/${id}`, {
@@ -170,7 +170,7 @@ export async function deleteRentalItem(id: string): Promise<void> {
   try {
     headers = await authHeaders();
   } catch {
-    throw new Error("Session tidak valid. Silakan login ulang ke /dashboard-admin/admin/login");
+    throw new Error("Session tidak valid. Silakan login ulang ke /dashboard-admin/auth/login");
   }
 
   const res = await fetch(`${API_URL}/rentals/items/${id}`, {

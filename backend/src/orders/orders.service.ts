@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { DatabaseService, genId } from '../database/database.service';
+import { ChatGateway } from '../chat/chat.gateway';
 import { orders, orderItems, orderVouchers, products, services, users, vouchers, voucherUses, chats, payments, addresses, productReviews, productPromos, productTypes } from '../../db/schema';
 import { eq, and, desc, sql, inArray } from 'drizzle-orm';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -15,6 +16,17 @@ import { pickActivePromo, buildPromo } from '../promos/promo.helper';
 /** Batas pembayaran order = 24 jam sejak order dibuat */
 export const PAYMENT_EXPIRY_MS = 24 * 60 * 60 * 1000;
 export const RECEIVE_CONFIRM_DELAY_MS = 0;
+
+const ORDER_STATUS_LABEL: Record<string, string> = {
+  PENDING: 'Menunggu pembayaran',
+  CONFIRMED: 'Pembayaran berhasil',
+  PROCESSING: 'Pesanan sedang diproses',
+  SHIPPED: 'Pesanan sedang dikirim',
+  DELIVERED: 'Pesanan telah diterima',
+  CANCELLED: 'Pesanan dibatalkan',
+  REFUNDED: 'Dana telah dikembalikan',
+  EXPIRED: 'Pesanan dibatalkan',
+};
 
 @Injectable()
 export class OrdersService {
@@ -489,6 +501,16 @@ export class OrdersService {
     if (dto.status === 'SHIPPED') {
       await this.sendBotMessage(id, existing.userId);
     }
+
+    // Broadcast perubahan status ke customer via WebSocket
+    ChatGateway.instance?.emitOrderStatusUpdated({
+      orderId: id,
+      userId: existing.userId,
+      status: dto.status,
+      statusLabel: ORDER_STATUS_LABEL[dto.status] ?? dto.status,
+      updatedAt: new Date().toISOString(),
+    });
+
     return row;
   }
 
@@ -639,6 +661,63 @@ export class OrdersService {
     });
 
     await Promise.all([...new Set(productItems.map((item) => item.productId!))].map((productId) => this.recalculateProductRating(productId)));
+
+    // Broadcast review baru ke semua pengunjung halaman produk (realtime)
+    const reviewer = await this.database.db
+      .select({ name: users.name, avatar: users.avatar })
+      .from(users)
+      .where(eq(users.id, userId))
+      .then((rows) => rows[0] ?? null);
+
+    const receivedProofUrl = dto.receivedProof ?? null;
+
+    for (const item of productItems) {
+      const productId = item.productId!;
+      const review = reviewByItem.get(item.id)!;
+
+      const [countRow] = await this.database.db
+        .select({
+          avg: sql<string>`avg(${productReviews.rating})`,
+          count: sql<string>`count(*)`,
+        })
+        .from(productReviews)
+        .where(eq(productReviews.productId, productId));
+
+      const newAvg = Number(countRow?.avg ?? 0);
+      const newTotal = Number(countRow?.count ?? 0);
+
+      // Cari id review yang baru saja diinsert
+      const [inserted] = await this.database.db
+        .select({ id: productReviews.id, createdAt: productReviews.createdAt })
+        .from(productReviews)
+        .where(
+          and(
+            eq(productReviews.productId, productId),
+            eq(productReviews.orderItemId, item.id),
+          ),
+        )
+        .limit(1);
+
+      if (inserted) {
+        ChatGateway.instance?.emitProductReviewNew({
+          productId,
+          review: {
+            id: inserted.id,
+            rating: review.rating,
+            comment: review.comment?.trim() || null,
+            userName: reviewer?.name ?? 'Pelanggan',
+            userAvatar: reviewer?.avatar ?? null,
+            image: receivedProofUrl,
+            createdAt: inserted.createdAt instanceof Date
+              ? inserted.createdAt.toISOString()
+              : String(inserted.createdAt),
+          },
+          newAvgRating: newAvg,
+          newTotalReviews: newTotal,
+        });
+      }
+    }
+
     return this.findOne(id, userId);
   }
 
@@ -788,7 +867,10 @@ export class OrdersService {
     const totalAmount = effectiveTotal + fee;
 
     // Pastikan Midtrans memakai total yang sudah divalidasi (bukan yang basi)
+    // Sinkronkan juga discountAmount & shippingDiscount agar item_details konsisten
     ;(order as any).total = String(effectiveTotal);
+    ;(order as any).discountAmount = String(totals.productDiscount);
+    ;(order as any).shippingDiscount = String(totals.shippingDiscount);
 
     // Snap membutuhkan order_id UNIK per transaksi — orderNumber tidak boleh
     // dipakai ulang (Midtrans menolak order_id yang pernah dibuat, walau belum

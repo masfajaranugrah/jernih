@@ -30,8 +30,9 @@ export class PromosController {
 
   /** GET /api/promos/banner — promo untuk banner homepage */
   @Get('banner')
-  findBanner() {
-    return this.promosService.findBanner();
+  async findBanner() {
+    const data = await this.promosService.findBanner();
+    return data ?? { data: null };
   }
 
   /** GET /api/promos/:id */

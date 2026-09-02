@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useState, FormEvent, Suspense } from "react";
 import { useRouter } from "next/navigation";
 
@@ -12,6 +11,7 @@ function RegisterPageContent() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [agree, setAgree] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -19,14 +19,11 @@ function RegisterPageContent() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
-
     if (!agree) {
       setError("Anda harus menyetujui syarat layanan dan kebijakan privasi.");
       return;
     }
-
     setLoading(true);
-
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
@@ -35,204 +32,208 @@ function RegisterPageContent() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || data.message || "Registrasi gagal");
-
-      // Registrasi sukses — arahkan ke halaman login untuk masuk
       router.push("/dashboard/pelanggan/login?registered=1");
-    } catch (err: any) {
-      setError(err.message ?? "Terjadi kesalahan");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main className="min-h-screen bg-[#f8f9fa] flex flex-col lg:flex-row antialiased">
-      {/* Left panel — branding, hidden on mobile/tablet */}
-      <div className="relative hidden lg:flex lg:w-1/2 xl:w-3/5 flex-col justify-between overflow-hidden">
-        <Image
-          src="https://lh3.googleusercontent.com/aida-public/AB6AXuBldZ4Y3FzFjCxhbsi6Ir3mwX1p6IfF2n_BtZ7s2FTMhxx21a9Eo_P9rqIDV867wlovyg6Ca_CafMYzawNQaymO2Jz5LS3qFO34Q-iMMWOh2Sy3xGMA97f1NuQ75TYCAsmggGV8l2gv0PRjlDJ1nz71PeTnL1LQALxOg70jNdH-otpqbF88sojNQsCW-fFfTmj6cVkx1PekbJ_VEmslp4F8wLTT7I4vwsEHxToMzZeZHtLTbecmb6Ym"
-          alt="Luxury jewelry on marble surface"
-          fill
-          className="object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-black/20" />
-        <div className="relative z-10 p-10 xl:p-14 h-full flex flex-col justify-between">
-          <div className="text-white font-bold" style={{ fontSize: "48px", lineHeight: "1.1", letterSpacing: "-0.02em" }}>
-            Jernih Creatife
-          </div>
-          <div className="max-w-md">
-            <p className="text-white mb-4" style={{ fontSize: "30px", lineHeight: "1.2", letterSpacing: "-0.01em", fontWeight: 500 }}>
-              Satu akun untuk semua kebutuhan marketplace.
-            </p>
-            <p className="text-white/80" style={{ fontSize: "18px", lineHeight: "1.6" }}>
-              Temukan produk, layanan profesional, dan peralatan sewa dengan pengalaman yang cepat dan mudah.
-            </p>
-          </div>
-        </div>
+    <div className="min-h-screen flex items-center justify-center p-4 py-10"
+      style={{ background: "linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #dbeafe 100%)" }}>
+
+      {/* Ambient glow */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full opacity-40"
+          style={{ background: "radial-gradient(circle at 80% 10%, #93c5fd33, transparent 65%)" }} />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full opacity-30"
+          style={{ background: "radial-gradient(circle at 20% 90%, #93c5fd33, transparent 65%)" }} />
       </div>
 
-      {/* Right panel — form */}
-      <div className="flex-1 flex flex-col justify-center items-center px-5 py-10 sm:px-10 lg:px-12 bg-[#f8f9fa]">
-        <div className="w-full max-w-sm sm:max-w-md">
+      <div className="relative w-full max-w-[420px]">
 
-          {/* Mobile branding */}
-          <div className="lg:hidden text-center mb-8">
-            <h1 className="font-bold text-[#003527]" style={{ fontSize: "clamp(28px, 8vw, 40px)", letterSpacing: "-0.02em", fontWeight: 600 }}>
-              Jernih Creatife
-            </h1>
+        {/* Brand */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center mb-5">
+            <div className="w-10 h-10 rounded-[10px] flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg, #1d4ed8, #2563eb)" }}>
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
           </div>
+          <h1 className="text-2xl font-bold text-gray-900" style={{ letterSpacing: "-0.02em" }}>
+            Jernih Creatife
+          </h1>
+          <p className="text-gray-400 text-sm mt-1">Buat akun untuk mulai berbelanja</p>
+        </div>
+
+        {/* Card */}
+        <div className="bg-white rounded-2xl p-8 border border-gray-100/80"
+          style={{ boxShadow: "0 2px 40px rgba(37,99,235,0.08), 0 1px 3px rgba(0,0,0,0.04)" }}>
 
           <div className="mb-6">
-            <p className="text-xs font-bold uppercase tracking-widest text-[#003527]">Register</p>
-            <h2 className="mt-1 text-[#191c1d] font-semibold" style={{ fontSize: "clamp(22px, 5vw, 30px)", lineHeight: "1.2", letterSpacing: "-0.01em" }}>
-              Buat akun baru
+            <h2 className="text-xl font-bold text-gray-900" style={{ letterSpacing: "-0.01em" }}>
+              Buat Akun Baru
             </h2>
-            <p className="mt-2 text-[#404944] text-sm sm:text-base">
-              Daftar untuk mulai belanja, pesan jasa, atau sewa peralatan.
-            </p>
+            <p className="text-gray-400 text-sm mt-1">Daftar gratis, belanja langsung.</p>
           </div>
 
+          {/* Error */}
           {error && (
-            <div className="mb-4 rounded-lg bg-[#ffdad6] border border-[#ba1a1a]/20 px-4 py-3 text-sm text-[#ba1a1a] font-medium">
-              {error}
+            <div className="mb-5 flex items-center gap-2.5 rounded-lg bg-red-50 border border-red-100 px-3.5 py-3">
+              <svg className="w-4 h-4 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <p className="text-sm text-red-600">{error}</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+
             {/* Nama */}
-            <div className="flex flex-col gap-1">
-              <label className="text-xs sm:text-sm font-semibold text-[#191c1d]" htmlFor="reg-name">
+            <div className="space-y-1.5">
+              <label htmlFor="reg-name" className="block text-sm font-medium text-gray-700">
                 Nama Lengkap
               </label>
-              <div className="flex items-center gap-3 rounded-xl border border-[#bfc9c3] bg-white px-4 focus-within:border-[#003527] focus-within:ring-1 focus-within:ring-[#003527]">
-                <svg className="w-5 h-5 text-[#707974] shrink-0" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-8 9a8 8 0 0 1 16 0H4Z" />
-                </svg>
-                <input
-                  type="text"
-                  id="reg-name"
-                  placeholder="Masukkan nama lengkap"
-                  autoComplete="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="h-12 w-full bg-transparent text-sm text-[#191c1d] outline-none placeholder:text-[#9ca3af]"
-                />
-              </div>
+              <input
+                id="reg-name" type="text" autoComplete="name" required
+                value={name} onChange={(e) => setName(e.target.value)}
+                placeholder="Masukkan nama lengkap"
+                className="block w-full px-4 py-3 text-sm text-gray-900 placeholder-gray-300 bg-gray-50 border border-gray-200 rounded-xl outline-none transition-all focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+              />
             </div>
 
             {/* Email */}
-            <div className="flex flex-col gap-1">
-              <label className="text-xs sm:text-sm font-semibold text-[#191c1d]" htmlFor="reg-email">
+            <div className="space-y-1.5">
+              <label htmlFor="reg-email" className="block text-sm font-medium text-gray-700">
                 Email
               </label>
-              <div className="flex items-center gap-3 rounded-xl border border-[#bfc9c3] bg-white px-4 focus-within:border-[#003527] focus-within:ring-1 focus-within:ring-[#003527]">
-                <svg className="w-5 h-5 text-[#707974] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                </svg>
-                <input
-                  type="email"
-                  id="reg-email"
-                  placeholder="nama@email.com"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="h-12 w-full bg-transparent text-sm text-[#191c1d] outline-none placeholder:text-[#9ca3af]"
-                />
-              </div>
+              <input
+                id="reg-email" type="email" autoComplete="email" required
+                value={email} onChange={(e) => setEmail(e.target.value)}
+                placeholder="nama@email.com"
+                className="block w-full px-4 py-3 text-sm text-gray-900 placeholder-gray-300 bg-gray-50 border border-gray-200 rounded-xl outline-none transition-all focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+              />
             </div>
 
             {/* WhatsApp */}
-            <div className="flex flex-col gap-1">
-              <label className="text-xs sm:text-sm font-semibold text-[#191c1d]" htmlFor="reg-phone">
+            <div className="space-y-1.5">
+              <label htmlFor="reg-phone" className="block text-sm font-medium text-gray-700">
                 Nomor WhatsApp
               </label>
-              <div className="flex items-center gap-3 rounded-xl border border-[#bfc9c3] bg-white px-4 focus-within:border-[#003527] focus-within:ring-1 focus-within:ring-[#003527]">
-                <svg className="w-5 h-5 text-[#707974] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
-                </svg>
-                <input
-                  type="tel"
-                  id="reg-phone"
-                  placeholder="08xxxxxxxxxx"
-                  autoComplete="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  required
-                  className="h-12 w-full bg-transparent text-sm text-[#191c1d] outline-none placeholder:text-[#9ca3af]"
-                />
-              </div>
+              <input
+                id="reg-phone" type="tel" autoComplete="tel" required
+                value={phone} onChange={(e) => setPhone(e.target.value)}
+                placeholder="08xxxxxxxxxx"
+                className="block w-full px-4 py-3 text-sm text-gray-900 placeholder-gray-300 bg-gray-50 border border-gray-200 rounded-xl outline-none transition-all focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+              />
             </div>
 
             {/* Password */}
-            <div className="flex flex-col gap-1">
-              <label className="text-xs sm:text-sm font-semibold text-[#191c1d]" htmlFor="reg-password">
+            <div className="space-y-1.5">
+              <label htmlFor="reg-password" className="block text-sm font-medium text-gray-700">
                 Password
               </label>
-              <div className="flex items-center gap-3 rounded-xl border border-[#bfc9c3] bg-white px-4 focus-within:border-[#003527] focus-within:ring-1 focus-within:ring-[#003527]">
-                <svg className="w-5 h-5 text-[#707974] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                </svg>
+              <div className="relative">
                 <input
-                  type="password"
-                  id="reg-password"
-                  placeholder="Buat password"
-                  autoComplete="new-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="h-12 w-full bg-transparent text-sm text-[#191c1d] outline-none placeholder:text-[#9ca3af]"
+                  id="reg-password" type={showPassword ? "text" : "password"}
+                  autoComplete="new-password" required
+                  value={password} onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Minimal 8 karakter"
+                  className="block w-full px-4 py-3 pr-11 text-sm text-gray-900 placeholder-gray-300 bg-gray-50 border border-gray-200 rounded-xl outline-none transition-all focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
                 />
+                <button type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  aria-label={showPassword ? "Sembunyikan" : "Tampilkan"}
+                  className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors">
+                  {showPassword
+                    ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" /></svg>
+                    : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  }
+                </button>
               </div>
             </div>
 
-            {/* Agree */}
-            <label className="flex items-start gap-2 text-xs sm:text-sm text-[#404944] leading-5">
-              <input
-                type="checkbox"
-                checked={agree}
-                onChange={(e) => setAgree(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-[#bfc9c3] accent-[#003527] shrink-0"
-              />
-              Saya menyetujui syarat layanan dan kebijakan privasi Jernih Creatife.
+            {/* Agree checkbox */}
+            <label className="flex items-start gap-3 cursor-pointer pt-1">
+              <div className="relative flex-shrink-0 mt-0.5">
+                <input
+                  type="checkbox"
+                  checked={agree}
+                  onChange={(e) => setAgree(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-4 h-4 rounded border-2 border-gray-300 peer-checked:border-blue-600 peer-checked:bg-blue-600 transition-all flex items-center justify-center">
+                  {agree && (
+                    <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </div>
+              </div>
+              <span className="text-xs text-gray-500 leading-relaxed">
+                Saya menyetujui{" "}
+                <Link href="/syarat-ketentuan" className="text-blue-600 font-medium hover:underline">Syarat & Ketentuan</Link>
+                {" "}dan{" "}
+                <Link href="/kebijakan-privasi" className="text-blue-600 font-medium hover:underline">Kebijakan Privasi</Link>
+                {" "}Jernih Creatife.
+              </span>
             </label>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full h-12 rounded-xl bg-[#003527] text-sm font-bold text-white transition hover:bg-[#064e3b] disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {loading ? "Memproses..." : "Daftar"}
+            {/* CTA */}
+            <button type="submit" disabled={loading}
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-semibold text-white transition-opacity duration-150 disabled:opacity-50 disabled:cursor-not-allowed mt-1"
+              style={{ background: "linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)", boxShadow: "0 4px 20px rgba(37,99,235,0.30)" }}>
+              {loading ? (
+                <>
+                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Memproses...
+                </>
+              ) : "Daftar Sekarang"}
             </button>
           </form>
 
-          <div className="mt-6 text-center space-y-2">
-            <p className="text-sm text-[#404944]">
-              Sudah punya akun?{" "}
-              <Link href="/dashboard/pelanggan/login" className="font-bold text-[#003527] hover:underline">
-                Masuk
-              </Link>
-            </p>
-            <p className="text-sm text-[#404944]">
-              Daftar sebagai mitra?{" "}
-              <Link href="/register-mitra" className="font-bold text-[#003527] hover:underline">
-                Daftar Mitra
-              </Link>
-            </p>
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-5">
+            <div className="flex-1 h-px bg-gray-100" />
+            <span className="text-xs text-gray-400">atau</span>
+            <div className="flex-1 h-px bg-gray-100" />
           </div>
+
+          <Link href="/register-mitra"
+            className="flex items-center justify-center w-full py-3 rounded-xl text-sm font-medium text-gray-500 border border-gray-100 hover:bg-gray-50 transition-colors">
+            Daftar sebagai Mitra
+          </Link>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-6 text-center space-y-1">
+          <p className="text-sm text-gray-400">
+            Sudah punya akun?{" "}
+            <Link href="/dashboard/pelanggan/login" className="text-blue-600 font-medium hover:underline">
+              Masuk
+            </Link>
+          </p>
+          <p className="text-xs text-gray-300">© {new Date().getFullYear()} Jernih Creatife</p>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
 
 export default function RegisterPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#064e3b] border-t-transparent" />
+      <div className="min-h-screen flex items-center justify-center"
+        style={{ background: "linear-gradient(160deg, #eff6ff, #f8fafc, #dbeafe)" }}>
+        <div className="w-6 h-6 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />
       </div>
     }>
       <RegisterPageContent />

@@ -13,8 +13,8 @@ export default function SewaSection() {
   return (
     <section className="mx-auto w-full max-w-[1260px]">
       <div className="flex items-end justify-between gap-4">
-        <h2 className="text-2xl font-bold text-[#191c1d]">Sewa Peralatan</h2>
-        <Link href="/sewa" className="flex items-center gap-1 text-sm font-bold text-[#1e3a8a] hover:underline">
+        <h2 className="text-2xl font-bold text-[#0F172A]">Sewa Peralatan</h2>
+        <Link href="/sewa" className="flex items-center gap-1 text-sm font-bold text-[#2563EB] hover:underline">
           Lihat Semua <ArrowIcon />
         </Link>
       </div>

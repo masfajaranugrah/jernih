@@ -78,29 +78,35 @@ function ProductCard({
   const badgeText = getBadgeText(product, index);
   const { basePrice, displayPrice, hasDiscount } = getProductPricing(product);
 
+  // Badge diskon (angka %) → merah #EF4444, badge NEW/HOT/teks → #0F172A
+  const isDiscountBadge = badgeText && /^-\d+%$/.test(badgeText);
+
   return (
     <Link
       href={`/produk/${product.slug}`}
-      className="group relative flex h-auto w-[210px] flex-shrink-0 flex-col rounded-[28px] border border-neutral-100 bg-white p-3.5 shadow-sm sm:w-[240px] sm:rounded-[32px] sm:p-4 hover:shadow-md transition-all"
+      className="group relative flex h-auto w-[210px] flex-shrink-0 flex-col rounded-2xl border border-[#E2E8F0] bg-white p-3.5 shadow-sm sm:w-[240px] sm:p-4 hover:shadow-md hover:border-[#CBD5E1] transition-all duration-200"
     >
-      {/* Top Left Black Capsule Pill Badge (Promo, -5%, New, Hot) */}
+      {/* Badge */}
       {badgeText && (
-        <div className="absolute top-2.5 left-2.5 z-20 rounded-full bg-black px-3.5 py-1 text-[11px] font-extrabold text-white shadow-md flex items-center justify-center whitespace-nowrap tracking-wide">
+        <div
+          className={`absolute top-2.5 left-2.5 z-20 rounded-full px-3 py-1 text-[11px] font-bold text-white shadow-sm flex items-center justify-center whitespace-nowrap tracking-wide ${
+            isDiscountBadge ? "bg-[#EF4444]" : "bg-[#0F172A]"
+          }`}
+        >
           {badgeText}
         </div>
       )}
 
-      {/* Product image fills its full image area. */}
-      <div className="relative -mx-3.5 -mt-3.5 aspect-[4/3] w-[calc(100%+1.75rem)] shrink-0 overflow-hidden rounded-t-[27px] sm:-mx-4 sm:-mt-4 sm:w-[calc(100%+2rem)] sm:rounded-t-[31px]">
+      {/* Image area */}
+      <div className="relative -mx-3.5 -mt-3.5 aspect-[4/3] w-[calc(100%+1.75rem)] shrink-0 overflow-hidden rounded-t-2xl sm:-mx-4 sm:-mt-4 sm:w-[calc(100%+2rem)] bg-[#F8FAFC]">
 
-        {/* Top Right Black Circle Button with Diagonal Arrow ↗ matching screenshot */}
-        <div className="absolute top-2.5 right-2.5 z-10 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black text-white flex items-center justify-center shadow-md">
-          <svg className="w-4 h-4 sm:w-5 sm:h-5 stroke-white fill-none stroke-[2.5]" viewBox="0 0 24 24">
+        {/* Arrow button — biru saat hover */}
+        <div className="absolute top-2.5 right-2.5 z-10 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white border border-[#E2E8F0] text-[#334155] flex items-center justify-center shadow-sm group-hover:bg-[#2563EB] group-hover:text-white group-hover:border-[#2563EB] transition-all duration-200">
+          <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-current fill-none stroke-[2]" viewBox="0 0 24 24">
             <path d="M7 17L17 7M17 7H7M17 7V17" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
 
-        {/* Product Image */}
         <Image
           src={resolveImageUrl(product.images && product.images[0] ? product.images[0] : null)}
           alt={product.name}
@@ -110,34 +116,33 @@ function ProductCard({
         />
       </div>
 
-      {/* Info Section - Nama penuh (kecil), rating, lalu harga */}
-      <div className="mt-2.5 flex flex-col items-start text-left px-0.5">
-        <h3 className="font-semibold text-xs sm:text-sm leading-snug text-black">
+      {/* Info */}
+      <div className="mt-3 flex flex-col items-start gap-1 px-0.5">
+        <h3 className="font-semibold text-xs sm:text-sm leading-snug text-[#0F172A] line-clamp-2">
           {truncate(product.name)}
         </h3>
-        {/* Baris rating + total terjual */}
-        <div className="mt-1.5 flex w-full items-center gap-1">
-          <div className="flex items-center gap-1">
-            <svg className="w-3.5 h-3.5 fill-[#f59e0b] shrink-0" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-            </svg>
-            <span className="text-[11px] sm:text-xs font-bold text-neutral-700">
-              {product.rating ? Number(product.rating).toFixed(1) : "0.0"}
-            </span>
-          </div>
-          <span className="text-[11px] sm:text-xs font-medium text-neutral-400">.</span>
-          <span className="text-[11px] sm:text-xs font-medium text-neutral-400">
+
+        {/* Rating + terjual */}
+        <div className="flex items-center gap-1">
+          <svg className="w-3.5 h-3.5 fill-[#F59E0B] shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+          </svg>
+          <span className="text-[11px] sm:text-xs font-semibold text-[#334155]">
+            {product.rating ? Number(product.rating).toFixed(1) : "0.0"}
+          </span>
+          <span className="text-[11px] text-[#94A3B8]">·</span>
+          <span className="text-[11px] sm:text-xs text-[#64748B]">
             {product.totalSold.toLocaleString("id-ID")} terjual
           </span>
         </div>
 
-        {/* Harga tersusun vertikal: harga jual di atas, harga coret di bawah */}
-        <div className="mt-1.5 flex flex-col items-start">
-          <span className="font-bold text-sm sm:text-base text-neutral-900">
+        {/* Harga */}
+        <div className="flex flex-col items-start">
+          <span className="font-bold text-sm sm:text-base text-[#0F172A]">
             {formatRupiah(displayPrice)}
           </span>
           {hasDiscount && (
-            <span className="text-xs sm:text-[13px] text-neutral-400 line-through">
+            <span className="text-xs text-[#EF4444] line-through">
               {formatRupiah(basePrice)}
             </span>
           )}
@@ -149,7 +154,7 @@ function ProductCard({
 
 function SkeletonCard() {
   return (
-    <div className="flex h-auto w-[210px] flex-shrink-0 flex-col rounded-[28px] border border-neutral-100 bg-white p-3.5 shadow-xs animate-pulse sm:w-[240px] sm:rounded-[32px] sm:p-4">
+    <div className="flex h-auto w-[210px] flex-shrink-0 flex-col rounded-2xl border border-[#E2E8F0] bg-white p-3.5 shadow-xs animate-pulse sm:w-[240px] sm:p-4">
       <div className="-mx-3.5 -mt-3.5 aspect-[4/3] w-[calc(100%+1.75rem)] rounded-t-[27px] bg-[#f3f4f1] sm:-mx-4 sm:-mt-4 sm:w-[calc(100%+2rem)] sm:rounded-t-[31px]" />
       <div className="mt-3 space-y-2 flex flex-col items-start px-1">
         <div className="h-4 w-3/4 rounded-full bg-neutral-200" />

@@ -66,7 +66,8 @@ export class MidtransService {
     const itemDetails: SnapItem[] = Array.isArray(order.items)
       ? order.items.map((i) => ({
           id: i.id,
-          name: i.name,
+          // Midtrans membatasi name max 50 karakter
+          name: String(i.name).slice(0, 50),
           price: Number(i.price),
           quantity: i.quantity,
         }))

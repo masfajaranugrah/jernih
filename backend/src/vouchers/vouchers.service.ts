@@ -11,7 +11,19 @@ export class VouchersService {
   async create(dto: CreateVoucherDto) {
     const [row] = await this.database.db
       .insert(vouchers)
-      .values({ id: genId('vch'), ...(dto as any) })
+      .values({
+        id: genId('vch'),
+        code: dto.code,
+        description: dto.description ?? null,
+        type: dto.type,
+        value: String(dto.value),
+        minPurchase: dto.minPurchase !== undefined ? String(dto.minPurchase) : '0',
+        maxDiscount: dto.maxDiscount !== undefined ? String(dto.maxDiscount) : null,
+        quota: dto.quota ?? 1,
+        isActive: dto.isActive ?? true,
+        startDate: dto.startDate ? new Date(dto.startDate) : null,
+        endDate: dto.endDate ? new Date(dto.endDate) : null,
+      })
       .returning();
     return row;
   }

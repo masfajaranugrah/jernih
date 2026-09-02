@@ -354,8 +354,8 @@ export default function MobileBottomNav({ initialSlug }: { initialSlug?: string 
 
             {/* Header */}
             <div className="mb-5 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-[#5E3CF6]/10 flex items-center justify-center mx-auto mb-3">
-                <UserIcon className="w-6 h-6 text-[#5E3CF6]" />
+              <div className="w-12 h-12 rounded-2xl bg-[#2563EB]/10 flex items-center justify-center mx-auto mb-3">
+                <UserIcon className="w-6 h-6 text-[#2563EB]" />
               </div>
               <h2 className="text-lg font-extrabold text-black tracking-tight">Masuk ke Akun</h2>
               <p className="text-xs text-neutral-500 mt-1">Login untuk mengakses fitur lengkap</p>
@@ -372,7 +372,7 @@ export default function MobileBottomNav({ initialSlug }: { initialSlug?: string 
                   placeholder="email@example.com"
                   required
                   autoComplete="email"
-                  className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm focus:outline-none focus:border-[#5E3CF6] focus:ring-2 focus:ring-[#5E3CF6]/20 transition"
+                  className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 transition"
                 />
               </div>
               <div>
@@ -384,7 +384,7 @@ export default function MobileBottomNav({ initialSlug }: { initialSlug?: string 
                   placeholder="••••••••"
                   required
                   autoComplete="current-password"
-                  className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm focus:outline-none focus:border-[#5E3CF6] focus:ring-2 focus:ring-[#5E3CF6]/20 transition"
+                  className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 transition"
                 />
               </div>
 
@@ -395,7 +395,7 @@ export default function MobileBottomNav({ initialSlug }: { initialSlug?: string 
               <button
                 type="submit"
                 disabled={loginLoading}
-                className="w-full rounded-xl bg-[#5E3CF6] text-white font-extrabold text-sm py-3 mt-1 transition hover:bg-[#4c30d4] active:scale-[0.98] disabled:opacity-60"
+                className="w-full rounded-xl bg-[#2563EB] text-white font-extrabold text-sm py-3 mt-1 transition hover:bg-[#1D4ED8] active:scale-[0.98] disabled:opacity-60"
               >
                 {loginLoading ? "Memproses..." : "Masuk"}
               </button>
@@ -403,7 +403,7 @@ export default function MobileBottomNav({ initialSlug }: { initialSlug?: string 
 
             {/* Footer links */}
             <div className="mt-4 flex items-center justify-between text-xs">
-              <Link href="/dashboard/pelanggan/register" onClick={() => setShowLoginModal(false)} className="text-[#5E3CF6] font-bold hover:underline">
+              <Link href="/dashboard/pelanggan/register" onClick={() => setShowLoginModal(false)} className="text-[#2563EB] font-bold hover:underline">
                 Daftar Akun
               </Link>
               <Link href="/dashboard/pelanggan/login" onClick={() => setShowLoginModal(false)} className="text-neutral-400 hover:underline">
@@ -429,9 +429,10 @@ export default function MobileBottomNav({ initialSlug }: { initialSlug?: string 
                   aria-label={item.label}
                   className={`relative flex items-center transition-all duration-300 ease-out cursor-pointer rounded-full ${
                     active
-                      ? "bg-[#5E3CF6] text-white px-3 py-3 sm:px-4 sm:py-3 font-semibold text-xs sm:text-sm shadow-md shadow-[#5E3CF6]/30 gap-1.5 sm:gap-2"
-                      : "text-[#1C1C1C] hover:text-black hover:bg-slate-100 p-2 sm:p-2.5"
+                      ? "text-white px-3 py-3 sm:px-4 sm:py-3 font-semibold text-xs sm:text-sm shadow-md gap-1.5 sm:gap-2"
+                      : "text-[#334155] hover:text-black hover:bg-slate-100 p-2 sm:p-2.5"
                   }`}
+                  style={active ? { background: "linear-gradient(135deg,#2563EB,#1D4ED8)", boxShadow: "0 4px 12px rgba(37,99,235,0.35)" } : {}}
                 >
                   <div className="relative flex items-center justify-center shrink-0">
                     {item.icon}
@@ -453,9 +454,10 @@ export default function MobileBottomNav({ initialSlug }: { initialSlug?: string 
                 href={item.href}
                 aria-label={item.label}
                 className={`relative flex items-center transition-all duration-300 ease-out cursor-pointer rounded-full ${active
-                  ? "bg-[#5E3CF6] text-white px-3 py-3 sm:px-4 sm:py-3 font-semibold text-xs sm:text-sm shadow-md shadow-[#5E3CF6]/30 gap-1.5 sm:gap-2"
-                  : "text-[#1C1C1C] hover:text-black hover:bg-slate-100 p-2 sm:p-2.5"
+                  ? "text-white px-3 py-3 sm:px-4 sm:py-3 font-semibold text-xs sm:text-sm shadow-md gap-1.5 sm:gap-2"
+                  : "text-[#334155] hover:text-black hover:bg-slate-100 p-2 sm:p-2.5"
                   }`}
+                style={active ? { background: "linear-gradient(135deg,#2563EB,#1D4ED8)", boxShadow: "0 4px 12px rgba(37,99,235,0.35)" } : {}}
               >
                 <div className="relative flex items-center justify-center shrink-0">
                   {item.icon}

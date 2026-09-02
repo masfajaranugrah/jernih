@@ -66,7 +66,7 @@ export default function PromoSectionClient({ promoCards }: { promoCards: PromoCa
           onClick={() => scrollBy(-1)}
           disabled={!canPrev}
           aria-label="Promo sebelumnya"
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-black/10 bg-white text-[#191c1d] shadow-lg transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-30"
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-[#E2E8F0] bg-white text-[#334155] shadow-lg transition hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-30"
         >
           <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
@@ -93,18 +93,18 @@ export default function PromoSectionClient({ promoCards }: { promoCards: PromoCa
               className="object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
-            <div className="absolute left-3 top-3 rounded-full bg-[#575e70] px-2.5 py-0.5 text-xs font-bold text-white">
+            <div className="absolute left-3 top-3 rounded-full bg-[#EF4444] px-2.5 py-0.5 text-xs font-bold text-white">
               PROMO
             </div>
             {promo.category && (
-              <div className="absolute right-3 top-3 rounded-full bg-white px-2.5 py-0.5 text-xs font-bold text-[#191c1d]">
+              <div className="absolute right-3 top-3 rounded-full bg-white px-2.5 py-0.5 text-xs font-bold text-[#0F172A]">
                 {promo.category}
               </div>
             )}
             <div className="absolute inset-x-3 bottom-3 text-white">
               <h3 className="text-xs font-bold">{promo.title}</h3>
-              <p className="mt-1 text-xl font-black text-[#a5b4fc]">{promo.price}</p>
-              <span className="mt-3 block rounded-xl bg-white py-1.5 text-center text-xs font-bold text-[#191c1d]">
+              <p className="mt-1 text-xl font-black text-white">{promo.price}</p>
+              <span className="mt-3 block rounded-xl bg-[#2563EB] py-1.5 text-center text-xs font-bold text-white">
                 Lihat Detail
               </span>
             </div>
@@ -119,7 +119,7 @@ export default function PromoSectionClient({ promoCards }: { promoCards: PromoCa
           onClick={() => scrollBy(1)}
           disabled={!canNext}
           aria-label="Promo berikutnya"
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-black/10 bg-white text-[#191c1d] shadow-lg transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-30"
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-[#E2E8F0] bg-white text-[#334155] shadow-lg transition hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-30"
         >
           <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />

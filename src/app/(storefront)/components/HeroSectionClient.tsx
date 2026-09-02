@@ -151,7 +151,7 @@ export default function HeroSectionClient({ hero }: { hero: HeroData }) {
             )}
             {b.ctaText && (
               <div className="mt-4 flex items-center gap-3">
-                <span className="rounded-xl bg-white px-5 py-2.5 text-xs sm:text-sm font-bold text-slate-900 shadow-md transition-transform hover:scale-105">
+                <span className="rounded-xl bg-white px-5 py-2.5 text-xs sm:text-sm font-bold text-[#0F172A] shadow-md transition-transform hover:scale-105">
                   {b.ctaText}
                 </span>
               </div>
@@ -176,7 +176,7 @@ export default function HeroSectionClient({ hero }: { hero: HeroData }) {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
             <div className="relative z-10 flex items-start justify-between">
-              <span className="rounded-full bg-blue-600/80 px-3.5 py-1 text-[11px] font-black uppercase tracking-widest text-white backdrop-blur-md">
+              <span className="rounded-full bg-[#2563EB]/80 px-3.5 py-1 text-[11px] font-black uppercase tracking-widest text-white backdrop-blur-md">
                 NEW RELEASE
               </span>
               <div className="flex items-center gap-1 rounded-xl bg-black/60 px-3 py-1.5 border border-amber-400/40 backdrop-blur-md">
@@ -192,7 +192,7 @@ export default function HeroSectionClient({ hero }: { hero: HeroData }) {
                 Internet Satelit Kecepatan Tinggi untuk Rumah & Bisnis. Kuota Tanpa Batas dengan Latensi Rendah.
               </p>
               <div className="mt-4 flex items-center gap-3">
-                <span className="rounded-xl bg-white px-5 py-2.5 text-xs sm:text-sm font-bold text-slate-900 shadow-md transition-transform hover:scale-105">
+                <span className="rounded-xl bg-[#2563EB] px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md transition-transform hover:scale-105">
                   Beli Sekarang
                 </span>
               </div>
@@ -207,7 +207,7 @@ export default function HeroSectionClient({ hero }: { hero: HeroData }) {
           <div className="relative flex h-full w-full flex-col justify-between overflow-hidden bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 p-6 sm:p-8 text-white">
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
             <div className="relative z-10 flex items-start justify-between">
-              <span className="rounded-full bg-purple-600/80 px-3.5 py-1 text-[11px] font-black uppercase tracking-widest text-white backdrop-blur-md">
+              <span className="rounded-full bg-[#2563EB]/80 px-3.5 py-1 text-[11px] font-black uppercase tracking-widest text-white backdrop-blur-md">
                 OFFICIAL PROMO
               </span>
             </div>
@@ -219,7 +219,7 @@ export default function HeroSectionClient({ hero }: { hero: HeroData }) {
                 Desain Planet 3D, AI Kolase Mix, dan Kamera Selfie 50MP Ultra-Wide.
               </p>
               <div className="mt-4">
-                <span className="rounded-xl bg-purple-500 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md">
+                <span className="rounded-xl bg-[#2563EB] px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md">
                   Selengkapnya
                 </span>
               </div>

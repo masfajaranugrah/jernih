@@ -76,14 +76,14 @@ type Order = {
 };
 
 const STATUS_META: Record<string, { label: string; desc: string; badge: string }> = {
-  PENDING: { label: "Menunggu Pembayaran", desc: "Pembayaran belum diterima", badge: "bg-[#ffdad6] text-[#93000a]" },
-  CONFIRMED: { label: "Pembayaran Berhasil", desc: "Pesanan menunggu diproses", badge: "bg-[#064e3b]/10 text-[#064e3b]" },
-  PROCESSING: { label: "Sedang Diproses", desc: "Pesanan sedang dikemas", badge: "bg-[#d9dff5] text-[#3d4a77]" },
-  SHIPPED: { label: "Dalam Pengiriman", desc: "Pesanan telah dikirim", badge: "bg-[#d9dff5] text-[#3d4a77]" },
-  DELIVERED: { label: "Selesai", desc: "Pesanan telah diterima", badge: "bg-[#e7e8e9] text-[#404944]" },
-  CANCELLED: { label: "Dibatalkan", desc: "Pesanan dibatalkan", badge: "bg-[#e7e8e9] text-[#707974]" },
-  REFUNDED: { label: "Dana Dikembalikan", desc: "Pembayaran telah dikembalikan", badge: "bg-[#e7e8e9] text-[#707974]" },
-  EXPIRED: { label: "Kedaluwarsa", desc: "Waktu pembayaran habis", badge: "bg-[#e7e8e9] text-[#707974]" },
+  PENDING: { label: "Menunggu Pembayaran", desc: "Pembayaran belum diterima", badge: "bg-amber-50 text-amber-700" },
+  CONFIRMED: { label: "Pembayaran Berhasil", desc: "Pesanan menunggu diproses", badge: "bg-blue-50 text-blue-700" },
+  PROCESSING: { label: "Sedang Diproses", desc: "Pesanan sedang dikemas", badge: "bg-blue-50 text-blue-700" },
+  SHIPPED: { label: "Dalam Pengiriman", desc: "Pesanan telah dikirim", badge: "bg-indigo-50 text-indigo-700" },
+  DELIVERED: { label: "Selesai", desc: "Pesanan telah diterima", badge: "bg-green-50 text-green-700" },
+  CANCELLED: { label: "Dibatalkan", desc: "Pesanan dibatalkan", badge: "bg-red-50 text-red-600" },
+  REFUNDED: { label: "Dana Dikembalikan", desc: "Pembayaran telah dikembalikan", badge: "bg-slate-50 text-slate-600" },
+  EXPIRED: { label: "Kedaluwarsa", desc: "Waktu pembayaran habis", badge: "bg-red-50 text-red-600" },
 };
 
 const PAYMENT_STATUS_LABEL: Record<string, string> = {
@@ -99,7 +99,7 @@ const PAYMENT_STATUS_LABEL: Record<string, string> = {
 
 const PAYMENT_BADGE: Record<string, string> = {
   PENDING: "bg-[#ffdad6] text-[#93000a]",
-  PAID: "bg-[#064e3b]/10 text-[#064e3b]",
+  PAID: "bg-[#2563EB]/10 text-[#2563EB]",
   FAILED: "bg-[#ffdad6] text-[#93000a]",
   EXPIRED: "bg-[#e7e8e9] text-[#707974]",
   CANCELLED: "bg-[#e7e8e9] text-[#707974]",
@@ -247,7 +247,7 @@ export default function OrderDetailPage({
                 setError("");
                 load();
               }}
-              className="rounded-xl bg-[#064e3b] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#043b2d]"
+              className="rounded-xl bg-[#2563EB] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#1D4ED8]"
             >
               Coba Lagi
             </button>
@@ -276,7 +276,7 @@ export default function OrderDetailPage({
             role="status"
             className={`fixed top-20 right-4 z-[100] px-5 py-3 rounded-xl shadow-lg text-sm font-semibold ${
               toast.type === "success"
-                ? "bg-[#f0fdf4] border border-[#bbf7d0] text-[#064e3b]"
+                ? "bg-[#f0fdf4] border border-[#bbf7d0] text-[#2563EB]"
                 : "bg-[#fef2f2] border border-[#fecaca] text-[#dc2626]"
             }`}
           >
@@ -290,15 +290,15 @@ export default function OrderDetailPage({
             <button
               onClick={() => router.back()}
               aria-label="Kembali"
-              className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#e2e8f0] bg-white text-[#475569] transition hover:bg-[#f8f9fa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b]/40"
+              className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#e2e8f0] bg-white text-[#475569] transition hover:bg-[#f8f9fa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/40"
             >
               <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
               </svg>
             </button>
             <div className="min-w-0">
-              <h1 className="text-xl font-semibold tracking-tight text-[#191c1d] sm:text-2xl">Detail Pesanan</h1>
-              <p className="mt-0.5 text-sm font-bold text-[#191c1d]">#{displayNumber}</p>
+              <h1 className="text-xl font-semibold tracking-tight text-[#0F172A] sm:text-2xl">Detail Pesanan</h1>
+              <p className="mt-0.5 text-sm font-bold text-[#0F172A]">#{displayNumber}</p>
               <p className="text-xs text-[#707974]">{formatDateTime(order.createdAt) ?? "Tanggal tidak tersedia"}</p>
             </div>
           </div>
@@ -402,7 +402,7 @@ export default function OrderDetailPage({
                   placeholder="contoh: JNE"
                   value={courier}
                   onChange={(e) => setCourier(e.target.value)}
-                  className="w-full rounded-xl border border-[#bfc9c3] bg-white px-4 py-2.5 text-sm text-[#191c1d] outline-none transition focus:border-[#064e3b] focus:ring-1 focus:ring-[#064e3b]"
+                  className="w-full rounded-xl border border-[#bfc9c3] bg-white px-4 py-2.5 text-sm text-[#191c1d] outline-none transition focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB]"
                 />
               </label>
               <label className="block">
@@ -412,7 +412,7 @@ export default function OrderDetailPage({
                   placeholder="contoh: JNE123456789"
                   value={resi}
                   onChange={(e) => setResi(e.target.value)}
-                  className="w-full rounded-xl border border-[#bfc9c3] bg-white px-4 py-2.5 text-sm text-[#191c1d] outline-none transition focus:border-[#064e3b] focus:ring-1 focus:ring-[#064e3b]"
+                  className="w-full rounded-xl border border-[#bfc9c3] bg-white px-4 py-2.5 text-sm text-[#191c1d] outline-none transition focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB]"
                 />
               </label>
             </div>
@@ -424,7 +424,7 @@ export default function OrderDetailPage({
                   setShowShippingForm(false);
                 }}
                 disabled={updating === "SHIPPED" || !courier.trim() || !resi.trim()}
-                className="flex-1 rounded-xl bg-[#064e3b] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#043b2d] disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1 rounded-xl bg-[#2563EB] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {updating === "SHIPPED" ? "Memproses..." : "Kirim Pesanan"}
               </button>
@@ -490,13 +490,13 @@ function ActionButtons({
         const styles =
           action.tone === "danger"
             ? "bg-[#dc2626] hover:bg-[#b91c1c] text-white"
-            : "bg-[#064e3b] hover:bg-[#043b2d] text-white";
+            : "bg-[#2563EB] hover:bg-[#1D4ED8] text-white";
         return (
           <button
             key={action.status}
             onClick={() => (action.tone === "primary" ? onPrimary(action) : onSecondary(action.status))}
             disabled={updating !== null}
-            className={`flex-1 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#064e3b]/40 disabled:cursor-not-allowed disabled:opacity-50 lg:flex-none ${styles}`}
+            className={`flex-1 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/40 disabled:cursor-not-allowed disabled:opacity-50 lg:flex-none ${styles}`}
           >
             {isUpdating ? "Memproses..." : action.label}
           </button>
@@ -508,8 +508,8 @@ function ActionButtons({
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#f8f9fa] text-[#191c1d] antialiased">
-      <main className="lg:ml-64 min-h-screen flex flex-col pb-40 lg:pb-12">
+    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] antialiased">
+      <main className="lg:ml-[230px] min-h-screen flex flex-col pb-40 lg:pb-12">
         <section className="p-4 sm:p-6 max-w-[1280px] mx-auto w-full space-y-5">{children}</section>
       </main>
     </div>
@@ -528,8 +528,8 @@ function StatusBadge({ status }: { status: string }) {
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="w-full rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm">
-      <h2 className="mb-4 text-sm font-semibold text-[#191c1d]">{title}</h2>
+    <div className="w-full rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+      <h2 className="mb-4 text-sm font-semibold text-[#0F172A]">{title}</h2>
       {children}
     </div>
   );
@@ -613,7 +613,7 @@ function SummaryCard({ order }: { order: Order }) {
       </dl>
       <div className="mt-4 flex items-center justify-between border-t border-dashed border-[#e2e8f0] pt-4">
         <span className="text-sm font-semibold text-[#191c1d]">Total Pembayaran</span>
-        <span className="text-xl font-bold text-[#064e3b]">{formatRupiah(order.total)}</span>
+        <span className="text-xl font-bold text-[#2563EB]">{formatRupiah(order.total)}</span>
       </div>
     </Card>
   );
@@ -704,7 +704,7 @@ function ShippingCard({ order }: { order: Order }) {
         {order.trackingNumber && (
           <div className="flex items-center justify-between gap-4 rounded-xl bg-[#f8f9fa] px-3 py-2">
             <dt className="text-xs text-[#707974]">No. Resi</dt>
-            <dd className="text-sm font-bold text-[#064e3b]">{order.trackingNumber}</dd>
+            <dd className="text-sm font-bold text-[#2563EB]">{order.trackingNumber}</dd>
           </div>
         )}
       </dl>
@@ -783,7 +783,7 @@ function VoucherCard({ order }: { order: Order }) {
         {vouchers.map((v) => (
           <li key={v.id} className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-[#e2e8f0] bg-[#f8f9fa] px-3 py-2.5">
             <div className="min-w-0">
-              <p className="text-sm font-bold text-[#064e3b]">{v.voucherCode}</p>
+              <p className="text-sm font-bold text-[#2563EB]">{v.voucherCode}</p>
               <p className="text-xs text-[#707974]">
                 {v.voucherCategory === "SHIPPING" ? "Potongan Ongkir" : "Diskon Produk"}
               </p>
@@ -801,7 +801,7 @@ function CustomerCard({ order }: { order: Order }) {
   return (
     <Card title="Customer">
       <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#064e3b] text-base font-bold text-white">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#2563EB] text-base font-bold text-white">
           {initial}
         </div>
         <div className="min-w-0">
@@ -843,7 +843,7 @@ function TimelineCard({ order }: { order: Order }) {
   return (
     <Card title="Status Pesanan">
       <div className="relative">
-        <div className="absolute left-[13px] top-2 bottom-2 w-0.5 bg-[#e2e8f0]" />
+        <div className="absolute left-[13px] top-2 bottom-2 w-0.5 bg-[#E2E8F0]" />
 
         {steps.map((step, idx) => {
           const isActive = idx <= activeIdx;
@@ -853,8 +853,8 @@ function TimelineCard({ order }: { order: Order }) {
             <div key={step.key} className={`relative flex gap-4 ${idx === steps.length - 1 ? "pb-0" : "pb-6"}`}>
               <div
                 className={`relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
-                  isActive ? "bg-[#064e3b] text-white" : "border-2 border-[#e2e8f0] bg-white"
-                } ${isCurrent ? "ring-2 ring-[#064e3b]/30" : ""}`}
+                  isActive ? "bg-[#2563EB] text-white" : "border-2 border-[#e2e8f0] bg-white"
+                } ${isCurrent ? "ring-2 ring-[#2563EB]/30" : ""}`}
                 aria-hidden="true"
               >
                 {isActive ? (
@@ -869,7 +869,7 @@ function TimelineCard({ order }: { order: Order }) {
                 <p className={`text-sm font-semibold ${isActive ? "text-[#191c1d]" : "text-[#94a3b8]"}`}>
                   {step.label}
                   {isCurrent && !terminal && (
-                    <span className="ml-2 inline-block rounded-full bg-[#064e3b]/10 px-2 py-0.5 text-[11px] font-bold text-[#064e3b]">
+                    <span className="ml-2 inline-block rounded-full bg-[#2563EB]/10 px-2 py-0.5 text-[11px] font-bold text-[#2563EB]">
                       Berlangsung
                     </span>
                   )}

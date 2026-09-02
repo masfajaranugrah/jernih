@@ -22,14 +22,21 @@ export async function adminApi<T = unknown>(
     if (typeof window !== "undefined") {
       await fetch("/api/auth/logout", { method: "POST" });
       sessionStorage.setItem("auth_expired", "1");
-      window.location.href = "/dashboard-admin/admin/login";
+      window.location.href = "/dashboard-admin/auth/login";
     }
     throw new Error("Session expired");
   }
 
-  const data = await res.json();
+  const text = await res.text();
+  let data: unknown;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = null;
+  }
+
   if (!res.ok) {
-    throw new Error(data?.message ?? `API error: ${res.status}`);
+    throw new Error((data as any)?.message ?? `API error: ${res.status}`);
   }
 
   return data as T;

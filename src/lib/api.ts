@@ -104,7 +104,8 @@ export async function fetchProductBySlug(slug: string): Promise<ApiProduct | nul
       next: { revalidate: 60, tags: ["products"] },
     });
     if (!res.ok) return null;
-    return await res.json();
+    const text = await res.text();
+    return text ? JSON.parse(text) : null;
   } catch (e) {
     console.error("[fetchProductBySlug] error:", e);
     return null;
@@ -171,7 +172,8 @@ export async function fetchPromos(params?: {
       next: params?.noCache ? undefined : { revalidate: 60, tags: ["promos"] },
     });
     if (!res.ok) throw new Error(`API error: ${res.status}`);
-    const json: PromosResponse = await res.json();
+    const text = await res.text();
+    const json: PromosResponse = text ? JSON.parse(text) : { data: [] };
     return json.data ?? [];
   } catch (e) {
     console.error("[fetchPromos] error:", e);
@@ -187,7 +189,12 @@ export async function fetchPromoBanner(noCache?: boolean): Promise<ApiPromo | nu
       next: noCache ? undefined : { revalidate: 60, tags: ["promos"] },
     });
     if (!res.ok) return null;
-    return await res.json();
+    const text = await res.text();
+    if (!text) return null;
+    const json = JSON.parse(text);
+    // Handle both raw promo object and { data: null } wrapper
+    if (json === null || json?.data === null) return null;
+    return json as ApiPromo;
   } catch (e) {
     console.error("[fetchPromoBanner] error:", e);
     return null;

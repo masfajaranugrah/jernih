@@ -4,6 +4,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import * as compression from 'compression';
 import helmet from 'helmet';
+import * as express from 'express';
 import { AppModule } from './app.module';
 
 import { getUploadDir } from './upload/upload.controller';
@@ -21,6 +22,10 @@ async function bootstrap() {
       crossOriginResourcePolicy: false,
     }),
   );
+
+  // Batasi ukuran request body — cegah memory exhaustion / DoS via large payload
+  app.use(express.json({ limit: '2mb' }));
+  app.use(express.urlencoded({ limit: '2mb', extended: true }));
 
   // Gzip/Brotli compression — kurangi ukuran response JSON hingga 70%
   app.use(compression({ level: 6, threshold: 1024 }));

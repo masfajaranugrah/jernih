@@ -1,26 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
+import { jwtVerify } from "jose";
 
 const TOKEN_KEY = "mh_token";
 
 /**
- * Decode JWT payload tanpa verifikasi signature — cukup untuk baca role.
- * Jika token palsu, API backend tetap akan menolak di endpoint sebenarnya.
+ * Verifikasi JWT dan kembalikan payload jika valid.
+ * Menggunakan jose (Edge Runtime compatible) untuk verifikasi signature penuh.
+ * Jika JWT_SECRET tidak dikonfigurasi, fallback ke decode-only (dev mode).
  */
-function decodeJwtPayload(token: string): { role?: string } | null {
+async function verifyJwtPayload(token: string): Promise<{ role?: string } | null> {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    // Fallback dev: jangan crash jika secret belum dikonfigurasi
+    // PERINGATAN: ini TIDAK aman untuk production
+    try {
+      const parts = token.split(".");
+      if (parts.length !== 3) return null;
+      const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+      return JSON.parse(atob(base64));
+    } catch {
+      return null;
+    }
+  }
+
   try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    // JWT payload adalah base64url — konversi dulu ke base64 standar
-    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    return JSON.parse(atob(base64));
+    const secretKey = new TextEncoder().encode(secret);
+    const { payload } = await jwtVerify(token, secretKey);
+    return payload as { role?: string };
   } catch {
+    // Token tidak valid, expired, atau signature tidak cocok
     return null;
   }
 }
 
 /** Semua route di bawah dashboard-admin butuh role ADMIN */
 const ADMIN_PREFIX = "/dashboard-admin";
-const ADMIN_LOGIN_PAGE = "/dashboard-admin/admin/login";
+const ADMIN_LOGIN_PAGE = "/dashboard-admin/auth/login";
 
 /** Semua route di bawah dashboard/pelanggan hanya untuk non-admin */
 const CUSTOMER_PREFIX = "/dashboard/pelanggan";
@@ -29,7 +44,7 @@ const CUSTOMER_LOGIN_PAGE = "/dashboard/pelanggan/login";
 /** Route publik — tidak perlu dicek */
 const PUBLIC_ROUTES = ["/login", "/register"];
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip public routes (login, register)
@@ -43,7 +58,10 @@ export function proxy(request: NextRequest) {
     // Halaman login admin: jika sudah login → redirect ke dashboard
     if (pathname === ADMIN_LOGIN_PAGE || pathname.startsWith(ADMIN_LOGIN_PAGE + "/")) {
       if (token) {
-        return NextResponse.redirect(new URL("/dashboard-admin/admin", request.url));
+        const payload = await verifyJwtPayload(token);
+        if (payload?.role === "ADMIN") {
+          return NextResponse.redirect(new URL("/dashboard-admin/admin", request.url));
+        }
       }
       return NextResponse.next();
     }
@@ -53,10 +71,10 @@ export function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL(ADMIN_LOGIN_PAGE, request.url));
     }
 
-    // Cek role: harus ADMIN
-    const payload = decodeJwtPayload(token);
+    // Verifikasi signature JWT + cek role: harus ADMIN
+    const payload = await verifyJwtPayload(token);
     if (!payload || payload.role !== "ADMIN") {
-      // Non-admin mencoba akses admin → 403 Forbidden
+      // Token palsu / expired / non-admin mencoba akses admin → redirect ke forbidden
       const url = new URL("/forbidden", request.url);
       url.searchParams.set("from", pathname);
       return NextResponse.redirect(url);
@@ -73,9 +91,13 @@ export function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL(CUSTOMER_LOGIN_PAGE, request.url));
     }
 
-    // Cek role: ADMIN tidak boleh akses customer dashboard
-    const payload = decodeJwtPayload(token);
-    if (payload?.role === "ADMIN") {
+    // Verifikasi signature JWT + cek role: ADMIN tidak boleh akses customer dashboard
+    const payload = await verifyJwtPayload(token);
+    if (!payload) {
+      // Token tidak valid / expired
+      return NextResponse.redirect(new URL(CUSTOMER_LOGIN_PAGE, request.url));
+    }
+    if (payload.role === "ADMIN") {
       const url = new URL("/forbidden", request.url);
       url.searchParams.set("from", pathname);
       return NextResponse.redirect(url);
@@ -87,7 +109,7 @@ export function proxy(request: NextRequest) {
   return NextResponse.next();
 }
 
-// Next.js 16 otomatis deteksi proxy.ts sebagai middleware
+// Next.js otomatis deteksi proxy.ts sebagai middleware
 // Matcher dibatasi hanya untuk route yang butuh proteksi — jangan load di semua halaman
 export const config = {
   matcher: ["/dashboard-admin/:path*", "/dashboard/pelanggan/:path*"],

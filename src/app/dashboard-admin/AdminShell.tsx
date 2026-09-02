@@ -6,7 +6,6 @@ import TopNavBar from "./TopNavBar";
 
 /** Halaman yang TIDAK menampilkan sidebar (mis. halaman login). */
 const NO_SIDEBAR_PREFIXES = [
-  "/dashboard-admin/admin/login",
   "/dashboard-admin/auth/login",
 ];
 

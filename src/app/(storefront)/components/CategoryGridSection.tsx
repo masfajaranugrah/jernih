@@ -132,6 +132,13 @@ const categoryGridItems = [
   },
 ];
 
+// Design system colors:
+// Icon container idle: bg-[#F8FAFC] border border-[#E2E8F0]
+// Icon container hover: bg-[#EFF6FF] border-[#BFDBFE]
+// Label text idle: text-[#0F172A]
+// Label text hover: text-[#2563EB]
+// Action button: bg-[#2563EB] hover:bg-[#1D4ED8]
+
 export default function CategoryGridSection() {
   return (
     <section className="mx-auto w-full py-2 select-none md:max-w-[860px] lg:max-w-[940px]">
@@ -147,8 +154,8 @@ export default function CategoryGridSection() {
             {/* Box Icon */}
             <div
               className={`flex h-14 w-14 sm:h-18 sm:w-18 items-center justify-center rounded-2xl transition-all duration-300 group-hover:-translate-y-1 ${item.isActionButton
-                ? "bg-black shadow-md text-white group-hover:bg-neutral-800"
-                : "border border-neutral-100 bg-neutral-50 shadow-xs group-hover:border-neutral-200 group-hover:bg-white group-hover:shadow-md"
+                ? "bg-[#2563EB] shadow-md text-white group-hover:bg-[#1D4ED8]"
+                : "border border-[#E2E8F0] bg-[#F8FAFC] shadow-xs group-hover:border-[#BFDBFE] group-hover:bg-[#EFF6FF] group-hover:shadow-md"
                 }`}
             >
               {item.icon}
@@ -157,8 +164,8 @@ export default function CategoryGridSection() {
             {/* Nama Label Kategori */}
             <span
               className={`text-xs sm:text-sm font-semibold tracking-tight transition-colors line-clamp-2 ${item.isActionButton
-                ? "font-bold text-black group-hover:text-neutral-700"
-                : "text-neutral-800 group-hover:text-black"
+                ? "font-bold text-[#0F172A] group-hover:text-[#2563EB]"
+                : "text-[#0F172A] group-hover:text-[#2563EB]"
                 }`}
             >
               {item.name}

@@ -38,6 +38,19 @@ export class ProductsController {
     });
   }
 
+  /** GET /api/products/admin/reviews — semua ulasan (ADMIN only), paginated */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Get('admin/reviews')
+  findAllReviews(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('search') search?: string,
+    @Query('rating') rating?: number,
+  ) {
+    return this.productsService.findAllReviews({ page, limit, search, rating });
+  }
+
   /** GET /api/products/slug/:slug */
   @Get('slug/:slug')
   findBySlug(@Param('slug') slug: string) {

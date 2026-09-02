@@ -3,10 +3,6 @@ import Link from "next/link";
 type NavItem = {
   label: string;
   href: string;
-  bgColor: string;
-  textColor: string;
-  borderColor: string;
-  gradient: string;
   icon: React.ReactNode;
 };
 
@@ -14,12 +10,8 @@ const navItems: NavItem[] = [
   {
     label: "Produk",
     href: "/produk",
-    bgColor: "bg-blue-50 text-blue-600",
-    textColor: "text-blue-700",
-    borderColor: "border-blue-100",
-    gradient: "from-blue-500 to-indigo-600",
     icon: (
-      <svg className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <svg className="h-6 w-6 text-[#2563EB]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -31,12 +23,8 @@ const navItems: NavItem[] = [
   {
     label: "Sewa",
     href: "/sewa",
-    bgColor: "bg-amber-50 text-amber-600",
-    textColor: "text-amber-700",
-    borderColor: "border-amber-100",
-    gradient: "from-amber-500 to-orange-600",
     icon: (
-      <svg className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <svg className="h-6 w-6 text-[#2563EB]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -48,12 +36,8 @@ const navItems: NavItem[] = [
   {
     label: "Jasa",
     href: "/jasa",
-    bgColor: "bg-emerald-50 text-emerald-600",
-    textColor: "text-emerald-700",
-    borderColor: "border-emerald-100",
-    gradient: "from-emerald-500 to-teal-600",
     icon: (
-      <svg className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <svg className="h-6 w-6 text-[#2563EB]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -74,15 +58,13 @@ export default function QuickNavMenu() {
             href={item.href}
             className="group flex flex-col items-center gap-2 text-center transition-all duration-200 active:scale-95"
           >
-            {/* Bulatan Icon Tokopedia / Shopee style */}
-            <div
-              className={`relative flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-gradient-to-br ${item.gradient} p-3.5 shadow-sm transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-md group-hover:ring-4 group-hover:ring-slate-100`}
-            >
+            {/* Icon container — design system style */}
+            <div className="relative flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-[#EFF6FF] border border-[#BFDBFE] shadow-xs transition-all duration-300 group-hover:-translate-y-1 group-hover:bg-[#DBEAFE] group-hover:shadow-md">
               {item.icon}
             </div>
 
-            {/* Label Nama Menu */}
-            <span className="text-xs sm:text-sm font-bold tracking-tight text-gray-800 transition-colors group-hover:text-[#1e3a8a]">
+            {/* Label */}
+            <span className="text-xs sm:text-sm font-semibold tracking-tight text-[#0F172A] transition-colors group-hover:text-[#2563EB]">
               {item.label}
             </span>
           </Link>

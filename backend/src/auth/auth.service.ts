@@ -57,6 +57,11 @@ export class AuthService {
     return { user, access_token: token };
   }
 
+  // Hash dummy untuk timing-safe comparison — cegah user enumeration via timing attack.
+  // bcrypt.compare dengan hash invalid memakan waktu ~sama dengan hash valid.
+  private static readonly DUMMY_HASH =
+    '$2b$10$invalidhashfortimingprotectionnnnnnnnnnnnnnnnnnnn';
+
   // ── Login ───────────────────────────────────────────────────────────────────
   async login(dto: LoginDto) {
     const user = await this.database.db.query.users.findFirst({
@@ -70,12 +75,12 @@ export class AuthService {
       },
     });
 
-    if (!user || !user.isActive) {
-      throw new UnauthorizedException('Email atau password salah');
-    }
+    // Selalu jalankan bcrypt.compare meski user tidak ditemukan — cegah timing attack
+    // (perbedaan waktu respons bisa membocorkan apakah email terdaftar atau tidak)
+    const hashToCompare = user?.password ?? AuthService.DUMMY_HASH;
+    const passwordMatch = await bcrypt.compare(dto.password, hashToCompare);
 
-    const passwordMatch = await bcrypt.compare(dto.password, user.password);
-    if (!passwordMatch) {
+    if (!user || !user.isActive || !passwordMatch) {
       throw new UnauthorizedException('Email atau password salah');
     }
 

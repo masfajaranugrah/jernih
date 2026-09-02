@@ -69,7 +69,7 @@ export async function createProduct(
   } catch {
     return {
       success: false,
-      error: "Session tidak valid. Silakan login ulang ke /dashboard-admin/admin/login",
+      error: "Session tidak valid. Silakan login ulang ke /dashboard-admin/auth/login",
     };
   }
 

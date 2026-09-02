@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export default function SidebarPelanggan({ nama }: { nama: string }) {
+interface SidebarPelangganProps {
+  nama: string;
+  displayName?: string;
+}
+
+export default function SidebarPelanggan({ nama, displayName }: SidebarPelangganProps) {
   const pathname = usePathname();
 
   const navItems = [
@@ -25,67 +30,133 @@ export default function SidebarPelanggan({ nama }: { nama: string }) {
       : pathname.startsWith(href);
 
   return (
-    <>
-      {/* Desktop sidebar */}
-      <aside className="hidden md:flex h-screen w-64 fixed left-0 top-0 bg-white border-r border-[#e1e3e4] flex-col py-6 px-3 overflow-y-auto z-50 shadow-sm">
-        {/* Brand */}
-        <div className="mb-8 px-1">
-          <Link href="/" className="inline-flex">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.svg" alt="Jernih Creatife" className="h-10 w-auto" />
-          </Link>
-        </div>
+    /* Desktop-only sidebar — mobile nav is handled by MobileBottomNav */
+    <aside className="hidden md:flex h-screen w-64 fixed left-0 top-0 bg-white flex-col z-50"
+      style={{ borderRight: "1px solid #E2E8F0" }}
+    >
+      {/* ── Brand ─────────────────────────────────────────────── */}
+      <div className="px-5 pt-6 pb-5" style={{ borderBottom: "1px solid #E2E8F0" }}>
+        <Link href="/" className="inline-flex flex-col gap-1">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="Ecco Market" className="h-8 w-auto" />
+          <span className="text-[10px] font-semibold tracking-[0.15em] uppercase"
+            style={{ color: "#64748B", letterSpacing: "0.12em" }}>
+            Dashboard
+          </span>
+        </Link>
+      </div>
 
-        {/* Nav */}
-        <nav className="flex-1 flex flex-col gap-0.5">
-          {navItems.map((item) => {
-            const active = isActive(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                prefetch={false}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                  active
-                    ? "bg-[#f3f4f5] text-[#003527] font-bold border-r-2 border-[#003527] scale-[0.98]"
-                    : "text-[#404944] hover:text-[#003527] hover:bg-[#f3f4f5]"
-                }`}
+      {/* ── User greeting ──────────────────────────────────────── */}
+      {(displayName || nama) && (
+        <div className="px-5 py-4" style={{ borderBottom: "1px solid #E2E8F0" }}>
+          <div className="flex items-center gap-3">
+            {/* Avatar placeholder */}
+            <div
+              className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold"
+              style={{ background: "#EFF6FF", color: "#2563EB" }}
+            >
+              {(displayName || nama).charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs" style={{ color: "#64748B" }}>Hai,</p>
+              <p
+                className="text-sm font-semibold truncate"
+                style={{ color: "#0F172A" }}
               >
+                {displayName || nama}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Main nav ───────────────────────────────────────────── */}
+      <nav className="flex-1 flex flex-col gap-0.5 px-3 py-3 overflow-y-auto">
+        {navItems.map((item) => {
+          const active = isActive(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              prefetch={false}
+              className={`
+                group relative flex items-center gap-3 px-3 py-2.5 rounded-lg
+                text-sm font-medium transition-all duration-150
+                ${active
+                  ? "bg-[#EFF6FF] text-[#2563EB]"
+                  : "text-[#64748B] hover:bg-slate-50 hover:text-slate-800"
+                }
+              `}
+            >
+              {/* Left border accent for active state */}
+              {active && (
                 <span
-                  className="material-symbols-outlined text-xl"
-                  style={active ? { fontVariationSettings: "'FILL' 1" } : {}}
-                >
-                  {item.icon}
-                </span>
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full"
+                  style={{ background: "#2563EB" }}
+                />
+              )}
 
-        {/* Bottom */}
-        <div className="mt-auto pt-4 border-t border-[#e1e3e4] flex flex-col gap-0.5">
-          {bottomItems.map((item) => {
-            const active = isActive(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                prefetch={false}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+              <span
+                className="material-symbols-outlined text-[20px] leading-none flex-shrink-0"
+                style={
                   active
-                    ? "bg-[#f3f4f5] text-[#003527] font-bold border-r-2 border-[#003527]"
-                    : "text-[#404944] hover:text-[#003527] hover:bg-[#f3f4f5]"
-                }`}
+                    ? { fontVariationSettings: "'FILL' 1", color: "#2563EB" }
+                    : { fontVariationSettings: "'FILL' 0", color: "#64748B" }
+                }
               >
-                <span className="material-symbols-outlined text-xl">{item.icon}</span>
-                {item.label}
-              </Link>
-            );
-          })}
-        </div>
-      </aside>
+                {item.icon}
+              </span>
 
-      </>
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* ── Bottom: Profile ────────────────────────────────────── */}
+      <div
+        className="px-3 py-3 flex flex-col gap-0.5"
+        style={{ borderTop: "1px solid #E2E8F0" }}
+      >
+        {bottomItems.map((item) => {
+          const active = isActive(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              prefetch={false}
+              className={`
+                group relative flex items-center gap-3 px-3 py-2.5 rounded-lg
+                text-sm font-medium transition-all duration-150
+                ${active
+                  ? "bg-[#EFF6FF] text-[#2563EB]"
+                  : "text-[#64748B] hover:bg-slate-50 hover:text-slate-800"
+                }
+              `}
+            >
+              {active && (
+                <span
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full"
+                  style={{ background: "#2563EB" }}
+                />
+              )}
+
+              <span
+                className="material-symbols-outlined text-[20px] leading-none flex-shrink-0"
+                style={
+                  active
+                    ? { fontVariationSettings: "'FILL' 1", color: "#2563EB" }
+                    : { fontVariationSettings: "'FILL' 0", color: "#64748B" }
+                }
+              >
+                {item.icon}
+              </span>
+
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+      </div>
+    </aside>
   );
 }

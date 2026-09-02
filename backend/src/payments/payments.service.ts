@@ -27,7 +27,7 @@ import {
   voucherUses,
   products,
 } from '../../db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq, sql, and } from 'drizzle-orm';
 
 type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'REFUNDED' | 'EXPIRED';
 type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED' | 'CANCELLED' | 'REFUNDED' | 'PARTIALLY_REFUNDED' | 'AMOUNT_MISMATCH';
@@ -532,7 +532,8 @@ export class PaymentsService {
   /**
    * Catat pemakaian voucher saat pembayaran berhasil (PAID):
    * - buat VoucherUse (voucher_id, user_id) untuk penanda sekali pakai per user
-   * - increment vouchers.usedCount untuk kuota
+   * - increment vouchers.usedCount untuk kuota — ATOMIC: hanya jika kuota masih tersedia
+   *   (cegah race condition dua pembayaran bersamaan dengan voucher yang sama)
    * Dipanggil bersama deductStock, sehingga voucher "terpakai" hanya ketika
    * order benar-benar dibayar (bukan saat apply di halaman checkout).
    */
@@ -546,10 +547,18 @@ export class PaymentsService {
         .insert(voucherUses)
         .values({ id: genId('vu'), voucherId: ov.voucherId, userId })
         .onConflictDoNothing();
+      // Atomic UPDATE: hanya increment jika kuota masih tersedia.
+      // Jika hasilnya 0 rows (kuota habis), voucher tidak dicatat — lanjut saja
+      // (idempotency: pembayaran tetap berhasil, voucher tidak double-count).
       await tx
         .update(vouchers)
         .set({ usedCount: sql`${vouchers.usedCount} + 1` })
-        .where(eq(vouchers.id, ov.voucherId));
+        .where(
+          and(
+            eq(vouchers.id, ov.voucherId),
+            sql`${vouchers.usedCount} < ${vouchers.quota}`,
+          ),
+        );
     }
   }
 

@@ -20,14 +20,18 @@ export class PaymentsController {
   }
 
   /**
-   * POST /payments/midtrans/webhook — alias lama webhook notifikasi.
-   * Dipertahankan agar konfigurasi Midtrans yang sudah ada tidak rusak.
-   * Logika sama persis dengan /payments/midtrans/notification.
+   * POST /payments/midtrans/webhook — endpoint lama (DEPRECATED).
+   * Dikembalikan 410 Gone agar konfigurasi lama diperbarui ke /notification.
+   * Jika Anda masih menggunakan URL ini di dashboard Midtrans, perbarui ke:
+   *   POST /payments/midtrans/notification
    */
   @Post('midtrans/webhook')
-  @HttpCode(200)
-  webhook(@Body() payload: any) {
-    return this.paymentsService.processMidtransNotification(payload);
+  @HttpCode(410)
+  webhook() {
+    return {
+      message: 'Endpoint ini sudah tidak aktif. Gunakan /payments/midtrans/notification',
+      status_code: 410,
+    };
   }
 
   /**

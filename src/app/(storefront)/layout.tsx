@@ -66,7 +66,7 @@ export default async function StorefrontLayout({
   return (
     <StorefrontProviders>
       <Navbar initialSlug={initialSlug} />
-      <div className="min-h-screen bg-[#e3e5e0] text-black">
+      <div className="min-h-screen bg-[#F8FAFC] text-black">
         {children}
       </div>
       <MobileBottomNav initialSlug={initialSlug} />

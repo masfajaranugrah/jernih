@@ -97,7 +97,7 @@ export async function createService(data: CreateServiceInput): Promise<ApiServic
     headers = await authHeaders();
   } catch {
     throw new Error(
-      "Session tidak valid. Silakan login ulang ke /dashboard-admin/admin/login"
+      "Session tidak valid. Silakan login ulang ke /dashboard-admin/auth/login"
     );
   }
 
@@ -140,7 +140,7 @@ export async function editService(
     headers = await authHeaders();
   } catch {
     throw new Error(
-      "Session tidak valid. Silakan login ulang ke /dashboard-admin/admin/login"
+      "Session tidak valid. Silakan login ulang ke /dashboard-admin/auth/login"
     );
   }
 
@@ -171,7 +171,7 @@ export async function deleteService(id: string): Promise<void> {
     headers = await authHeaders();
   } catch {
     throw new Error(
-      "Session tidak valid. Silakan login ulang ke /dashboard-admin/admin/login"
+      "Session tidak valid. Silakan login ulang ke /dashboard-admin/auth/login"
     );
   }
 

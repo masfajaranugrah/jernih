@@ -2,12 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { addToCart, emitWishlistChange } from "@/lib/cart";
 import { getToken } from "@/lib/auth";
 import { useAuth } from "@/lib/auth-context";
 import { resolveImageUrl } from "@/lib/image-url";
+import { getChatSocket } from "@/lib/chatSocket";
 
 function maskName(name: string): string {
   return (name || "")
@@ -106,6 +107,19 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [selectedTypeIdx, setSelectedTypeIdx] = useState(0);
   const activeType = hasTypes ? product.types![selectedTypeIdx] : null;
 
+  // ── Reviews state lokal (bisa diupdate realtime tanpa reload) ────────────
+  const [localReviews, setLocalReviews] = useState<ProductReview[]>(
+    Array.isArray(product.reviews) ? product.reviews : []
+  );
+  const [localAvgRating, setLocalAvgRating] = useState(() => {
+    const r = Array.isArray(product.reviews) ? product.reviews : [];
+    return r.length > 0 ? r.reduce((s, x) => s + x.rating, 0) / r.length : 0;
+  });
+  // Set berisi id review yang baru masuk (untuk animasi highlight)
+  const [newReviewIds, setNewReviewIds] = useState<Set<string>>(new Set());
+  // Ref agar reviewsSection bisa di-scroll ke review baru
+  const reviewsRef = useRef<HTMLDivElement>(null);
+
   const displayPrice = activeType ? activeType.price : product.price;
   const displayOldPrice = activeType?.oldPrice ?? product.installment;
   const displayStock = activeType ? activeType.stock : (() => {
@@ -162,6 +176,59 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     checkWishlist();
     return () => {
       cancelled = true;
+    };
+  }, [product.id]);
+
+  // ── Realtime: listen review baru via WebSocket ───────────────────────────
+  useEffect(() => {
+    const socket = getChatSocket(getToken() ?? undefined);
+    // Join room produk (tidak butuh auth — publik)
+    socket.emit('product:join', { productId: product.id });
+
+    type ReviewPayload = {
+      productId?: string;
+      review?: ProductReview;
+      newAvgRating?: number;
+      newTotalReviews?: number;
+    };
+
+    const onReview = (payload: ReviewPayload) => {
+      if (payload?.productId !== product.id || !payload?.review) return;
+      const incoming = payload.review;
+
+      // Prepend review baru ke list (paling atas)
+      setLocalReviews((prev) => {
+        // Hindari duplikasi jika event tiba dua kali
+        if (prev.some((r) => r.id === incoming.id)) return prev;
+        return [incoming, ...prev];
+      });
+
+      // Update avg rating dari backend (sudah dihitung ulang)
+      if (typeof payload.newAvgRating === 'number') {
+        setLocalAvgRating(payload.newAvgRating);
+      }
+
+      // Tandai review baru — highlight 3 detik lalu hapus
+      setNewReviewIds((prev) => new Set([...prev, incoming.id]));
+      setTimeout(() => {
+        setNewReviewIds((prev) => {
+          const next = new Set(prev);
+          next.delete(incoming.id);
+          return next;
+        });
+      }, 3000);
+
+      // Scroll ringan ke area ulasan agar user tahu ada yang baru
+      setTimeout(() => {
+        reviewsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
+    };
+
+    socket.on('product:review:new', onReview);
+
+    return () => {
+      socket.off('product:review:new', onReview);
+      socket.emit('product:leave', { productId: product.id });
     };
   }, [product.id]);
 
@@ -224,6 +291,11 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       router.push(`/dashboard/pelanggan/login?from=/produk/${product.slug}`);
       return;
     }
+    // Bersihkan draft pembayaran lama agar tidak restore order produk berbeda
+    try { sessionStorage.removeItem("mh_payment_draft"); } catch {}
+    const itemKey = `${product.id}:${activeType?.name ?? ""}`;
+    // Simpan key item ini agar keranjang hanya checkout item ini saja (bukan semua keranjang)
+    try { sessionStorage.setItem("mh_buy_now_key", itemKey); } catch {}
     addToCart({
       productId: product.id,
       name: product.title,
@@ -240,7 +312,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           }
         : {}),
     });
-    router.push("/keranjang?step=payment");
+    router.push(`/keranjang?step=payment&from=/produk/${product.slug}`);
   }
 
   /** Tanya produk via chat in-app — bawa context produk ke halaman chat */
@@ -273,11 +345,9 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   }
 
   // Rating & ulasan produk (dari backend)
-  const reviews = Array.isArray(product.reviews) ? product.reviews : [];
-  const avgRating =
-    reviews.length > 0
-      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-      : 0;
+  // Gunakan state lokal agar bisa diupdate realtime tanpa reload halaman
+  const reviews = localReviews;
+  const avgRating = localAvgRating;
   const breakdown = [5, 4, 3, 2, 1].map((star) => ({
     star,
     count: reviews.filter((r) => r.rating === star).length,
@@ -642,9 +712,14 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             </div>
 
             {/* ── ULASAN PELANGGAN ── */}
-            <div className="pt-4 border-t border-slate-200 mt-2">
-              <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-slate-900 mb-3">
+            <div ref={reviewsRef} className="pt-4 border-t border-slate-200 mt-2">
+              <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-slate-900 mb-3 flex items-center gap-2">
                 Ulasan Pelanggan
+                {reviews.length > 0 && (
+                  <span className="text-xs font-semibold text-slate-500 normal-case tracking-normal">
+                    ({reviews.length})
+                  </span>
+                )}
               </h3>
 
               {reviews.length === 0 ? (
@@ -691,7 +766,15 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                   {/* Daftar ulasan */}
                   <div className="space-y-4">
                     {reviews.map((review) => (
-                      <div key={review.id} className="border border-slate-200/80 bg-white rounded-xl p-3.5 shadow-2xs">
+                      <div
+                        key={review.id}
+                        className={[
+                          "rounded-xl p-3.5 shadow-2xs border transition-all duration-700",
+                          newReviewIds.has(review.id)
+                            ? "border-[#064e3b] bg-[#f0fdf4] ring-2 ring-[#064e3b]/20 animate-pulse-once"
+                            : "border-slate-200/80 bg-white",
+                        ].join(" ")}
+                      >
                         <div className="flex items-center justify-between gap-2 flex-wrap">
                           <div className="flex items-center gap-2 min-w-0">
                             <div className="h-8 w-8 shrink-0 rounded-full bg-[#5E3CF6]/10 text-[#5E3CF6] flex items-center justify-center text-sm font-black">
@@ -712,7 +795,14 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                               </div>
                             </div>
                           </div>
-                          <span className="text-[11px] text-slate-400">{formatReviewDate(review.createdAt)}</span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {newReviewIds.has(review.id) && (
+                              <span className="inline-flex items-center rounded-full bg-[#064e3b] px-2 py-0.5 text-[10px] font-bold text-white">
+                                Baru
+                              </span>
+                            )}
+                            <span className="text-[11px] text-slate-400">{formatReviewDate(review.createdAt)}</span>
+                          </div>
                         </div>
                         {review.comment && (
                           <p className="mt-2 text-xs sm:text-sm text-slate-700 leading-relaxed break-words">{review.comment}</p>

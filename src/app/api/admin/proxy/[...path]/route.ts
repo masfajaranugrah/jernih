@@ -2,7 +2,7 @@
 // Baca HttpOnly cookie server-side, forward ke backend sebagai Bearer token
 // Aman dari XSS karena token tidak pernah terekspose ke JavaScript
 
-import { revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { Agent as HttpAgent } from "http";
 import { Agent as HttpsAgent } from "https";
@@ -98,16 +98,15 @@ async function proxy(
     if (res.body) await res.arrayBuffer().catch(() => {});
 
     // Revalidate cache Next.js untuk data yang diubah admin
-    // Next.js 16: revalidateTag() butuh 2 argumen (tag, profile)
     if (res.ok) {
       if (apiPath === "settings/homepage_sections") {
-        revalidateTag("homepage_sections", { expire: 0 });
+        revalidatePath("/", "page");
       }
       if (apiPath.startsWith("hero")) {
-        revalidateTag("hero", { expire: 0 });
+        revalidatePath("/", "page");
       }
       if (apiPath.startsWith("promo")) {
-        revalidateTag("promo", { expire: 0 });
+        revalidatePath("/", "page");
       }
     }
 

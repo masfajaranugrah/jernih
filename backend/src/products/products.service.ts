@@ -205,6 +205,68 @@ export class ProductsService {
     };
   }
 
+  async findAllReviews({
+    page = 1,
+    limit = 20,
+    search,
+    rating,
+  }: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    rating?: number;
+  }) {
+    const offset = (Number(page) - 1) * Number(limit);
+
+    const conditions: any[] = [];
+    if (rating) conditions.push(eq(productReviews.rating, Number(rating)));
+    if (search) {
+      conditions.push(
+        or(
+          ilike(productReviews.comment, `%${search}%`),
+        ),
+      );
+    }
+
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const [{ total }] = await this.database.db
+      .select({ total: sql<string>`count(*)` })
+      .from(productReviews)
+      .where(where);
+
+    const rows = await this.database.db.query.productReviews.findMany({
+      where,
+      with: {
+        user: { columns: { id: true, name: true, avatar: true } },
+        product: { columns: { id: true, name: true, slug: true } },
+        order: { columns: { receivedProof: true } },
+      },
+      orderBy: (r: any, { desc }: any) => [desc(r.createdAt)],
+      limit: Number(limit),
+      offset,
+    });
+
+    return {
+      data: rows.map((r) => ({
+        id: r.id,
+        rating: r.rating,
+        comment: r.comment,
+        userName: r.user?.name ?? 'Pelanggan',
+        userAvatar: r.user?.avatar ?? null,
+        image: r.order?.receivedProof ?? null,
+        productId: r.productId,
+        productName: (r as any).product?.name ?? null,
+        productSlug: (r as any).product?.slug ?? null,
+        createdAt: r.createdAt,
+      })),
+      total: Number(total),
+      page: Number(page),
+      limit: Number(limit),
+      totalPages: Math.ceil(Number(total) / Number(limit)),
+    };
+  }
+
   async findReviews(productId: string) {
     const [avgRow] = await this.database.db
       .select({ avg: sql<string>`avg(${productReviews.rating})`, count: sql<string>`count(*)` })

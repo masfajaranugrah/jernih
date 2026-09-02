@@ -84,7 +84,7 @@ export async function handleSessionExpired() {
   // Simpan pesan di sessionStorage supaya halaman login bisa tampilkan notif
   sessionStorage.setItem("auth_expired", "1");
   const currentPath = window.location.pathname + window.location.search;
-  window.location.href = `/dashboard-admin/admin/login?from=${encodeURIComponent(currentPath)}`;
+  window.location.href = `/dashboard-admin/auth/login?from=${encodeURIComponent(currentPath)}`;
 }
 
 /**
